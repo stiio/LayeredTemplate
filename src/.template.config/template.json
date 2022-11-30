@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Stio",
+  "classifications": [
+    "Web",
+    "Solution"
+  ],
+  "name": "Stio Layered Template",
+  "shortName": "stio_layered_template",
+  "defaultName": "LayeredTemplateSolution",
+  "sourceName": "LayeredTemplate",
+  "identity": "Stio.LayeredTemplate",
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "preferNameDirectory": true,
+  "guids": [
+    "C321EFFB-2D66-4302-9DD8-8F4B89370F60",
+    "E3EDF299-E686-4D1D-8B49-AE0397AF4459",
+    "3BCDC2F2-3869-478A-8D5F-786606E59147",
+    "B770D234-E490-4B08-BBA0-D0BEA2B4684E",
+    "8D5EF5EC-3494-46BE-95EF-EFF55CE57344",
+    "24057D60-B88B-42F1-A706-726D70B54D80",
+    "5C0FC7BA-D4E7-4022-9799-0B89ED75AD00",
+    "45A3C1D1-3242-42B7-84AD-44638EEBDEE2",
+    "2ED5ECCD-69CE-478C-92A3-E9379CCE8E47",
+    "3C48C1E8-1250-4CEB-B469-D03D23724243",
+    "18A4A02B-4D3F-4044-82A4-E953C21653AF"
+  ],
+  "symbols": {
+    "Framework": {
+      "type": "parameter",
+      "description": "The target framework for the project.",
+      "datatype": "choice",
+      "choices": [
+        {
+          "choice": "net6.0",
+          "description": "Target net6.0"
+        }
+      ],
+      "replaces": "net6.0",
+      "defaultValue": "net6.0"
+    }
+  },
+  "primaryOutputs": [
+    {
+      "path": "LayeredTemplate.sln"
+    }
+  ],
+  "sources": [
+    {
+      "exclude": [
+        "**/[Bb]in/**",
+        "**/[Oo]bj/**",
+        "[Bb]in/**",
+        "[Oo]bj/**",
+        ".template.config/**/*",
+        "**/*.filelist",
+        "**/*.user",
+        "**/*.lock.json",
+        ".vs/**"
+      ]
+    }
+  ]
+}

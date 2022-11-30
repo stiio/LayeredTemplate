@@ -1,0 +1,35 @@
+version: '3.4'
+
+services:  
+  postgres:
+    image: postgres:13.2
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5433:5432
+    networks:
+      - app-network
+
+  web:
+    image: ${DOCKER_REGISTRY-}web
+    env_file:
+      - .env
+    ports:
+      - 3080:3080
+      - 3081:3081
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+    depends_on:
+      - postgres
+    build:
+      context: .
+      dockerfile: Web/Dockerfile
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

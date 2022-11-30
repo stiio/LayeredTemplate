@@ -1,0 +1,76 @@
+﻿{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:65390",
+      "sslPort": 44398
+    }
+  },
+  "profiles": {
+    "Web": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "api-docs",
+      "applicationUrl": "https://localhost:7299;http://localhost:5299",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "Web Mock Client": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "api-docs",
+      "applicationUrl": "https://localhost:7299;http://localhost:5299",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "USE_MOCK_AUTH": "true",
+        "MockUserSettings:Id": "361f7c7a-0c25-4e6d-a3d9-d2584a9d80e6",
+        "MockUserSettings:Email": "sample_client_555@yopmail.com",
+        "MockUserSettings:Phone": "+79685555555",
+        "MockUserSettings:Role": "Client"
+      }
+    },
+    "Web Mock Client2": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "api-docs",
+      "applicationUrl": "https://localhost:7299;http://localhost:5299",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "USE_MOCK_AUTH": "true",
+        "MockUserSettings:Id": "591f7c7a-0c25-4e6d-a3d9-d2584a9d80a2",
+        "MockUserSettings:Email": "sample_client_666@yopmail.com",
+        "MockUserSettings:Phone": "+79685555555",
+        "MockUserSettings:Role": "Client"
+      }
+    },
+    "Web Mock Admin": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "api-docs",
+      "applicationUrl": "https://localhost:7299;http://localhost:5299",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "USE_MOCK_AUTH": "true",
+        "MockUserSettings:Id": "03baa42b-d2c9-49e3-a4d1-4009492676c0",
+        "MockUserSettings:Email": "sample_admin_555@yopmail.com",
+        "MockUserSettings:Phone": "+79685555555",
+        "MockUserSettings:Role": "Admin"
+      }
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "launchUrl": "api-docs",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
