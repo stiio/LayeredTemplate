@@ -1,8 +1,8 @@
 ﻿using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Infrastructure.AuthorizationHandlers;
+using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Services;
 using LayeredTemplate.Shared.Constants;
-using LayeredTemplate.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
