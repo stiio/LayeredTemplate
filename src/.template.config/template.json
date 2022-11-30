@@ -6,7 +6,7 @@
     "Solution"
   ],
   "name": "Stio Layered Template",
-  "shortName": "stio_layered_template",
+  "shortName": "stio_layered",
   "defaultName": "LayeredTemplateSolution",
   "sourceName": "LayeredTemplate",
   "identity": "Stio.LayeredTemplate",
@@ -59,7 +59,14 @@
         "**/*.filelist",
         "**/*.user",
         "**/*.lock.json",
-        ".vs/**"
+        ".vs/**/*"
+      ],
+      "modifiers": [
+        {
+          "rename": {
+            "LayeredTemplate.App.sln": "LayeredTemplate.sln"
+          }
+        }
       ]
     }
   ]

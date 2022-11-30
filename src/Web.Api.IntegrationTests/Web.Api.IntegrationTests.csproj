@@ -43,7 +43,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\src\Web\Web.csproj" />
+	  <ProjectReference Include="..\Web\Web.csproj" />
 	</ItemGroup>
 
 </Project>
