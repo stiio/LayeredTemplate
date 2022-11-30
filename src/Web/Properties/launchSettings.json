@@ -34,7 +34,7 @@
         "MockUserSettings:Role": "Client"
       }
     },
-    "Web Mock Client2": {
+    "Web Mock Client 2": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

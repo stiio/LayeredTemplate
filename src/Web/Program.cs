@@ -53,7 +53,6 @@ void ConfigureConfiguration(ConfigurationManager configuration, IWebHostEnvironm
 {
     configuration.AddJsonFile("appsettings.json", false, true) // load base settings
         .AddJsonFile($"appsettings.{env.EnvironmentName}.json", true, true) // load environment settings
-        .AddJsonFile("appsettings.local.json", true, true) // load local settings
         .AddEnvironmentVariables();
 }
 

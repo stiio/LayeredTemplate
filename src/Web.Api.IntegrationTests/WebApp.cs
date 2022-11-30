@@ -53,7 +53,7 @@ public class WebApp : WebApplicationFactory<Web.Program>, IAsyncLifetime
 
     protected override IWebHostBuilder? CreateWebHostBuilder()
     {
-        return base.CreateWebHostBuilder()?.UseEnvironment("test");
+        return base.CreateWebHostBuilder()?.UseEnvironment("Test");
     }
 
     protected override void ConfigureClient(HttpClient client)
