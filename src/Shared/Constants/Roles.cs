@@ -1,6 +1,6 @@
 ﻿namespace LayeredTemplate.Shared.Constants;
 
-public static class RoleKeys
+public static class Roles
 {
     public const string Admin = "Admin";
 

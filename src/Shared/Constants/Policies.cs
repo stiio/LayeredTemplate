@@ -10,11 +10,11 @@ public static class Policies
 
     public static AuthorizationPolicy AdminPolicy => new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
-        .RequireClaim(TokenKeys.Role, RoleKeys.Admin)
+        .RequireClaim(TokenKeys.Role, Roles.Admin)
         .Build();
 
     public static AuthorizationPolicy ClientPolicy => new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
-        .RequireClaim(TokenKeys.Role, RoleKeys.Client)
+        .RequireClaim(TokenKeys.Role, Roles.Client)
         .Build();
 }

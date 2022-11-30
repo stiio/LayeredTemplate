@@ -28,8 +28,8 @@ internal class CurrentUserService : ICurrentUserService
 
         return role switch
         {
-            RoleKeys.Client => Role.Client,
-            RoleKeys.Admin => Role.Admin,
+            Roles.Client => Role.Client,
+            Roles.Admin => Role.Admin,
             _ => throw new ArgumentException(nameof(role)),
         };
     }

@@ -6,7 +6,7 @@ namespace LayeredTemplate.Application.EventHandlers.Users;
 
 internal class UserCreatedEventHandler : INotificationHandler<UserCreatedEvent>
 {
-    private readonly ILogger logger;
+    private readonly ILogger<UserCreatedEventHandler> logger;
 
     public UserCreatedEventHandler(ILogger<UserCreatedEventHandler> logger)
     {

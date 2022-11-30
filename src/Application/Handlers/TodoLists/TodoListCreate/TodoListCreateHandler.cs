@@ -2,7 +2,6 @@
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
-using LayeredTemplate.Application.Events.TodoLists;
 using LayeredTemplate.Domain.Entities;
 using MediatR;
 
@@ -13,18 +12,15 @@ internal class TodoListCreateHandler : IRequestHandler<TodoListCreateRequest, To
     private readonly ICurrentUserService currentUserService;
     private readonly IApplicationDbContext dbsContext;
     private readonly IMapper mapper;
-    private readonly IPublisher publisher;
 
     public TodoListCreateHandler(
         ICurrentUserService currentUserService,
         IApplicationDbContext dbsContext,
-        IMapper mapper,
-        IPublisher publisher)
+        IMapper mapper)
     {
         this.currentUserService = currentUserService;
         this.dbsContext = dbsContext;
         this.mapper = mapper;
-        this.publisher = publisher;
     }
 
     public async Task<TodoListDto> Handle(TodoListCreateRequest request, CancellationToken cancellationToken)
@@ -38,8 +34,6 @@ internal class TodoListCreateHandler : IRequestHandler<TodoListCreateRequest, To
 
         await this.dbsContext.TodoLists.AddAsync(todoList, cancellationToken);
         await this.dbsContext.SaveChangesAsync(cancellationToken);
-
-        await this.publisher.Publish(new TodoListCreatedEvent(todoList.Id), cancellationToken);
 
         return this.mapper.Map<TodoListDto>(todoList);
     }

@@ -36,8 +36,6 @@
     <Folder Include="Common\Behaviors\" />
     <Folder Include="Common\Mapper\" />
     <Folder Include="Common\Exceptions\" />
-    <Folder Include="EventHandlers\TodoLists\" />
-    <Folder Include="Events\TodoLists\" />
     <Folder Include="QueryableExtensions\" />
   </ItemGroup>
 
