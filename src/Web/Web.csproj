@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>$(SolutionName.Replace(" ", "_")).Replace(".App", "").$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <RootNamespace>$(SolutionName.Replace(" ", "_").Replace(".App", "")).$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
     <UserSecretsId>dd3b4de9-130e-46f9-83f7-5e713377cc05</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
