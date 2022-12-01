@@ -42,6 +42,14 @@
       "replaces": "net6.0",
       "defaultValue": "net6.0"
     },
+    "appDbName": {
+      "type": "parameter",
+      "dataType": "string",
+      "description": "Database name for connection string",
+      "defaultValue": "appDbName",
+      "defaultIfOptionWithoutValue": "appDbName",
+      "replaces": "appDbName"
+    },
     "npmClientName": {
       "type": "derived",
       "valueSource": "name",
