@@ -11,6 +11,9 @@ cd src
 dotnet new install .
 ```
 3. Create new solution
+- From cmd:
 ```
 dotnet new stio_layered -n LayeredSolution
 ```
+- From IDE  
+Template name: **Stio Layered Template**
