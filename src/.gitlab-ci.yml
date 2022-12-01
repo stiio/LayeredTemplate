@@ -3,15 +3,11 @@ stages:
   - package-codegen
   - package-deploy
 
-  - test
+  - web-integration-test
   
   - erc-auth-staging
   - deploy-aws-staging
-  - deplot-aws-ecs-staging
-
-  - erc-auth-release
-  - deploy-aws-release
-  - deplot-aws-ecs-release
+  - deploy-aws-ecs-staging
 
 package-build:
   stage: package-build
@@ -32,10 +28,10 @@ package-build:
 package-codegen:
   stage: package-codegen
   image: openapitools/openapi-generator-cli:v6.2.1
-  dependencies:
-    - package-build
   only:
     - package-release
+  dependencies:
+    - package-build
   artifacts:
     paths:
       - front/
@@ -60,16 +56,66 @@ package-deploy:
 
 
 
-test:
-  stage: test
+
+web-integration-test:
+  stage: web-integration-test
   image: mcr.microsoft.com/dotnet/sdk:6.0
   only:
+    - package-release
     - staging
     - release
   script:
-    - cd Web.Mock
+    - cd Web.IntegrationTests
     - dotnet restore
-    - dotnet tool restore
-    - dotnet publish -c Release -o /publish_mock
-    - cd /publish_mock
-    - dotnet swagger tofile --output ./spec.yml --yaml Web.Mock.dll merged_api_versions
+    - dotnet test --verbosity normal -c Release -f net6.0
+
+
+
+
+erc-auth-staging:
+  stage: erc-auth-staging
+  image: docker:stable
+  only:
+    - staging
+  environment:
+    name: npmClientName-staging
+  script:
+    - apk add --no-cache curl jq bash
+    - echo "###################"
+    - echo $CI_PROJECT_ID
+    - echo "###################"
+    - |
+        AWS_PASSWORD=$(docker run --rm \
+            -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+            amazon/aws-cli ecr get-login-password \
+            --region $AWS_DEFAULT_REGION)
+        ENCODED=$(echo -n "AWS:$AWS_PASSWORD" | base64)
+        PAYLOAD=$( jq -n --arg userpass "$ENCODED" '{"auths": {"$AWS_REGISTRY": {"auth": $userpass}}}' )
+        echo $PAYLOAD
+        curl --request PUT --header "PRIVATE-TOKEN:$REPO_API_TOKEN" "https://<BASE_GIT_HOST>/api/v4/projects/$CI_PROJECT_ID/variables/DOCKER_AUTH_CONFIG" --form "value=$PAYLOAD"
+
+deploy-aws-staging:
+  stage: deploy-aws-staging
+  image:
+    name: cappers/awscli-docker-nodejs    
+    entrypoint: [""]
+  only:
+    - staging
+  environment:
+    name: npmClientName-staging
+  script:
+    - cd Web
+    - docker build -t $AWS_ECR_TAG .
+    - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_REGISTRY
+    - docker push $AWS_ECR_TAG
+
+deploy-aws-ecs-staging:
+  stage: deploy-aws-ecs-staging
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+  only:
+    - staging
+  environment:
+    name: npmClientName-staging
+  script:
+    - aws ecs update-service --cluster $AWS_ECS_CLUSTER --service $AWS_ECS_SERVICE --force-new-deployment

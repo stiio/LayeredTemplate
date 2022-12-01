@@ -28,7 +28,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Application.Contracts", "Ap
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{45A3C1D1-3242-42B7-84AD-44638EEBDEE2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Web.IntegrationTests", "Web.Api.IntegrationTests\Web.IntegrationTests.csproj", "{2ED5ECCD-69CE-478C-92A3-E9379CCE8E47}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Web.IntegrationTests", "Web.IntegrationTests\Web.IntegrationTests.csproj", "{2ED5ECCD-69CE-478C-92A3-E9379CCE8E47}"
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{3C48C1E8-1250-4CEB-B469-D03D23724243}"
 EndProject
