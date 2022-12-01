@@ -2,14 +2,14 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using LayeredTemplate.Application.Contracts.Models;
-using LayeredTemplate.Web.Api.IntegrationTests.Utils;
+using LayeredTemplate.Web.IntegrationTests.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit;
 using Xunit.Priority;
 
-namespace LayeredTemplate.Web.Api.IntegrationTests.Tests.Controllers;
+namespace LayeredTemplate.Web.IntegrationTests.Tests.Controllers;
 
 [TestCaseOrderer(PriorityOrderer.Name, PriorityOrderer.Assembly)]
 [Collection(nameof(WebApp))]

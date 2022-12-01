@@ -50,6 +50,14 @@
       "defaultIfOptionWithoutValue": "appDbName",
       "replaces": "appDbName"
     },
+    "baseGitHost":{
+      "type": "parameter",
+      "dataType": "string",
+      "description": "Gitlab host (e.g. gitlab.com)",
+      "defaultValue": "gitlab.com",
+      "defaultIfOptionWithoutValue": "gitlab.com",
+      "replaces": "<BASE_GIT_HOST>"
+    },
     "npmClientName": {
       "type": "derived",
       "valueSource": "name",

@@ -6,8 +6,8 @@ using DotNet.Testcontainers.Containers;
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Infrastructure.Data.Context;
-using LayeredTemplate.Web.Api.IntegrationTests.TestAuth;
-using LayeredTemplate.Web.Api.IntegrationTests.Utils;
+using LayeredTemplate.Web.IntegrationTests.TestAuthHandler;
+using LayeredTemplate.Web.IntegrationTests.Utils;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -16,7 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
 
-namespace LayeredTemplate.Web.Api.IntegrationTests;
+namespace LayeredTemplate.Web.IntegrationTests;
 
 public class WebApp : WebApplicationFactory<Web.Program>, IAsyncLifetime
 {
@@ -80,7 +80,7 @@ public class WebApp : WebApplicationFactory<Web.Program>, IAsyncLifetime
 
             // --
             services.AddAuthentication(TestAuthAuthenticationOptions.DefaultScheme)
-                .AddScheme<TestAuthAuthenticationOptions, TestAuthHandler>(TestAuthAuthenticationOptions.DefaultScheme, _ => { });
+                .AddScheme<TestAuthAuthenticationOptions, TestAuthHandler.TestAuthHandler>(TestAuthAuthenticationOptions.DefaultScheme, _ => { });
 
             DataSeeder.SeedData(services);
         });

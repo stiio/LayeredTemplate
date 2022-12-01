@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace LayeredTemplate.Web.Api.IntegrationTests.TestAuth;
+namespace LayeredTemplate.Web.IntegrationTests.TestAuthHandler;
 
 public class TestAuthHandler : AuthenticationHandler<TestAuthAuthenticationOptions>
 {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 
-namespace LayeredTemplate.Web.Api.IntegrationTests.TestAuth;
+namespace LayeredTemplate.Web.IntegrationTests.TestAuthHandler;
 
 public class TestAuthAuthenticationOptions : AuthenticationSchemeOptions
 {

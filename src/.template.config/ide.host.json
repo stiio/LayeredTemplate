@@ -7,6 +7,13 @@
           "text": "Database name"
         },
         "isVisible": true
+      },
+      {
+        "id": "baseGitHost",
+        "name": {
+          "text": "Gitlab host"
+        },
+        "isVisible": true
       }
     ]
   }

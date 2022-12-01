@@ -31,7 +31,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<InternalsVisibleTo Include="Web.Api.IntegrationTests" />
+		<InternalsVisibleTo Include="Web.IntegrationTests" />
 	</ItemGroup>
 
 </Project>

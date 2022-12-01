@@ -1,7 +1,7 @@
 ﻿using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Domain.Enums;
 
-namespace LayeredTemplate.Web.Api.IntegrationTests.Utils;
+namespace LayeredTemplate.Web.IntegrationTests.Utils;
 
 public static class TestUsers
 {

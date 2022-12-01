@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace LayeredTemplate.Web.Api.IntegrationTests.Utils;
+namespace LayeredTemplate.Web.IntegrationTests.Utils;
 
 internal static class DataSeeder
 {

@@ -1,6 +1,6 @@
 ﻿using Xunit;
 
-namespace LayeredTemplate.Web.Api.IntegrationTests;
+namespace LayeredTemplate.Web.IntegrationTests;
 
 [CollectionDefinition(nameof(WebApp))]
 public class WebAppCollection : ICollectionFixture<WebApp>

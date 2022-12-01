@@ -48,7 +48,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<InternalsVisibleTo Include="Web.Api.IntegrationTests" />
+		<InternalsVisibleTo Include="Web.IntegrationTests" />
 	</ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties properties_4launchsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>

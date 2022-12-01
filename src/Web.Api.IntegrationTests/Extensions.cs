@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace LayeredTemplate.Web.Api.IntegrationTests;
+namespace LayeredTemplate.Web.IntegrationTests;
 
 public static class Extensions
 {
