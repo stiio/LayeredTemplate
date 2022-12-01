@@ -1,4 +1,4 @@
 ﻿{
-  "npmName": "@LayeredTemplate/api-docs",
+  "npmName": "@npmClientName/api-docs",
   "useSingleRequestParameter": false
 }

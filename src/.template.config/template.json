@@ -41,6 +41,20 @@
       ],
       "replaces": "net6.0",
       "defaultValue": "net6.0"
+    },
+    "npmClientName": {
+      "type": "derived",
+      "valueSource": "name",
+      "valueTransform": "lowerCase",
+      "replaces": "npmClientName"
+    },
+    "replaceTrimSolutionNamespase": {
+      "type": "generated",
+      "generator": "constant",
+      "parameters": {
+        "value": ""
+      },
+      "replaces": ".Replace(\".App\", \"\")"
     }
   },
   "primaryOutputs": [
@@ -68,6 +82,18 @@
           }
         }
       ]
+    }
+  ],
+  "postActions": [
+    {
+      "description": "Restore NuGet packages required by this project.",
+      "manualInstructions": [
+        {
+          "text": "Run 'dotnet restore'"
+        }
+      ],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
     }
   ]
 }

@@ -6,6 +6,10 @@ For all new projects add to *.cs
 <RootNamespace>$(SolutionName.Replace(" ", "_")).$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
 ```
 
+## Naming convensions
+- For requests/responses: [Resource][ResourceSuffix][Action][Role?][Request|Response] (e.g. TodoItemCreateRequest, UserAddressAdminUpdateRequest, CurrentUserResponse)
+- For api actions: [Role?][Action][Resource] (e.g. UpdateUser, AdminUpdateUser)
+
 ## TypeScript client generation
 Use openapi-generator-cli:v6.2.1
 image `image openapitools/openapi-generator-cli:v6.2.1`
