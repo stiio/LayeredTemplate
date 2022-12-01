@@ -7,8 +7,8 @@ For all new projects add to *.cs
 ```
 
 ## Naming convensions
-- For requests/responses: [Resource][ResourceSuffix][Action][Role?][Request|Response] (e.g. TodoItemCreateRequest, UserAddressAdminUpdateRequest, CurrentUserResponse)
-- For api actions: [Role?][Action][Resource] (e.g. UpdateUser, AdminUpdateUser)
+- For requests/responses: **[** Resource **]****[** ResourceSuffix **]****[ **Action** ]****[ **Role?** ]****[** Request | Response **]** (e.g. TodoItemCreateRequest, UserAddressAdminUpdateRequest, CurrentUserResponse)
+- For api actions: **[** Role? **]****[** Action **]****[** Resource **]** (e.g. UpdateUser, AdminUpdateUser)
 
 ## TypeScript client generation
 Use openapi-generator-cli:v6.2.1
