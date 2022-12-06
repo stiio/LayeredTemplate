@@ -4,6 +4,7 @@ using LayeredTemplate.Infrastructure.Data.Extensions;
 using LayeredTemplate.Shared;
 using LayeredTemplate.Web.Api.Extensions;
 using LayeredTemplate.Web.Extensions;
+using LayeredTemplate.Web.Middleware;
 using LayeredTemplate.Web.Mocks.Authentication;
 using Serilog;
 using Serilog.Exceptions;
@@ -74,6 +75,8 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddHttpClient();
     services.AddHttpContextAccessor();
     services.AddHealthChecks();
+
+    services.AddScoped<AppExceptionHandlerMiddleware>();
 }
 
 void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env)
@@ -87,6 +90,8 @@ void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env)
     }
 
     app.UseHttpsRedirection();
+
+    app.UseMiddleware<AppExceptionHandlerMiddleware>();
 
     app.UseRequestLogging();
     app.UseRouting();

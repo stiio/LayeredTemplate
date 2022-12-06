@@ -1,7 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using LayeredTemplate.Web.Api.Conventions;
 using LayeredTemplate.Web.Api.Converters;
-using LayeredTemplate.Web.Api.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.JsonMultipartFormDataSupport.Extensions;
 using Swashbuckle.AspNetCore.JsonMultipartFormDataSupport.Integrations;
@@ -22,7 +21,6 @@ public static class ConfigureControllerExtensions
         services.AddControllers(opts =>
             {
                 opts.Conventions.Add(new ApiExplorerGroupPerVersionConvention());
-                opts.Filters.Add<ApplicationExceptionFilter>();
             })
             .AddJsonOptions(options =>
             {
