@@ -23,13 +23,16 @@ internal class TodoListDeleteHandler : IRequestHandler<TodoListDeleteRequest>
     public async Task<Unit> Handle(TodoListDeleteRequest request, CancellationToken cancellationToken)
     {
         var todoList = await this.dbContext.TodoLists.FindAsync(request.Id);
-
         if (todoList is null)
         {
             throw new NotFoundException(nameof(TodoList), request.Id);
         }
 
-        await this.resourceAuthorizationService.Authorize(todoList, Operations.FullAccess);
+        var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.FullAccess);
+        if (!authorizationResult.Succeeded)
+        {
+            throw new AccessDeniedException();
+        }
 
         this.dbContext.TodoLists.Remove(todoList);
         await this.dbContext.SaveChangesAsync(cancellationToken);

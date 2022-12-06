@@ -30,7 +30,6 @@ internal class CurrentUserGetHandler : IRequestHandler<CurrentUserGetRequest, Cu
     public async Task<CurrentUser> Handle(CurrentUserGetRequest request, CancellationToken cancellationToken)
     {
         var user = await this.dbContext.Users.FindAsync(this.currentUserService.UserId);
-
         if (user is null)
         {
             user = new User()

@@ -22,43 +22,19 @@ internal class ResourceAuthorizationService : IResourceAuthorizationService
         this.logger = logger;
     }
 
-    public async Task Authorize<TResource>(TResource resource, IAuthorizationRequirement requirement)
+    public Task<AuthorizationResult> Authorize<TResource>(TResource resource, IAuthorizationRequirement requirement)
         where TResource : class
     {
-        if (this.htContextAccessor.HttpContext?.User == null)
-        {
-            this.logger.LogInformation("Resource authorization failed: {resource}", resource.GetType().Name);
-            throw new AccessDeniedException();
-        }
-
-        var result = await this.authorizationService.AuthorizeAsync(this.htContextAccessor.HttpContext.User, resource, requirement);
-
-        if (!result.Succeeded)
-        {
-            this.logger.LogInformation("Resource authorization failed: {resource}", resource.GetType().Name);
-            throw new AccessDeniedException();
-        }
-
-        this.logger.LogInformation("Resource authorization succeed: {resource}", resource.GetType().Name);
+        return this.htContextAccessor.HttpContext?.User == null
+            ? Task.FromResult(AuthorizationResult.Failed())
+            : this.authorizationService.AuthorizeAsync(this.htContextAccessor.HttpContext.User, resource, requirement);
     }
 
-    public async Task Authorize<TResource>(TResource resource, IEnumerable<IAuthorizationRequirement> requirements)
+    public Task<AuthorizationResult> Authorize<TResource>(TResource resource, IEnumerable<IAuthorizationRequirement> requirements)
         where TResource : class
     {
-        if (this.htContextAccessor.HttpContext?.User == null)
-        {
-            this.logger.LogInformation("Resource authorization failed: {resource}", resource.GetType().Name);
-            throw new AccessDeniedException();
-        }
-
-        var result = await this.authorizationService.AuthorizeAsync(this.htContextAccessor.HttpContext.User, resource, requirements);
-
-        if (!result.Succeeded)
-        {
-            this.logger.LogInformation("Resource authorization failed: {resource}", resource.GetType().Name);
-            throw new AccessDeniedException();
-        }
-
-        this.logger.LogInformation("Resource authorization succeed: {resource}", resource.GetType().Name);
+        return this.htContextAccessor.HttpContext?.User == null
+            ? Task.FromResult(AuthorizationResult.Failed())
+            : this.authorizationService.AuthorizeAsync(this.htContextAccessor.HttpContext.User, resource, requirements);
     }
 }

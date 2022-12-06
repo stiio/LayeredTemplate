@@ -28,13 +28,16 @@ internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, To
     public async Task<TodoListDto> Handle(TodoListUpdateRequest request, CancellationToken cancellationToken)
     {
         var todoList = await this.dbContext.TodoLists.FindAsync(request.Id);
-
         if (todoList is null)
         {
             throw new NotFoundException(nameof(TodoList), request.Id);
         }
 
-        await this.resourceAuthorizationService.Authorize(todoList, Operations.FullAccess);
+        var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.FullAccess);
+        if (!authorizationResult.Succeeded)
+        {
+            throw new AccessDeniedException();
+        }
 
         this.mapper.Map(request, todoList);
 
