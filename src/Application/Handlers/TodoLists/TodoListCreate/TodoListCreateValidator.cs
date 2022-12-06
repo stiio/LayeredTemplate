@@ -9,7 +9,7 @@ public class TodoListCreateValidator : AbstractValidator<TodoListCreateRequest>
     {
         this.RuleFor(x => x.Name)
             .NotEmpty()
-            .MaximumLength(256);
+            .MaximumLength(15);
 
         this.RuleFor(x => x.Type)
             .NotEmpty();
