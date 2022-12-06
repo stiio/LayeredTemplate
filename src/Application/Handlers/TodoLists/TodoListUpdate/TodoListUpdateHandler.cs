@@ -7,7 +7,7 @@ using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Shared.Constants;
 using MediatR;
 
-namespace LayeredTemplate.Application.Handlers.TodoLists.UpdateTodoList;
+namespace LayeredTemplate.Application.Handlers.TodoLists.TodoListUpdate;
 
 internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, TodoListDto>
 {

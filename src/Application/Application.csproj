@@ -37,6 +37,7 @@
     <Folder Include="Common\Mapper\" />
     <Folder Include="Common\Exceptions\" />
     <Folder Include="QueryableExtensions\" />
+    <Folder Include="Extensions\" />
   </ItemGroup>
 
 	<ItemGroup>
