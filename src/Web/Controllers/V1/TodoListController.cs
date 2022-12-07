@@ -81,4 +81,9 @@ public class TodoListController : Api.Controllers.V1.TodoListController
         // await this.sender.Send(new TodoListDeleteRequest(todoListId));
         return Task.FromResult<ActionResult<SuccessfulResult>>(this.Response200());
     }
+
+    public override Task<ActionResult> GetTodoListCsv(Guid todoListId)
+    {
+        throw new NotImplementedException();
+    }
 }

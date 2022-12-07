@@ -57,4 +57,13 @@ public abstract class TodoListController : AppControllerBase
     /// <returns></returns>
     [HttpDelete("{todoListId}")]
     public abstract Task<ActionResult<SuccessfulResult>> DeleteTodoList(Guid todoListId);
+
+    /// <summary>
+    /// Get TodoList Csv
+    /// </summary>
+    /// <param name="todoListId"></param>
+    /// <returns></returns>
+    [HttpGet("{todoListId}/csv")]
+    [Produces("application/octet-stream", Type = typeof(FileResult))]
+    public abstract Task<ActionResult> GetTodoListCsv(Guid todoListId);
 }
