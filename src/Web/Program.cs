@@ -115,9 +115,6 @@ void ConfigureSerilog(IHostBuilder host)
     });
 }
 
-namespace LayeredTemplate.Web
+public partial class Program
 {
-    public partial class Program
-    {
-    }
 }

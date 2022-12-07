@@ -12,6 +12,6 @@ public class TodoListCreateValidator : AbstractValidator<TodoListCreateRequest>
             .MaximumLength(15);
 
         this.RuleFor(x => x.Type)
-            .NotEmpty();
+            .NotNull();
     }
 }
