@@ -18,7 +18,7 @@ using Xunit;
 
 namespace LayeredTemplate.Web.IntegrationTests;
 
-public class WebApp : WebApplicationFactory<Web.Program>, IAsyncLifetime
+public class WebApp : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly PostgreSqlTestcontainer postgreSqlTestContainer = new TestcontainersBuilder<PostgreSqlTestcontainer>()
         .WithDatabase(new PostgreSqlTestcontainerConfiguration()

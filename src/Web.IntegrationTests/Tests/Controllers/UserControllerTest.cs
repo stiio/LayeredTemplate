@@ -24,7 +24,7 @@ public class UserControllerTest
         this.jsonOptions = webApp.Services.GetRequiredService<IOptions<JsonOptions>>().Value.JsonSerializerOptions;
     }
 
-    [Fact]
+    [Fact(Skip = "Example")]
     [Priority(0)]
     public async Task Test_GetCurrentUser_Client()
     {
@@ -41,7 +41,7 @@ public class UserControllerTest
         Assert.Equal(TestUsers.Client.Id, currentUser?.Id);
     }
 
-    [Fact]
+    [Fact(Skip = "Example")]
     [Priority(0)]
     public async Task Test_GetCurrentUser_Admin()
     {
@@ -58,7 +58,7 @@ public class UserControllerTest
         Assert.Equal(TestUsers.Admin.Id, currentUser?.Id);
     }
 
-    [Fact]
+    [Fact(Skip = "Example")]
     [Priority(0)]
     public async Task Test_GetCurrentUser_WithoutToken()
     {
@@ -71,7 +71,7 @@ public class UserControllerTest
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [Fact]
+    [Fact(Skip = "Example")]
     [Priority(0)]
     public async Task Test_GetCurrentUser_NotSeedClient()
     {

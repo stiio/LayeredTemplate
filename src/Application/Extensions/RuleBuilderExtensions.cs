@@ -7,7 +7,6 @@ public static class RuleBuilderExtensions
 {
     public static IRuleBuilderOptions<T, string> NormalizedPhone<T>(this IRuleBuilder<T, string> ruleBuilder)
     {
-
         return ruleBuilder
             .Must((rootObject, src, context) =>
             {

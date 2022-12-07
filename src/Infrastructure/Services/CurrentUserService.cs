@@ -14,17 +14,17 @@ internal class CurrentUserService : ICurrentUserService
         this.httpContextAccessor = httpContextAccessor;
     }
 
-    public Guid UserId => new(this.httpContextAccessor.HttpContext.User!.FindFirst(TokenKeys.UserId)!.Value);
+    public Guid UserId => new(this.httpContextAccessor.HttpContext!.User!.FindFirst(TokenKeys.UserId)!.Value);
 
-    public string? Email => this.httpContextAccessor.HttpContext.User!.FindFirst(TokenKeys.Email)?.Value;
+    public string? Email => this.httpContextAccessor.HttpContext!.User!.FindFirst(TokenKeys.Email)?.Value;
 
-    public bool IsAuthenticate => this.httpContextAccessor.HttpContext.User.Identity?.IsAuthenticated ?? false;
+    public bool IsAuthenticate => this.httpContextAccessor.HttpContext!.User.Identity?.IsAuthenticated ?? false;
 
     public Role Role => this.GetRole();
 
     private Role GetRole()
     {
-        var role = this.httpContextAccessor.HttpContext.User!.FindFirst(TokenKeys.Role)?.Value;
+        var role = this.httpContextAccessor.HttpContext!.User!.FindFirst(TokenKeys.Role)?.Value;
 
         return role switch
         {
