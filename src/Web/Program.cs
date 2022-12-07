@@ -78,8 +78,8 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
 void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env)
 {
-    app.EnsureDbExists();
-
+    // TODO: Uncomment after db configured
+    // app.EnsureDbExists();
     if (env.IsDevelopment() || env.IsStaging())
     {
         app.UseDeveloperExceptionPage();
