@@ -97,7 +97,8 @@ void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env)
 
 void ConfigureEndpoints(IEndpointRouteBuilder app)
 {
-    app.MapControllers();
+    app.MapControllers()
+        .AllowAnonymous(); // TODO: Delete this after set auth settings
     app.MapHealthChecks("/health");
 }
 

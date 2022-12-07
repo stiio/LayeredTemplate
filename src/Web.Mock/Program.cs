@@ -15,11 +15,7 @@ webApplication.Run();
 
 void ConfigureServices(IServiceCollection services, IConfiguration configuration)
 {
-    services.AddAuthorization(opts =>
-    {
-        opts.AddPolicy(Policies.Client, Policies.ClientPolicy);
-        opts.AddPolicy(Policies.Admin, Policies.AdminPolicy);
-    });
+    services.ConfigureAuthorization();
 
     services.ConfigureControllers();
     services.ConfigureSwagger();
