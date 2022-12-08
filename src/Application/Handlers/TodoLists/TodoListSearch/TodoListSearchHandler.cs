@@ -1,9 +1,9 @@
 ﻿using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Common.QueryableExtensions;
 using LayeredTemplate.Application.Contracts.Common;
 using LayeredTemplate.Application.Contracts.Enums;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
-using LayeredTemplate.Application.QueryableExtensions;
 using MediatR;
 
 namespace LayeredTemplate.Application.Handlers.TodoLists.TodoListSearch;

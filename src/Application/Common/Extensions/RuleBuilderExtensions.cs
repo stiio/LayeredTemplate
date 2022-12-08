@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using PhoneNumbers;
 
-namespace LayeredTemplate.Application.Extensions;
+namespace LayeredTemplate.Application.Common.Extensions;
 
 public static class RuleBuilderExtensions
 {
@@ -15,7 +15,7 @@ public static class RuleBuilderExtensions
                     return true;
                 }
 
-                var phoneNumberUtil = PhoneNumbers.PhoneNumberUtil.GetInstance();
+                var phoneNumberUtil = PhoneNumberUtil.GetInstance();
 
                 PhoneNumber phone;
                 try

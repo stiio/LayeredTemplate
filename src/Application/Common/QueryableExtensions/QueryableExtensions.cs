@@ -3,7 +3,7 @@ using LayeredTemplate.Application.Contracts.Common;
 using LayeredTemplate.Application.Contracts.Enums;
 using Microsoft.EntityFrameworkCore;
 
-namespace LayeredTemplate.Application.QueryableExtensions;
+namespace LayeredTemplate.Application.Common.QueryableExtensions;
 
 internal static class QueryableExtensions
 {
