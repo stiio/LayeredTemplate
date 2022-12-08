@@ -78,8 +78,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
 void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env)
 {
-    // TODO: Uncomment after db configured
-    // app.EnsureDbExists();
+    app.EnsureDbExists();
     if (env.IsDevelopment() || env.IsStaging())
     {
         app.UseDeveloperExceptionPage();
@@ -97,8 +96,7 @@ void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env)
 
 void ConfigureEndpoints(IEndpointRouteBuilder app)
 {
-    app.MapControllers()
-        .AllowAnonymous(); // TODO: Delete this after set auth settings
+    app.MapControllers();
     app.MapHealthChecks("/health");
 }
 
