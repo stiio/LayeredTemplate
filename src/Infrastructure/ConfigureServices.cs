@@ -3,6 +3,7 @@ using LayeredTemplate.Infrastructure.AuthorizationHandlers;
 using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Services;
 using LayeredTemplate.Shared.Constants;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,8 @@ public static class ConfigureServices
     public static void AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.RegisterDbContext(configuration[ConnectionStrings.DefaultConnection]!);
+
+        services.AddScoped<IClaimsTransformation, AppClaimTransformation>();
 
         services.AddScoped<IResourceAuthorizationService, ResourceAuthorizationService>();
         services.AddScoped<IAuthorizationHandler, TodoListAuthorizationHandler>();

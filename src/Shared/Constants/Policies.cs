@@ -4,17 +4,10 @@ namespace LayeredTemplate.Shared.Constants;
 
 public static class Policies
 {
-    public const string Admin = "Admin";
+    public const string Example = "ExamplePolicy";
 
-    public const string Client = "Client";
-
-    public static AuthorizationPolicy AdminPolicy => new AuthorizationPolicyBuilder()
+    public static AuthorizationPolicy ExamplePolicy => new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .RequireClaim(TokenKeys.Role, Roles.Admin)
-        .Build();
-
-    public static AuthorizationPolicy ClientPolicy => new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .RequireClaim(TokenKeys.Role, Roles.Client)
         .Build();
 }

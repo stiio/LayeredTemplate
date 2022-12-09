@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Net.Mime;
 using LayeredTemplate.Application.Contracts.Common;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
@@ -14,7 +15,7 @@ namespace LayeredTemplate.Web.Api.Controllers.V1;
 /// </summary>
 [ApiController]
 [Route("api/v1/todo_lists")]
-[Authorize(Policies.Client)]
+[Authorize(Roles = $"{Roles.Client}, {Roles.Admin}")]
 public abstract class TodoListController : AppControllerBase
 {
     /// <summary>
@@ -64,6 +65,7 @@ public abstract class TodoListController : AppControllerBase
     /// <param name="todoListId"></param>
     /// <returns></returns>
     [HttpGet("{todoListId}/csv")]
-    [Produces("application/octet-stream", Type = typeof(FileResult))]
+    [Produces(MediaTypeNames.Application.Octet, Type = typeof(FileResult))]
+    [Authorize(Policies.Example)]
     public abstract Task<ActionResult> GetTodoListCsv(Guid todoListId);
 }

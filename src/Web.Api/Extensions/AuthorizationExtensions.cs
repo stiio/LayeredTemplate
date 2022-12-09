@@ -20,7 +20,6 @@ public static class AuthorizationExtensions
 
     private static void ConfigurePolicies(AuthorizationOptions options)
     {
-        options.AddPolicy(Policies.Admin, Policies.AdminPolicy);
-        options.AddPolicy(Policies.Client, Policies.ClientPolicy);
+        options.AddPolicy(Policies.Example, Policies.ExamplePolicy);
     }
 }
