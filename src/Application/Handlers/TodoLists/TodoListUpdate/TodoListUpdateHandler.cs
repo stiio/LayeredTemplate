@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using LayeredTemplate.Application.Common.Exceptions;
 using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Common.QueryableExtensions;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
 using LayeredTemplate.Domain.Entities;
@@ -27,7 +28,9 @@ internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, To
 
     public async Task<TodoListDto> Handle(TodoListUpdateRequest request, CancellationToken cancellationToken)
     {
-        var todoList = await this.dbContext.TodoLists.FindAsync(request.Id);
+        await using var transaction = await this.dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var todoList = await this.dbContext.TodoLists.SelectForUpdate(request.Id);
         if (todoList is null)
         {
             throw new NotFoundException(nameof(TodoList), request.Id);
@@ -41,8 +44,8 @@ internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, To
 
         this.mapper.Map(request, todoList);
 
-        this.dbContext.TodoLists.Update(todoList);
         await this.dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return this.mapper.Map<TodoListDto>(todoList);
     }

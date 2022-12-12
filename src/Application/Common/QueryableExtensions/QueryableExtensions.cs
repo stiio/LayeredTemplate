@@ -1,12 +1,25 @@
 ﻿using System.Linq.Expressions;
 using LayeredTemplate.Application.Contracts.Common;
 using LayeredTemplate.Application.Contracts.Enums;
+using LayeredTemplate.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace LayeredTemplate.Application.Common.QueryableExtensions;
 
 internal static class QueryableExtensions
 {
+    public static Task<T?> SelectForUpdate<T>(this DbSet<T> dbSet, Guid id)
+        where T : BaseEntity
+    {
+        var tableName = dbSet.EntityType.GetTableName();
+        return dbSet.FromSqlRaw(@$"
+                SELECT * FROM ""{tableName}""
+                WHERE ""Id"" = '{id}'
+                FOR UPDATE")
+            .Where(entity => entity.Id == id)
+            .FirstOrDefaultAsync();
+    }
+
     public static async Task<PagedList<T>> ToPagedList<T>(this IQueryable<T> query, Pagination? pagination, CancellationToken cancellationToken = default)
     {
         var page = pagination?.Page ?? 1;
