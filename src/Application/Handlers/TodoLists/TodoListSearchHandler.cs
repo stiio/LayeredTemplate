@@ -6,7 +6,7 @@ using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
 using MediatR;
 
-namespace LayeredTemplate.Application.Handlers.TodoLists.TodoListSearch;
+namespace LayeredTemplate.Application.Handlers.TodoLists;
 
 internal class TodoListSearchHandler : IRequestHandler<TodoListSearchRequest, PagedList<TodoListRecordDto>>
 {

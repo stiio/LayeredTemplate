@@ -5,7 +5,7 @@ using LayeredTemplate.Application.Contracts.Requests;
 using LayeredTemplate.Domain.Entities;
 using MediatR;
 
-namespace LayeredTemplate.Application.Handlers.TodoLists.TodoListCreate;
+namespace LayeredTemplate.Application.Handlers.TodoLists;
 
 internal class TodoListCreateHandler : IRequestHandler<TodoListCreateRequest, TodoListDto>
 {

@@ -1,36 +1,33 @@
 ﻿using AutoMapper;
 using LayeredTemplate.Application.Common.Exceptions;
 using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Application.Common.QueryableExtensions;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Shared.Constants;
 using MediatR;
 
-namespace LayeredTemplate.Application.Handlers.TodoLists.TodoListUpdate;
+namespace LayeredTemplate.Application.Handlers.TodoLists;
 
-internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, TodoListDto>
+internal class TodoListGetHandler : IRequestHandler<TodoListGetRequest, TodoListDto>
 {
-    private readonly IApplicationDbContext dbContext;
+    private readonly IApplicationDbContext dbsContext;
     private readonly IResourceAuthorizationService resourceAuthorizationService;
     private readonly IMapper mapper;
 
-    public TodoListUpdateHandler(
-        IApplicationDbContext dbContext,
+    public TodoListGetHandler(
+        IApplicationDbContext dbsContext,
         IResourceAuthorizationService resourceAuthorizationService,
         IMapper mapper)
     {
-        this.dbContext = dbContext;
+        this.dbsContext = dbsContext;
         this.resourceAuthorizationService = resourceAuthorizationService;
         this.mapper = mapper;
     }
 
-    public async Task<TodoListDto> Handle(TodoListUpdateRequest request, CancellationToken cancellationToken)
+    public async Task<TodoListDto> Handle(TodoListGetRequest request, CancellationToken cancellationToken)
     {
-        await using var transaction = await this.dbContext.Database.BeginTransactionAsync(cancellationToken);
-
-        var todoList = await this.dbContext.TodoLists.SelectForUpdate(request.Id);
+        var todoList = await this.dbsContext.TodoLists.FindAsync(request.Id);
         if (todoList is null)
         {
             throw new NotFoundException(nameof(TodoList), request.Id);
@@ -41,11 +38,6 @@ internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, To
         {
             throw new AccessDeniedException();
         }
-
-        this.mapper.Map(request, todoList);
-
-        await this.dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
 
         return this.mapper.Map<TodoListDto>(todoList);
     }

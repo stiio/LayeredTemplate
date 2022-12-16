@@ -5,7 +5,7 @@ using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Shared.Constants;
 using MediatR;
 
-namespace LayeredTemplate.Application.Handlers.TodoLists.TodoListDelete;
+namespace LayeredTemplate.Application.Handlers.TodoLists;
 
 internal class TodoListDeleteHandler : IRequestHandler<TodoListDeleteRequest>
 {

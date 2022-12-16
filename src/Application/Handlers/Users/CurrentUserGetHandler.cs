@@ -6,7 +6,7 @@ using LayeredTemplate.Application.Events.Users;
 using LayeredTemplate.Domain.Entities;
 using MediatR;
 
-namespace LayeredTemplate.Application.Handlers.Users.CurrentUserGet;
+namespace LayeredTemplate.Application.Handlers.Users;
 
 internal class CurrentUserGetHandler : IRequestHandler<CurrentUserGetRequest, CurrentUser>
 {
