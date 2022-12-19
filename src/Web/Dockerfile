@@ -24,7 +24,7 @@ COPY ["Infrastructure/*.csproj", "Infrastructure/"]
 COPY ["Infrastructure.Data/*.csproj", "Infrastructure.Data/"]
 COPY ["Web.Api/*.csproj", "Web.Api/"]
 
-RUN dotnet restore
+RUN dotnet restore "Web/Web.csproj"
 
 COPY . .
 
