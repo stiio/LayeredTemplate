@@ -47,12 +47,12 @@ public class TodoListController : Api.Controllers.V1.TodoListController
         throw new NotImplementedException();
     }
 
-    public override Task<ActionResult<TodoListDto>> GetTodoList(Guid todoListId)
+    public override Task<ActionResult<TodoListDto>> UpdateTodoList(TodoListUpdateRequest request)
     {
         throw new NotImplementedException();
     }
 
-    public override Task<ActionResult<TodoListDto>> UpdateTodoList(Guid todoListId, TodoListUpdateRequest request)
+    public override Task<ActionResult<TodoListDto>> GetTodoList(Guid todoListId)
     {
         throw new NotImplementedException();
     }

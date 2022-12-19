@@ -59,10 +59,13 @@
       "replaces": "<BASE_GIT_HOST>"
     },
     "npmClientName": {
-      "type": "derived",
-      "valueSource": "name",
-      "valueTransform": "lowerCase",
-      "replaces": "npmClientName"
+      "type": "parameter",
+      "dataType": "string",
+      "description": "Npm client name",
+      "defaultValue": "npmClientName",
+      "defaultIfOptionWithoutValue": "npmClientName",
+      "replaces": "npmClientName",
+      "isRequired": true
     },
     "replaceTrimSolutionNamespase": {
       "type": "generated",

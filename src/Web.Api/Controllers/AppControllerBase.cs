@@ -37,20 +37,4 @@ public abstract class AppControllerBase : ControllerBase
                 TraceId = this.HttpContext.TraceIdentifier,
             });
     }
-
-    /// <summary>
-    /// NotEqualIdsResponse
-    /// </summary>
-    /// <returns></returns>
-    /// /// <returns>Return <see cref="ErrorResult"/></returns>
-    [NonAction]
-    public BadRequestObjectResult NotEqualIdsResponse()
-    {
-        return this.BadRequest(
-            new ErrorResult()
-            {
-                Message = $"The identifiers in the path and body do not match.",
-                TraceId = this.HttpContext.TraceIdentifier,
-            });
-    }
 }

@@ -35,21 +35,20 @@ public abstract class TodoListController : AppControllerBase
     public abstract Task<ActionResult<TodoListDto>> CreateTodoList([Required] TodoListCreateRequest request);
 
     /// <summary>
+    /// Update TodoList
+    /// </summary>
+    /// <param name="request">Request body</param>
+    /// <returns>Return <see cref="TodoListDto"/></returns>
+    [HttpPut]
+    public abstract Task<ActionResult<TodoListDto>> UpdateTodoList([Required] TodoListUpdateRequest request);
+
+    /// <summary>
     /// Get TodoList by id
     /// </summary>
     /// <param name="todoListId">Id of TodoList</param>
     /// <returns>Return <see cref="TodoListDto"/></returns>
     [HttpGet("{todoListId}")]
     public abstract Task<ActionResult<TodoListDto>> GetTodoList(Guid todoListId);
-
-    /// <summary>
-    /// Update TodoList
-    /// </summary>
-    /// <param name="todoListId">Id of TodoList</param>
-    /// <param name="request">Request body</param>
-    /// <returns>Return <see cref="TodoListDto"/></returns>
-    [HttpPut("{todoListId}")]
-    public abstract Task<ActionResult<TodoListDto>> UpdateTodoList(Guid todoListId, [Required] TodoListUpdateRequest request);
 
     /// <summary>
     /// Delete TodoList

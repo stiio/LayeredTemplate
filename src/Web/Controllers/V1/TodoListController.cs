@@ -27,19 +27,14 @@ public class TodoListController : Api.Controllers.V1.TodoListController
         return await this.sender.Send(request);
     }
 
+    public override async Task<ActionResult<TodoListDto>> UpdateTodoList([Required] TodoListUpdateRequest request)
+    {
+        return await this.sender.Send(request);
+    }
+
     public override async Task<ActionResult<TodoListDto>> GetTodoList(Guid todoListId)
     {
         return await this.sender.Send(new TodoListGetRequest(todoListId));
-    }
-
-    public override async Task<ActionResult<TodoListDto>> UpdateTodoList(Guid todoListId, [Required] TodoListUpdateRequest request)
-    {
-        if (todoListId != request.Id)
-        {
-            return this.NotEqualIdsResponse();
-        }
-
-        return await this.sender.Send(request);
     }
 
     public override async Task<ActionResult<SuccessfulResult>> DeleteTodoList(Guid todoListId)
