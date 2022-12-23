@@ -1,4 +1,7 @@
-﻿using LayeredTemplate.Application.Common.Interfaces;
+﻿using Amazon;
+using Amazon.CognitoIdentityProvider;
+using Amazon.SecurityToken.Model;
+using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Infrastructure.AuthorizationHandlers;
 using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Services;
@@ -22,5 +25,22 @@ public static class ConfigureServices
         services.AddScoped<IAuthorizationHandler, TodoListAuthorizationHandler>();
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IUserPoolService, UserPoolService>();
+
+        services.ConfigureAwsServices(configuration);
+    }
+
+    private static void ConfigureAwsServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        var awsOptions = configuration.GetAWSOptions();
+        awsOptions.Region = RegionEndpoint.GetBySystemName(configuration["AWS_REGION"]);
+        awsOptions.Credentials = new Credentials()
+        {
+            AccessKeyId = configuration["AWS_ACCESS_KEY_ID"],
+            SecretAccessKey = configuration["AWS_SECRET_ACCESS_KEY"],
+        };
+        services.AddDefaultAWSOptions(awsOptions);
+
+        services.AddAWSService<IAmazonCognitoIdentityProvider>();
     }
 }

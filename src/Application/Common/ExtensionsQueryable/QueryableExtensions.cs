@@ -4,7 +4,7 @@ using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
-namespace LayeredTemplate.Application.Common.QueryableExtensions;
+namespace LayeredTemplate.Application.Common.ExtensionsQueryable;
 
 internal static class QueryableExtensions
 {

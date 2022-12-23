@@ -2,6 +2,7 @@
 
 public enum Role
 {
-    Client,
+    Guest,
     Admin,
+    Client,
 }

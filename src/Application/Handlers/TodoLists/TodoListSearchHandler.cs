@@ -1,5 +1,5 @@
-﻿using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Application.Common.QueryableExtensions;
+﻿using LayeredTemplate.Application.Common.ExtensionsQueryable;
+using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Contracts.Enums;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;

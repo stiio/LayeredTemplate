@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using LayeredTemplate.Application.Common.Exceptions;
+using LayeredTemplate.Application.Common.ExtensionsQueryable;
 using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Application.Common.QueryableExtensions;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
 using LayeredTemplate.Domain.Entities;
