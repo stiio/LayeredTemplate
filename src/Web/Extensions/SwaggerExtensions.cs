@@ -42,6 +42,8 @@ public static class SwaggerExtensions
                     ? $"{methodInfo.Name}{apiDesc.GroupName!.ToUpper()}"
                     : null);
 
+            options.SwaggerGeneratorOptions.DescribeAllParametersInCamelCase = true;
+
             options.ConfigureSecurity();
         });
     }
