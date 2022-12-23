@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+	<GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)common.targets" />
@@ -21,9 +21,5 @@
   <ItemGroup>
     <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
-
-	<ItemGroup>
-		<InternalsVisibleTo Include="Web.IntegrationTests" />
-	</ItemGroup>
 
 </Project>

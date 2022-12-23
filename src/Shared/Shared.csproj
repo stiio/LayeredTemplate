@@ -12,8 +12,4 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
   </ItemGroup>
 
-	<ItemGroup>
-		<InternalsVisibleTo Include="Web.IntegrationTests" />
-	</ItemGroup>
-
 </Project>

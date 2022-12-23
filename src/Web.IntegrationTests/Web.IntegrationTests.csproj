@@ -24,12 +24,12 @@
     </PackageReference>
   </ItemGroup>
 
-	<ItemGroup>
+  <ItemGroup>
     <Folder Include="TestAuthHandler\" />
   </ItemGroup>
 
-	<ItemGroup>
-	  <ProjectReference Include="..\Web\Web.csproj" />
-	</ItemGroup>
+  <ItemGroup>
+	<ProjectReference Include="..\Web\Web.csproj" />
+  </ItemGroup>
 
 </Project>

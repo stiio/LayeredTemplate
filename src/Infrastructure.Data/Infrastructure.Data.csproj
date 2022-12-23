@@ -27,8 +27,4 @@
     <Folder Include="Migrations\" />
   </ItemGroup>
 
-	<ItemGroup>
-		<InternalsVisibleTo Include="Web.IntegrationTests" />
-	</ItemGroup>
-
 </Project>

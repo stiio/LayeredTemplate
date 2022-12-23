@@ -29,8 +29,4 @@
     <Folder Include="Common\Models\" />
   </ItemGroup>
 
-	<ItemGroup>
-		<InternalsVisibleTo Include="Web.IntegrationTests" />
-	</ItemGroup>
-
 </Project>

@@ -23,8 +23,4 @@
     <Folder Include="Controllers\V2\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="Web.IntegrationTests" />
-  </ItemGroup>
-
 </Project>

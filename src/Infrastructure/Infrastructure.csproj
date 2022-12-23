@@ -20,8 +20,4 @@
     <PackageReference Include="PasswordGenerator" Version="2.1.0" />
   </ItemGroup>
 
-	<ItemGroup>
-		<InternalsVisibleTo Include="Web.IntegrationTests" />
-	</ItemGroup>
-
 </Project>
