@@ -1,9 +1,7 @@
 ﻿namespace LayeredTemplate.Domain.Common;
 
-public abstract class BaseEntity
+public interface ITimeStamp
 {
-    public Guid Id { get; set; }
-
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

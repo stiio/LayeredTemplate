@@ -27,7 +27,7 @@ internal class BaseEntitySaveChangesInterceptor : SaveChangesInterceptor
             return;
         }
 
-        foreach (var entry in context.ChangeTracker.Entries<BaseEntity>())
+        foreach (var entry in context.ChangeTracker.Entries<ITimeStamp>())
         {
             switch (entry.State)
             {

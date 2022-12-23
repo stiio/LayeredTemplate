@@ -18,6 +18,11 @@
     <NoWarn>1701;1702;SA0001</NoWarn>
   </PropertyGroup>
 
+  <Target Name="OpenAPI" AfterTargets="Build" Condition="$(Configuration)=='Debug'">
+  	<Exec Command="dotnet tool restore" />
+  	<Exec Command="dotnet swagger tofile --output ./specs/api_merged.yaml --yaml $(OutputPath)$(AssemblyName).dll merged_api" WorkingDirectory="$(ProjectDir)" />
+  </Target>
+
   <ItemGroup>
 	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.0">
     <PrivateAssets>all</PrivateAssets>
@@ -43,8 +48,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Extensions\" />
     <Folder Include="Mocks\Authentication\" />
+    <Folder Include="specs\" />
   </ItemGroup>
 
 	<ItemGroup>

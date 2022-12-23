@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
-using LayeredTemplate.Application.Contracts.Common;
 using LayeredTemplate.Application.Contracts.Enums;
+using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +9,7 @@ namespace LayeredTemplate.Application.Common.QueryableExtensions;
 internal static class QueryableExtensions
 {
     public static Task<T?> SelectForUpdate<T>(this DbSet<T> dbSet, Guid id)
-        where T : BaseEntity
+        where T : class, IBaseEntity<Guid>
     {
         var tableName = dbSet.EntityType.GetTableName();
         return dbSet.FromSqlRaw(@$"

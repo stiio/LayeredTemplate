@@ -1,19 +1,10 @@
 ﻿using LayeredTemplate.Web.Api.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace LayeredTemplate.Web.Api.Extensions;
+namespace LayeredTemplate.Web.Extensions;
 
-/// <summary>
-/// CustomValidationErrorExtension
-/// </summary>
 public static class CustomValidationErrorExtension
 {
-    /// <summary>
-    /// Use Custom Validation Error Responses
-    /// </summary>
-    /// <param name="mvcBuilder"></param>
-    /// <returns></returns>
     public static IMvcBuilder UseCustomValidationErrorResponses(this IMvcBuilder mvcBuilder)
     {
         return mvcBuilder.ConfigureApiBehaviorOptions(options =>

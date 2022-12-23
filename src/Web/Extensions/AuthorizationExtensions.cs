@@ -1,18 +1,10 @@
 ﻿using LayeredTemplate.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace LayeredTemplate.Web.Api.Extensions;
+namespace LayeredTemplate.Web.Extensions;
 
-/// <summary>
-/// Authorization Extensions
-/// </summary>
 public static class AuthorizationExtensions
 {
-    /// <summary>
-    /// Configure Authorization
-    /// </summary>
-    /// <param name="services"></param>
     public static void ConfigureAuthorization(this IServiceCollection services)
     {
         services.AddAuthorization(ConfigurePolicies);

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace LayeredTemplate.Web.Api.OpenApiFilters;
+namespace LayeredTemplate.Web.OpenApiFilters;
 
 /// <inheritdoc />
 public class AuthOperationFilter : IOperationFilter

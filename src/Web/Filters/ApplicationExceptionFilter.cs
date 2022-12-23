@@ -1,13 +1,9 @@
 ﻿using LayeredTemplate.Application.Common.Exceptions;
 using LayeredTemplate.Web.Api.Models;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
-namespace LayeredTemplate.Web.Api.Filters;
+namespace LayeredTemplate.Web.Filters;
 
 internal class ApplicationExceptionFilter : IExceptionFilter
 {

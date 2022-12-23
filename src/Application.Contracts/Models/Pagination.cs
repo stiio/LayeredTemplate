@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace LayeredTemplate.Application.Contracts.Common;
+namespace LayeredTemplate.Application.Contracts.Models;
 
 /// <summary>
 /// Pagination

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.Application.Contracts.Enums;
 
-namespace LayeredTemplate.Application.Contracts.Common;
+namespace LayeredTemplate.Application.Contracts.Models;
 
 /// <summary>
 /// Sorting

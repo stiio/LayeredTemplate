@@ -3,8 +3,10 @@ using LayeredTemplate.Domain.Enums;
 
 namespace LayeredTemplate.Domain.Entities;
 
-public class TodoList : BaseEntity
+public class TodoList : IBaseEntity<Guid>
 {
+    public Guid Id { get; set; }
+
     public Guid UserId { get; set; }
 
     public User? User { get; set; }
@@ -12,4 +14,8 @@ public class TodoList : BaseEntity
     public string? Name { get; set; }
 
     public TodoListType Type { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
 }

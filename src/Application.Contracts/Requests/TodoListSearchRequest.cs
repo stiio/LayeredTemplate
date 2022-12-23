@@ -1,5 +1,4 @@
-﻿using LayeredTemplate.Application.Contracts.Common;
-using LayeredTemplate.Application.Contracts.Models;
+﻿using LayeredTemplate.Application.Contracts.Models;
 using MediatR;
 
 namespace LayeredTemplate.Application.Contracts.Requests;

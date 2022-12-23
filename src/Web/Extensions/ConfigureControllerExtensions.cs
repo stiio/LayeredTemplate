@@ -1,22 +1,14 @@
 ﻿using System.Text.Json.Serialization;
-using LayeredTemplate.Web.Api.Conventions;
-using LayeredTemplate.Web.Api.Converters;
-using LayeredTemplate.Web.Api.Filters;
-using Microsoft.Extensions.DependencyInjection;
+using LayeredTemplate.Web.Conventions;
+using LayeredTemplate.Web.Converters;
+using LayeredTemplate.Web.Filters;
 using Swashbuckle.AspNetCore.JsonMultipartFormDataSupport.Extensions;
 using Swashbuckle.AspNetCore.JsonMultipartFormDataSupport.Integrations;
 
-namespace LayeredTemplate.Web.Api.Extensions;
+namespace LayeredTemplate.Web.Extensions;
 
-/// <summary>
-/// Controller Extensions
-/// </summary>
 public static class ConfigureControllerExtensions
 {
-    /// <summary>
-    /// Configure Controllers
-    /// </summary>
-    /// <param name="services"></param>
     public static void ConfigureControllers(this IServiceCollection services)
     {
         services.AddControllers(opts =>

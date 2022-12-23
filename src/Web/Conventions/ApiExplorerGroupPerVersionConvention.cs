@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
-namespace LayeredTemplate.Web.Api.Conventions;
+namespace LayeredTemplate.Web.Conventions;
 
 /// <inheritdoc />
 public class ApiExplorerGroupPerVersionConvention : IControllerModelConvention

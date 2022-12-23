@@ -1,23 +1,14 @@
 ﻿using System.Reflection;
 using LayeredTemplate.Web.Api.Controllers;
-using LayeredTemplate.Web.Api.OpenApiFilters;
+using LayeredTemplate.Web.OpenApiFilters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace LayeredTemplate.Web.Api.Extensions;
+namespace LayeredTemplate.Web.Extensions;
 
-/// <summary>
-/// SwaggerExtensions
-/// </summary>
 public static class SwaggerExtensions
 {
-    /// <summary>
-    /// Configure Swagger
-    /// </summary>
-    /// <param name="services"></param>
     public static void ConfigureSwagger(this IServiceCollection services)
     {
         services.AddSwaggerGen(options =>
@@ -26,7 +17,7 @@ public static class SwaggerExtensions
 
             options.SwaggerDoc("v1", new OpenApiInfo { Title = "Api - V1", Version = version });
             options.SwaggerDoc("v2", new OpenApiInfo { Title = "Api - V2", Version = version });
-            options.SwaggerDoc("merged_api_versions", new OpenApiInfo() { Title = "Merged Api Versions", Version = version });
+            options.SwaggerDoc("merged_api", new OpenApiInfo() { Title = "Merged Api", Version = version });
 
             options.SwaggerDoc("development", new OpenApiInfo() { Title = "API Development", Version = "v1" });
 
@@ -34,7 +25,7 @@ public static class SwaggerExtensions
             {
                 return documentName switch
                 {
-                    "merged_api_versions" => apiDescription.GroupName is "v1" or "v2",
+                    "merged_api" => apiDescription.GroupName is "v1" or "v2",
                     _ => documentName == apiDescription.GroupName,
                 };
             });
@@ -55,26 +46,26 @@ public static class SwaggerExtensions
         });
     }
 
-    /// <summary>
-    /// UseConfiguredSwagger
-    /// </summary>
-    /// <param name="app"></param>
-    public static void UseConfiguredSwagger(this IApplicationBuilder app)
+    public static void UseConfiguredSwagger(this IApplicationBuilder app, IWebHostEnvironment env)
     {
         app.UseSwagger(options => options.RouteTemplate = "/api-docs/{documentName}/swagger.json");
         app.UseSwaggerUI(c =>
         {
             c.SwaggerEndpoint("/api-docs/v1/swagger.json", "Api v1");
             c.SwaggerEndpoint("/api-docs/v2/swagger.json", "Api v2");
-            c.SwaggerEndpoint("/api-docs/merged_api_versions/swagger.json", "Merged Api");
+            c.SwaggerEndpoint("/api-docs/merged_api/swagger.json", "Merged Api");
 
-            c.SwaggerEndpoint("/api-docs/development/swagger.json", "Development Api");
+            if (env.IsDevelopment())
+            {
+                c.SwaggerEndpoint("/api-docs/development/swagger.json", "Development Api");
+            }
 
             c.RoutePrefix = "api-docs";
 
             c.EnableFilter();
             c.EnableDeepLinking();
             c.DisplayOperationId();
+            c.DisplayRequestDuration();
         });
     }
 

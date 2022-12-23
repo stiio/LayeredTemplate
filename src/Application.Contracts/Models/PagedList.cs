@@ -1,4 +1,4 @@
-﻿namespace LayeredTemplate.Application.Contracts.Common;
+﻿namespace LayeredTemplate.Application.Contracts.Models;
 
 /// <summary>
 /// Paged List

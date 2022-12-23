@@ -2,7 +2,6 @@ using LayeredTemplate.Application;
 using LayeredTemplate.Infrastructure;
 using LayeredTemplate.Infrastructure.Data.Extensions;
 using LayeredTemplate.Shared;
-using LayeredTemplate.Web.Api.Extensions;
 using LayeredTemplate.Web.Extensions;
 using LayeredTemplate.Web.Mocks.Authentication;
 using Serilog;
@@ -82,7 +81,7 @@ void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env)
     if (env.IsDevelopment() || env.IsStaging())
     {
         app.UseDeveloperExceptionPage();
-        app.UseConfiguredSwagger();
+        app.UseConfiguredSwagger(env);
     }
 
     app.UseHttpsRedirection();

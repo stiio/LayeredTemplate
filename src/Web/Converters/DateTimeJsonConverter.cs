@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace LayeredTemplate.Web.Api.Converters;
+namespace LayeredTemplate.Web.Converters;
 
 /// <inheritdoc />
 public class DateTimeJsonConverter : JsonConverter<DateTime>
