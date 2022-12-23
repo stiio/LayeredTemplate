@@ -2,11 +2,12 @@
 using System.Text.Encodings.Web;
 using LayeredTemplate.Shared.Constants;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace LayeredTemplate.Web.Mocks.Authentication;
+namespace LayeredTemplate.Infrastructure.Mocks.Authentication;
 
-public class MockAuthHandler : AuthenticationHandler<MockAuthAuthenticationOptions>
+internal class MockAuthHandler : AuthenticationHandler<MockAuthAuthenticationOptions>
 {
     private readonly MockUserSettings mockUser;
 

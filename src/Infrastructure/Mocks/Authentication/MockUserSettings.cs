@@ -1,6 +1,6 @@
-﻿namespace LayeredTemplate.Web.Mocks.Authentication;
+﻿namespace LayeredTemplate.Infrastructure.Mocks.Authentication;
 
-public class MockUserSettings
+internal class MockUserSettings
 {
     public string? Id { get; set; }
 

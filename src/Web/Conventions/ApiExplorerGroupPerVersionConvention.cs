@@ -11,6 +11,8 @@ public class ApiExplorerGroupPerVersionConvention : IControllerModelConvention
         var controllerNamespace = controller.ControllerType.Namespace; // e.g. "Controllers.V1"
         var apiVersion = controllerNamespace?.Split('.').Last().ToLower();
 
+        apiVersion = apiVersion == "controllers" ? "development" : apiVersion;
+
         controller.ApiExplorer.GroupName ??= apiVersion;
     }
 }

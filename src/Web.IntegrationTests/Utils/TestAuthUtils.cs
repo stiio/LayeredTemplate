@@ -1,8 +1,8 @@
 ﻿using System.Net.Http.Headers;
 using System.Text.Json;
 using LayeredTemplate.Domain.Entities;
+using LayeredTemplate.Infrastructure.Mocks.Authentication;
 using LayeredTemplate.Web.IntegrationTests.TestAuthHandler;
-using LayeredTemplate.Web.Mocks.Authentication;
 
 namespace LayeredTemplate.Web.IntegrationTests.Utils;
 

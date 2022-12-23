@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 
-namespace LayeredTemplate.Web.Mocks.Authentication;
+namespace LayeredTemplate.Infrastructure.Mocks.Authentication;
 
-public class MockAuthAuthenticationOptions : AuthenticationSchemeOptions
+internal class MockAuthAuthenticationOptions : AuthenticationSchemeOptions
 {
     public const string DefaultScheme = "MockAuth";
 

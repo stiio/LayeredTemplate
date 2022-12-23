@@ -3,7 +3,6 @@ using LayeredTemplate.Infrastructure;
 using LayeredTemplate.Infrastructure.Data.Extensions;
 using LayeredTemplate.Shared;
 using LayeredTemplate.Web.Extensions;
-using LayeredTemplate.Web.Mocks.Authentication;
 using Serilog;
 using Serilog.Exceptions;
 using Serilog.Exceptions.Core;
@@ -57,14 +56,10 @@ void ConfigureConfiguration(ConfigurationManager configuration, IWebHostEnvironm
 
 void ConfigureServices(IServiceCollection services, IConfiguration configuration)
 {
-    services.Configure<MockUserSettings>(configuration.GetSection(nameof(MockUserSettings)));
     services.RegisterSharedOptions(configuration);
 
     services.AddInfrastructureServices(configuration);
     services.AddApplicationServices(configuration);
-
-    services.ConfigureAuthentication(configuration);
-    services.ConfigureAuthorization();
 
     services.ConfigureControllers();
     services.ConfigureSwagger();

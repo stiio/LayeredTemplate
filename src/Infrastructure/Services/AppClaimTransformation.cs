@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace LayeredTemplate.Infrastructure.Services;
 
-public class AppClaimTransformation : IClaimsTransformation
+internal class AppClaimTransformation : IClaimsTransformation
 {
     private readonly ILogger<AppClaimTransformation> logger;
 

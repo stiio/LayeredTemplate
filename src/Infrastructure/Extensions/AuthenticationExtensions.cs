@@ -1,10 +1,12 @@
-﻿using LayeredTemplate.Shared.Options;
-using LayeredTemplate.Web.Mocks.Authentication;
+﻿using LayeredTemplate.Infrastructure.Mocks.Authentication;
+using LayeredTemplate.Shared.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace LayeredTemplate.Web.Extensions;
+namespace LayeredTemplate.Infrastructure.Extensions;
 
-public static class AuthenticationExtensions
+internal static class AuthenticationExtensions
 {
     public static void ConfigureAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
@@ -16,6 +18,8 @@ public static class AuthenticationExtensions
                 options.Audience = cognitoSettings.Audience;
             });
 
+        // Mock auth settings for development
+        services.Configure<MockUserSettings>(configuration.GetSection(nameof(MockUserSettings)));
         var useMockAuth = configuration.GetValue<bool>("USE_MOCK_AUTH");
         if (useMockAuth)
         {

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
   </PropertyGroup>
@@ -15,7 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="3.0.0" />
+	<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.10" />
+	<PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="3.0.0" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.2" />
     <PackageReference Include="PasswordGenerator" Version="2.1.0" />
   </ItemGroup>
