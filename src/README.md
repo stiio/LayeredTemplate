@@ -1,9 +1,9 @@
 # Sample
 
 ## Namespace settings
-For all new projects add to *.cs
+For all new projects add to *.cs and remove duplicate props.
 ```xml
-<RootNamespace>$(SolutionName.Replace(" ", "_")).$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+<Import Project="$(SolutionDir)common.targets" />
 ```
 
 ## Naming convensions

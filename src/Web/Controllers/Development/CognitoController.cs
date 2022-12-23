@@ -1,5 +1,5 @@
-﻿using Amazon.CognitoIdentityProvider.Model;
-using Amazon.CognitoIdentityProvider;
+﻿using Amazon.CognitoIdentityProvider;
+using Amazon.CognitoIdentityProvider.Model;
 using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Shared.Options;
 using LayeredTemplate.Web.Api.Controllers;

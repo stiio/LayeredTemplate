@@ -13,6 +13,7 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 
 WORKDIR /src
 
+COPY ["*.targets", "."]
 COPY ["Web/*.csproj", "Web/"]
 COPY ["Application/*.csproj", "Application/"]
 COPY ["Application.Contracts/*.csproj", "Application.Contracts/"]
