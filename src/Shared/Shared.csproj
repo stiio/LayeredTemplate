@@ -26,10 +26,6 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Options\" />
-  </ItemGroup>
-
 	<ItemGroup>
 		<InternalsVisibleTo Include="Web.IntegrationTests" />
 	</ItemGroup>

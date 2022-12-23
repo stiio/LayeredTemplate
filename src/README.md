@@ -10,16 +10,16 @@ For all new projects add to *.cs
 - For requests/responses: **[** Resource **]** **[** ResourceSuffix **]** **[** Action **]** **[** Role? **]** **[** Request | Response **]** (e.g. TodoItemCreateRequest, UserAddressAdminUpdateRequest, CurrentUserResponse)
 - For api actions: **[** Role? **]** **[** Action **]** **[** Resource **]** (e.g. UpdateUser, AdminUpdateUser)
 
-## TypeScript client generation
+## Manual TypeScript client generation
 Use openapi-generator-cli:v6.2.1
 image `image openapitools/openapi-generator-cli:v6.2.1`
 ```
-cd Web.Mock
+cd Web
 dotnet restore
 dotnet tool restore
 dotnet publish -c Release -o publish
 
 cd publish
-dotnet swagger tofile --output spec.yml --yaml Web.Mock.dll merged_api_versions
+dotnet swagger tofile --output spec.yml --yaml Web.dll merged_api_versions
 openapi-generator-cli generate -g typescript-fetch -i spec.yml -o front -c ts-gen-config.json --global-property skipFormModel=false
 ```

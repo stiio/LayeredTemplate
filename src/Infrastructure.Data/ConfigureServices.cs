@@ -15,10 +15,13 @@ public static class ConfigureServices
 
         services.AddDbContext<ApplicationDbContext>(options =>
         {
-            options.UseNpgsql(connectionString, x =>
-            {
-                x.MigrationsAssembly(Assembly.GetExecutingAssembly().FullName);
-            });
+            options
+                .UseNpgsql(connectionString, x =>
+                {
+                    x.MigrationsAssembly(Assembly.GetExecutingAssembly().FullName);
+                    x.EnableRetryOnFailure(5);
+                })
+                .UseSnakeCaseNamingConvention();
         });
 
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());

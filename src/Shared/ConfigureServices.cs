@@ -8,6 +8,6 @@ public static class ConfigureServices
 {
     public static void RegisterSharedOptions(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<AuthSettings>(configuration.GetSection(nameof(AuthSettings)));
+        services.Configure<CognitoSettings>(configuration.GetSection(nameof(CognitoSettings)));
     }
 }

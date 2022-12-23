@@ -8,12 +8,12 @@ public static class AuthenticationExtensions
 {
     public static void ConfigureAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
-        var authSettings = configuration.GetSection(nameof(AuthSettings)).Get<AuthSettings>()!;
+        var cognitoSettings = configuration.GetSection(nameof(CognitoSettings)).Get<CognitoSettings>()!;
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                options.Authority = authSettings.Authority;
-                options.Audience = authSettings.Audience;
+                options.Authority = $"https://cognito-idp.{configuration["AWS_REGION"]}.amazonaws.com/{cognitoSettings.UserPoolId}";
+                options.Audience = cognitoSettings.Audience;
             });
 
         var useMockAuth = configuration.GetValue<bool>("USE_MOCK_AUTH");

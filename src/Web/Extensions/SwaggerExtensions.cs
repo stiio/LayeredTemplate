@@ -90,14 +90,14 @@ public static class SwaggerExtensions
         {
             Type = "string",
             Format = "date-only",
-            Example = OpenApiAnyFactory.CreateFromJson($"\"{DateOnly.FromDateTime(DateTime.UtcNow):O}\""),
+            Example = OpenApiAnyFactory.CreateFromJson($"\"{DateOnly.FromDateTime(new DateTime(2022, 11, 15, 12, 0, 0, DateTimeKind.Utc)):O}\""),
         });
 
         options.MapType<DateTime>(() => new OpenApiSchema
         {
             Type = "string",
             Format = "date-with-time",
-            Example = OpenApiAnyFactory.CreateFromJson($"\"{DateTime.UtcNow:O}\""),
+            Example = OpenApiAnyFactory.CreateFromJson($"\"{new DateTime(2022, 11, 15, 12, 0, 0, DateTimeKind.Utc):O}\""),
         });
     }
 }

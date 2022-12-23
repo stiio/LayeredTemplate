@@ -476,7 +476,7 @@ components:
           type: string
           description: Created At
           format: date-with-time
-          example: '2022-12-23T10:45:09.2615090Z'
+          example: '2022-12-23T14:48:18.5184163Z'
       additionalProperties: false
       description: TodoList Record
     TodoListRecordDtoPagedList:

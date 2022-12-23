@@ -48,6 +48,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Controllers\Development\" />
     <Folder Include="Mocks\Authentication\" />
     <Folder Include="specs\" />
   </ItemGroup>
