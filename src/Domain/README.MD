@@ -1,1 +1,2 @@
 ﻿# Domain
+Include domain entities.

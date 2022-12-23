@@ -18,6 +18,8 @@ internal class CurrentUserService : ICurrentUserService
 
     public string? Email => this.httpContextAccessor.HttpContext!.User!.FindFirst(TokenKeys.Email)?.Value;
 
+    public string? Phone => this.httpContextAccessor.HttpContext!.User!.FindFirst(TokenKeys.Phone)?.Value;
+
     public bool IsAuthenticate => this.httpContextAccessor.HttpContext!.User.Identity?.IsAuthenticated ?? false;
 
     public Role Role => this.GetRole();
@@ -26,11 +28,11 @@ internal class CurrentUserService : ICurrentUserService
     {
         var role = this.httpContextAccessor.HttpContext!.User!.FindFirst(TokenKeys.Role)?.Value;
 
-        return role switch
+        if (string.IsNullOrEmpty(role))
         {
-            Roles.Client => Role.Client,
-            Roles.Admin => Role.Admin,
-            _ => throw new ArgumentException(nameof(role)),
-        };
+            return Role.Guest;
+        }
+
+        return Enum.Parse<Role>(role, true);
     }
 }

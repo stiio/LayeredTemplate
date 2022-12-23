@@ -8,6 +8,8 @@ public interface ICurrentUserService
 
     public string? Email { get; }
 
+    public string? Phone { get; }
+
     public bool IsAuthenticate { get; }
 
     public Role Role { get; }

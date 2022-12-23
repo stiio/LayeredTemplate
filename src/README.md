@@ -7,7 +7,7 @@ For all new projects add to *.cs and remove duplicate props.
 ```
 
 ## Naming convensions
-- For requests/responses: **[** Resource **]** **[** ResourceSuffix **]** **[** Action **]** **[** Role? **]** **[** Request | Response **]** (e.g. TodoItemCreateRequest, UserAddressAdminUpdateRequest, CurrentUserResponse)
+- For requests/responses: **[** Resource **]** **[** ResourceSuffix? **]** **[** Action **]** **[** Role? **]** **[** Request | Response? **]** (e.g. TodoItemCreateRequest, UserAddressAdminUpdateRequest, CurrentUserResponse)
 - For api actions: **[** Role? **]** **[** Action **]** **[** Resource **]** (e.g. UpdateUser, AdminUpdateUser)
 
 ## Manual TypeScript client generation
