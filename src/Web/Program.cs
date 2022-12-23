@@ -86,6 +86,8 @@ void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env)
 
     app.UseHttpsRedirection();
 
+    app.UseStaticFiles("/api/static");
+
     app.UseRequestLogging();
     app.UseRouting();
 
