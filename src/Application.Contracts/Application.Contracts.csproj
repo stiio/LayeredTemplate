@@ -4,7 +4,7 @@
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <Import Project="$(SolutionDir)common.targets" />
+  <Import Project="../common.targets" />
 
   <ItemGroup>
     <PackageReference Include="libphonenumber-csharp" Version="8.13.1" />

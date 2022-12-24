@@ -3,7 +3,7 @@
 ## Namespace settings
 For all new projects add to *.cs and remove duplicate props.
 ```xml
-<Import Project="$(SolutionDir)common.targets" />
+<Import Project="../common.targets" />
 ```
 
 ## Naming convensions

@@ -5,7 +5,7 @@
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
-  <Import Project="$(SolutionDir)common.targets" />
+  <Import Project="../common.targets" />
 
   <Target Name="OpenAPI" AfterTargets="Build" Condition="$(Configuration)=='Debug'">
   	<Exec Command="dotnet tool restore" />

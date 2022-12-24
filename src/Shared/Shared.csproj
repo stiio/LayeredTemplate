@@ -3,7 +3,7 @@
   <PropertyGroup>
   </PropertyGroup>
 
-  <Import Project="$(SolutionDir)common.targets" />
+  <Import Project="../common.targets" />
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authorization.Policy" Version="2.2.0" />

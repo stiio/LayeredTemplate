@@ -5,7 +5,7 @@
     <Version>1.0.1</Version>
   </PropertyGroup>
 
-  <Import Project="$(SolutionDir)common.targets" />
+  <Import Project="../common.targets" />
 
   <ItemGroup>
 	<PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
