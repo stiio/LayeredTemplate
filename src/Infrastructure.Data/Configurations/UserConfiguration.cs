@@ -14,6 +14,9 @@ internal class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.Email)
             .HasMaxLength(255);
 
+        builder.Property(user => user.Phone)
+            .HasMaxLength(30);
+
         builder.Property(user => user.Role)
             .HasConversion<string>()
             .HasMaxLength(20);

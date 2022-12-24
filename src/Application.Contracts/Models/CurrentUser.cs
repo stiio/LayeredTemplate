@@ -1,4 +1,6 @@
-﻿namespace LayeredTemplate.Application.Contracts.Models;
+﻿using LayeredTemplate.Domain.Enums;
+
+namespace LayeredTemplate.Application.Contracts.Models;
 
 /// <summary>
 /// Current User
@@ -17,8 +19,18 @@ public class CurrentUser
     public string? Email { get; set; }
 
     /// <summary>
+    /// Phone of user
+    /// </summary>
+    public string? Phone { get; set; }
+
+    /// <summary>
     /// Name of user
     /// </summary>
     /// <example>John Doe</example>
     public string? Name { get; set; }
+
+    /// <summary>
+    /// Role of user
+    /// </summary>
+    public Role Role { get; set; }
 }

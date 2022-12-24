@@ -23,7 +23,7 @@ public class WebApp : WebApplicationFactory<Program>, IAsyncLifetime
     private readonly PostgreSqlTestcontainer postgreSqlTestContainer = new TestcontainersBuilder<PostgreSqlTestcontainer>()
         .WithDatabase(new PostgreSqlTestcontainerConfiguration()
         {
-            Database = "sampleWorkflowManager",
+            Database = "appDbName-test",
             Username = "postgres",
             Password = "postgres",
             Port = 5555,

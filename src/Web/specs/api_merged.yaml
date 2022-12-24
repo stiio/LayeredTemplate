@@ -332,11 +332,17 @@ components:
           description: Email of user
           nullable: true
           example: example@email.com
+        phone:
+          type: string
+          description: Phone of user
+          nullable: true
         name:
           type: string
           description: Name of user
           nullable: true
           example: John Doe
+        role:
+          $ref: '#/components/schemas/Role'
       additionalProperties: false
       description: Current User
     DirectionType:
@@ -385,6 +391,12 @@ components:
           example: 100
       additionalProperties: false
       description: Pagination
+    Role:
+      enum:
+        - Guest
+        - Admin
+        - Client
+      type: string
     SearchTodoListFilter:
       type: object
       properties:

@@ -10,13 +10,6 @@ internal static class AwsServicesExtensions
 {
     public static void ConfigureAwsServices(this IServiceCollection services, IConfiguration configuration)
     {
-        var region = configuration["AWS_REGION"];
-
-        if (string.IsNullOrEmpty(region))
-        {
-            return;
-        }
-
         var awsOptions = configuration.GetAWSOptions();
         awsOptions.Region = RegionEndpoint.GetBySystemName(configuration["AWS_REGION"]);
         awsOptions.Credentials = new Credentials()
