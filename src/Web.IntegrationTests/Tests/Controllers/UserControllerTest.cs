@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit;
+using Xunit.Abstractions;
 using Xunit.Priority;
 
 namespace LayeredTemplate.Web.IntegrationTests.Tests.Controllers;
@@ -17,11 +18,13 @@ public class UserControllerTest
 {
     private readonly WebApp webApp;
     private readonly JsonSerializerOptions jsonOptions;
+    private readonly ITestOutputHelper testOutputHelper;
 
-    public UserControllerTest(WebApp webApp)
+    public UserControllerTest(WebApp webApp, ITestOutputHelper testOutputHelper)
     {
         this.webApp = webApp;
         this.jsonOptions = webApp.Services.GetRequiredService<IOptions<JsonOptions>>().Value.JsonSerializerOptions;
+        this.testOutputHelper = testOutputHelper;
     }
 
     [Fact]

@@ -3,8 +3,8 @@ using System.Net.Mime;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
-using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Domain.Entities;
+using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Data.Context;
 using LayeredTemplate.Web.IntegrationTests.TestAuthHandler;
 using LayeredTemplate.Web.IntegrationTests.Utils;
@@ -68,15 +68,8 @@ public class WebApp : WebApplicationFactory<Program>, IAsyncLifetime
         {
             // test db
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
-            services.RemoveAll<ApplicationDbContext>();
-            services.RemoveAll<IApplicationDbContext>();
 
-            services.AddDbContext<ApplicationDbContext>(opts =>
-            {
-                opts.UseNpgsql(this.postgreSqlTestContainer.ConnectionString);
-            });
-
-            services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+            services.RegisterDbContext(this.postgreSqlTestContainer.ConnectionString);
 
             // --
             services.AddAuthentication(TestAuthAuthenticationOptions.DefaultScheme)
