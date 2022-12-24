@@ -1,9 +1,10 @@
-﻿using LayeredTemplate.Domain.Entities;
+﻿using System.Collections;
+using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Domain.Enums;
 
 namespace LayeredTemplate.Web.IntegrationTests.Utils;
 
-public static class TestUsers
+public class TestUsers : IEnumerable<object[]>
 {
     public static User Client { get; } = new User()
     {
@@ -25,4 +26,13 @@ public static class TestUsers
         Email = "sample_client_not_seed@yopmail.com",
         Role = Role.Client,
     };
+
+    public IEnumerator<object[]> GetEnumerator()
+    {
+        yield return new[] { Client };
+        yield return new object[] { Admin };
+        yield return new object[] { NotSeedClient };
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }
