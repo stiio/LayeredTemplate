@@ -16,17 +16,28 @@ internal class AppClaimTransformation : IClaimsTransformation
 
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
-        var role = principal.FindFirstValue(TokenKeys.Role);
-        if (!string.IsNullOrEmpty(role) && principal.Claims.All(claim => claim.Type != ClaimTypes.Role))
+        switch (principal.Identity?.AuthenticationType)
         {
-            var roleClaim = new Claim[]
+            case AppAuthenticationTypes.Jwt:
             {
-                new Claim(ClaimTypes.Role, role),
-            };
+                var role = principal.FindFirstValue(TokenKeys.Role);
+                if (!string.IsNullOrEmpty(role) && principal.Claims.All(claim => claim.Type != ClaimTypes.Role))
+                {
+                    var roleClaim = new Claim[]
+                    {
+                        new Claim(ClaimTypes.Role, role),
+                    };
 
-            principal.AddIdentity(new ClaimsIdentity(roleClaim));
+                    principal.AddIdentity(new ClaimsIdentity(roleClaim));
+                }
+
+                return Task.FromResult(principal);
+            }
+
+            default:
+            {
+                return Task.FromResult(principal);
+            }
         }
-
-        return Task.FromResult(principal);
     }
 }

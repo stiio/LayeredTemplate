@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using LayeredTemplate.Shared.Constants;
+using Microsoft.AspNetCore.Authentication;
 
 namespace LayeredTemplate.Web.IntegrationTests.TestAuthHandler;
 
@@ -8,5 +9,5 @@ public class TestAuthAuthenticationOptions : AuthenticationSchemeOptions
 
     public string Scheme => DefaultScheme;
 
-    public string AuthenticationType => DefaultScheme;
+    public string AuthenticationType => AppAuthenticationTypes.Jwt;
 }

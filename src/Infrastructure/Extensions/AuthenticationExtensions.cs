@@ -1,4 +1,5 @@
 ﻿using LayeredTemplate.Infrastructure.Mocks.Authentication;
+using LayeredTemplate.Shared.Constants;
 using LayeredTemplate.Shared.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +17,7 @@ internal static class AuthenticationExtensions
             {
                 options.Authority = $"https://cognito-idp.{configuration["AWS_REGION"]}.amazonaws.com/{cognitoSettings.UserPoolId}";
                 options.Audience = cognitoSettings.Audience;
+                options.TokenValidationParameters.AuthenticationType = AppAuthenticationTypes.Jwt;
             });
 
         // Mock auth settings for development
