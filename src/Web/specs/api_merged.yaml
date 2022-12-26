@@ -28,13 +28,13 @@ paths:
           content:
             text/plain:
               schema:
-                $ref: '#/components/schemas/TodoListRecordDtoPagedList'
+                $ref: '#/components/schemas/TodoListSearchResponse'
             application/json:
               schema:
-                $ref: '#/components/schemas/TodoListRecordDtoPagedList'
+                $ref: '#/components/schemas/TodoListSearchResponse'
             text/json:
               schema:
-                $ref: '#/components/schemas/TodoListRecordDtoPagedList'
+                $ref: '#/components/schemas/TodoListSearchResponse'
         '400':
           description: Bad request
           content:
@@ -364,7 +364,10 @@ components:
           nullable: true
       additionalProperties: false
       description: Error Result
-    Pagination:
+    PaginationRequest:
+      required:
+        - limit
+        - page
       type: object
       properties:
         page:
@@ -373,7 +376,6 @@ components:
           type: integer
           description: 'Page number (default: 1)'
           format: int32
-          nullable: true
           example: 1
         limit:
           maximum: 100
@@ -381,51 +383,43 @@ components:
           type: integer
           description: 'Limit items on page (default: 10)'
           format: int32
-          nullable: true
+          example: 10
+      additionalProperties: false
+      description: Pagination Request
+    PaginationResponse:
+      required:
+        - limit
+        - page
+        - total
+      type: object
+      properties:
+        page:
+          maximum: 2147483647
+          minimum: 1
+          type: integer
+          description: 'Page number (default: 1)'
+          format: int32
+          example: 1
+        limit:
+          maximum: 100
+          minimum: 1
+          type: integer
+          description: 'Limit items on page (default: 10)'
+          format: int32
           example: 10
         total:
           type: integer
           description: Total items
           format: int32
-          nullable: true
           example: 100
       additionalProperties: false
-      description: Pagination
+      description: Pagination Response
     Role:
       enum:
         - Guest
         - Admin
         - Client
       type: string
-    SearchTodoListFilter:
-      type: object
-      properties:
-        search:
-          type: string
-          description: Search
-          nullable: true
-        types:
-          type: array
-          items:
-            $ref: '#/components/schemas/TodoListType'
-          description: Types filter
-          nullable: true
-      additionalProperties: false
-      description: SearchTodoListFilter
-    Sorting:
-      required:
-        - column
-        - direction
-      type: object
-      properties:
-        column:
-          minLength: 1
-          type: string
-          description: Name of field for sort
-        direction:
-          $ref: '#/components/schemas/DirectionType'
-      additionalProperties: false
-      description: Sorting
     SuccessfulResult:
       type: object
       properties:
@@ -491,30 +485,72 @@ components:
           example: '2022-11-15T12:00:00.0000000Z'
       additionalProperties: false
       description: TodoList Record
-    TodoListRecordDtoPagedList:
+    TodoListRecordDtoFilter:
       type: object
       properties:
-        pagination:
-          $ref: '#/components/schemas/Pagination'
-        data:
+        search:
+          type: string
+          description: Search
+          nullable: true
+        types:
           type: array
           items:
-            $ref: '#/components/schemas/TodoListRecordDto'
-          description: Founded items
+            $ref: '#/components/schemas/TodoListType'
+          description: Types filter
           nullable: true
       additionalProperties: false
-      description: Paged List
+      description: TodoListRecordDtoFilter
+    TodoListRecordDtoSorting:
+      required:
+        - column
+        - direction
+      type: object
+      properties:
+        column:
+          minLength: 1
+          enum:
+            - Id
+            - UserId
+            - Name
+            - Type
+            - CreatedAt
+          type: string
+          description: Name of field for sort
+        direction:
+          $ref: '#/components/schemas/DirectionType'
+      additionalProperties: false
+      description: Sorting
     TodoListSearchRequest:
       type: object
       properties:
         pagination:
-          $ref: '#/components/schemas/Pagination'
-        filter:
-          $ref: '#/components/schemas/SearchTodoListFilter'
+          $ref: '#/components/schemas/PaginationRequest'
         sorting:
-          $ref: '#/components/schemas/Sorting'
+          $ref: '#/components/schemas/TodoListRecordDtoSorting'
+        filter:
+          $ref: '#/components/schemas/TodoListRecordDtoFilter'
       additionalProperties: false
       description: Search TodoList Request
+    TodoListSearchResponse:
+      required:
+        - data
+        - pagination
+        - sorting
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/PaginationResponse'
+        sorting:
+          $ref: '#/components/schemas/TodoListRecordDtoSorting'
+        filter:
+          $ref: '#/components/schemas/TodoListRecordDtoFilter'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TodoListRecordDto'
+          description: Data
+      additionalProperties: false
+      description: TodoListSearchResponse
     TodoListType:
       enum:
         - Default

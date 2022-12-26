@@ -35,7 +35,7 @@ public class TodoListController : AppControllerBase
     /// <param name="request">Request body</param>
     /// <returns></returns>
     [HttpPost("search")]
-    public async Task<ActionResult<PagedList<TodoListRecordDto>>> SearchTodoList([Required] TodoListSearchRequest request)
+    public async Task<ActionResult<TodoListSearchResponse>> SearchTodoList([Required] TodoListSearchRequest request)
     {
         return await this.sender.Send(request);
     }

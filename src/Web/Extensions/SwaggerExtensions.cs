@@ -36,6 +36,7 @@ public static class SwaggerExtensions
             options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Application.Contracts.xml"));
 
             options.OperationFilter<DefaultApplicationResponsesFilter>();
+            options.SchemaFilter<SortingToEnumFilter>();
 
             options.CustomOperationIds(apiDesc =>
                 apiDesc.TryGetMethodInfo(out var methodInfo)

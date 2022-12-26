@@ -3,9 +3,9 @@
 namespace LayeredTemplate.Application.Contracts.Models;
 
 /// <summary>
-/// SearchTodoListFilter
+/// TodoListRecordDtoFilter
 /// </summary>
-public class SearchTodoListFilter
+public class TodoListRecordDtoFilter
 {
     /// <summary>
     /// Search

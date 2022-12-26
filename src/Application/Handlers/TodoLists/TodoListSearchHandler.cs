@@ -1,13 +1,12 @@
 ﻿using LayeredTemplate.Application.Common.ExtensionsQueryable;
 using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Application.Contracts.Enums;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
 using MediatR;
 
 namespace LayeredTemplate.Application.Handlers.TodoLists;
 
-internal class TodoListSearchHandler : IRequestHandler<TodoListSearchRequest, PagedList<TodoListRecordDto>>
+internal class TodoListSearchHandler : IRequestHandler<TodoListSearchRequest, TodoListSearchResponse>
 {
     private readonly IApplicationDbContext dbsContext;
     private readonly ICurrentUserService currentUserService;
@@ -20,20 +19,20 @@ internal class TodoListSearchHandler : IRequestHandler<TodoListSearchRequest, Pa
         this.currentUserService = currentUserService;
     }
 
-    public Task<PagedList<TodoListRecordDto>> Handle(TodoListSearchRequest request, CancellationToken cancellationToken)
+    public async Task<TodoListSearchResponse> Handle(TodoListSearchRequest request, CancellationToken cancellationToken)
     {
-        request.Sorting ??= new Sorting()
-        {
-            Column = nameof(TodoListRecordDto.CreatedAt),
-            Direction = DirectionType.Desc,
-        };
-
-        return this.dbsContext.TodoLists
+        var query = this.dbsContext.TodoLists
             .ForUser(this.currentUserService.UserId)
-            .OrderByDescending(todoList => todoList.CreatedAt)
             .MapTodoListRecordDto()
             .ApplyFilter(request.Filter)
-            .ApplySorting(request.Sorting)
-            .ToPagedList(request.Pagination, cancellationToken);
+            .Sort(request.Sorting);
+
+        return new TodoListSearchResponse()
+        {
+            Filter = request.Filter,
+            Pagination = await query.PaginationResponse(request.Pagination, cancellationToken),
+            Sorting = request.Sorting,
+            Data = await query.Page(request.Pagination, cancellationToken),
+        };
     }
 }

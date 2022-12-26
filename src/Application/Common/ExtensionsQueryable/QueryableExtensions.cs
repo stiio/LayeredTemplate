@@ -20,27 +20,15 @@ internal static class QueryableExtensions
             .FirstOrDefaultAsync();
     }
 
-    public static async Task<PagedList<T>> ToPagedList<T>(this IQueryable<T> query, Pagination? pagination, CancellationToken cancellationToken = default)
+    public static async Task<T[]> Page<T>(this IQueryable<T> query, PaginationRequest pagination, CancellationToken cancellationToken = default)
     {
-        var page = pagination?.Page ?? 1;
-        var limit = pagination?.Limit ?? 10;
-
-        return new PagedList<T>()
-        {
-            Pagination = new Pagination()
-            {
-                Page = page,
-                Limit = limit,
-                Total = await query.CountAsync(cancellationToken),
-            },
-            Data = await query
-                .Skip((page - 1) * limit)
-                .Take(limit)
-                .ToArrayAsync(cancellationToken),
-        };
+        return await query
+            .Skip((pagination.Page - 1) * pagination.Limit)
+            .Take(pagination.Limit)
+            .ToArrayAsync(cancellationToken);
     }
 
-    public static IQueryable<T> ApplySorting<T>(this IQueryable<T> query, Sorting sorting)
+    public static IQueryable<T> Sort<T>(this IQueryable<T> query, Sorting sorting)
     {
         var queryElementTypeParam = Expression.Parameter(typeof(T));
         var memberAccess = Expression.PropertyOrField(queryElementTypeParam, sorting.Column);
@@ -54,5 +42,18 @@ internal static class QueryableExtensions
             Expression.Quote(keySelector));
 
         return query.Provider.CreateQuery<T>(orderBy);
+    }
+
+    public static async Task<PaginationResponse> PaginationResponse<T>(
+        this IQueryable<T> query,
+        PaginationRequest pagination,
+        CancellationToken cancellationToken = default)
+    {
+        return new PaginationResponse()
+        {
+            Page = pagination.Page,
+            Limit = pagination.Limit,
+            Total = await query.CountAsync(cancellationToken),
+        };
     }
 }

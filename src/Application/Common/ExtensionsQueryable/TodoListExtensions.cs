@@ -22,7 +22,7 @@ internal static class TodoListExtensions
         });
     }
 
-    public static IQueryable<TodoListRecordDto> ApplyFilter(this IQueryable<TodoListRecordDto> query, SearchTodoListFilter? filter)
+    public static IQueryable<TodoListRecordDto> ApplyFilter(this IQueryable<TodoListRecordDto> query, TodoListRecordDtoFilter? filter)
     {
         if (filter == null)
         {

@@ -6,20 +6,20 @@ namespace LayeredTemplate.Application.Contracts.Requests;
 /// <summary>
 /// Search TodoList Request
 /// </summary>
-public class TodoListSearchRequest : IRequest<PagedList<TodoListRecordDto>>
+public class TodoListSearchRequest : IRequest<TodoListSearchResponse>
 {
     /// <summary>
     /// Pagination
     /// </summary>
-    public Pagination? Pagination { get; set; }
-
-    /// <summary>
-    /// Filter
-    /// </summary>
-    public SearchTodoListFilter? Filter { get; set; }
+    public PaginationRequest Pagination { get; set; } = new();
 
     /// <summary>
     /// Sorting
     /// </summary>
-    public Sorting? Sorting { get; set; }
+    public Sorting<TodoListRecordDto> Sorting { get; set; } = new();
+
+    /// <summary>
+    /// Filter
+    /// </summary>
+    public TodoListRecordDtoFilter? Filter { get; set; }
 }
