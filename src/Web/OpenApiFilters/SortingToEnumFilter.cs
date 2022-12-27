@@ -13,41 +13,44 @@ public class SortingToEnumFilter : ISchemaFilter
         if (context.Type.IsGenericType && context.Type.GetGenericTypeDefinition() == typeof(Sorting<>))
         {
             var columnSchema = schema.Properties[nameof(Sorting.Column).ToLower()];
-            var recordProperties = context.Type.GetGenericArguments()[0].GetProperties();
+            var recordType = context.Type.GetGenericArguments()[0];
 
-            columnSchema.Enum = recordProperties.SelectMany(recordProperty => this.CreateOpenApiEnum(recordProperty)).ToArray();
+            columnSchema.Enum = this.CreateOpenApiEnum(recordType);
         }
     }
 
-    private IList<IOpenApiAny> CreateOpenApiEnum(
-        PropertyInfo propertyInfo,
-        IList<IOpenApiAny>? result = null,
-        string? prefix = null,
-        int level = 0)
+    private IList<IOpenApiAny> CreateOpenApiEnum(Type type)
+    {
+        var result = new List<IOpenApiAny>();
+
+        foreach (var property in type.GetProperties())
+        {
+            this.FillOpenApiEnum(property, result);
+        }
+
+        return result;
+    }
+
+    private void FillOpenApiEnum(PropertyInfo propertyInfo, List<IOpenApiAny> result, string? prefix = null, int level = 0)
     {
         if (level == 3)
         {
-            return result!;
+            return;
         }
 
-        result ??= new List<IOpenApiAny>();
-
-        if (propertyInfo.PropertyType.IsClass && propertyInfo.PropertyType != typeof(string))
+        if (!propertyInfo.PropertyType.IsClass || propertyInfo.PropertyType == typeof(string))
         {
-            foreach (var nestedProperty in propertyInfo.PropertyType.GetProperties())
-            {
-                this.CreateOpenApiEnum(
-                    nestedProperty,
-                    result,
-                    string.Join(".", new[] { prefix, propertyInfo.Name }.Where(x => x != null)),
-                    level++);
-            }
-
-            return result;
+            result.Add(new OpenApiString(prefix is null ? propertyInfo.Name : $"{prefix}.{propertyInfo.Name}"));
+            return;
         }
 
-        result.Add(new OpenApiString(string.IsNullOrEmpty(prefix) ? propertyInfo.Name : $"{prefix}.{propertyInfo.Name}"));
-
-        return result;
+        foreach (var nestedProperty in propertyInfo.PropertyType.GetProperties())
+        {
+            this.FillOpenApiEnum(
+                nestedProperty,
+                result,
+                prefix is null ? propertyInfo.Name : $"{prefix}.{propertyInfo.Name}",
+                level++);
+        }
     }
 }
