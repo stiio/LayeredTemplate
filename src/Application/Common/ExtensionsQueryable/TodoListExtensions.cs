@@ -16,6 +16,11 @@ internal static class TodoListExtensions
         {
             Id = todoList.Id,
             UserId = todoList.UserId,
+            User = new UserShortInfo()
+            {
+                Id = todoList.User!.Id,
+                Email = todoList.User.Email,
+            },
             Name = todoList.Name,
             Type = todoList.Type,
             CreatedAt = todoList.CreatedAt,

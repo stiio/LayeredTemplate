@@ -11,6 +11,6 @@ public class TodoListProfile : Profile
     {
         this.CreateMap<TodoList, TodoListDto>();
 
-        this.CreateMap<TodoListUpdateRequest, TodoList>();
+        this.CreateMap<TodoListUpdateRequestBody, TodoList>();
     }
 }

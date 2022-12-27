@@ -25,7 +25,7 @@ internal class TodoListDeleteHandler : IRequestHandler<TodoListDeleteRequest>
         var todoList = await this.dbContext.TodoLists.FindAsync(request.Id);
         if (todoList is null)
         {
-            throw new NotFoundException(nameof(TodoList), request.Id);
+            throw new AppNotFoundException(nameof(TodoList), request.Id);
         }
 
         var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.FullAccess);

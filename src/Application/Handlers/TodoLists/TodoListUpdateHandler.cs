@@ -33,7 +33,7 @@ internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, To
         var todoList = await this.dbContext.TodoLists.SelectForUpdate(request.Id);
         if (todoList is null)
         {
-            throw new NotFoundException(nameof(TodoList), request.Id);
+            throw new AppNotFoundException(nameof(TodoList), request.Id);
         }
 
         var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.FullAccess);
@@ -42,7 +42,7 @@ internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, To
             throw new AccessDeniedException();
         }
 
-        this.mapper.Map(request, todoList);
+        this.mapper.Map(request.Body, todoList);
 
         await this.dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);

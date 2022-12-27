@@ -30,14 +30,12 @@ internal static class QueryableExtensions
 
     public static IQueryable<T> Sort<T>(this IQueryable<T> query, Sorting sorting)
     {
-        var queryElementTypeParam = Expression.Parameter(typeof(T));
-        var memberAccess = Expression.PropertyOrField(queryElementTypeParam, sorting.Column);
-        var keySelector = Expression.Lambda(memberAccess, queryElementTypeParam);
+        var keySelector = CreateKeySelector(typeof(T), sorting.Column);
 
         var orderBy = Expression.Call(
             typeof(Queryable),
             sorting.Direction == DirectionType.Asc ? "OrderBy" : "OrderByDescending",
-            new Type[] { typeof(T), memberAccess.Type },
+            new Type[] { typeof(T), keySelector.ReturnType },
             query.Expression,
             Expression.Quote(keySelector));
 
@@ -55,5 +53,17 @@ internal static class QueryableExtensions
             Limit = pagination.Limit,
             Total = await query.CountAsync(cancellationToken),
         };
+    }
+
+    private static LambdaExpression CreateKeySelector(Type type, string propertyName)
+    {
+        var param = Expression.Parameter(type);
+        Expression body = param;
+        foreach (var member in propertyName.Split('.'))
+        {
+            body = Expression.PropertyOrField(body, member);
+        }
+
+        return Expression.Lambda(body, param);
     }
 }

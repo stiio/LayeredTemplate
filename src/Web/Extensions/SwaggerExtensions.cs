@@ -31,6 +31,7 @@ public static class SwaggerExtensions
             });
 
             options.UserCustomDateConverters();
+            options.DescribeAllParametersInCamelCase();
 
             options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Web.Api.xml"));
             options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Application.Contracts.xml"));
@@ -42,8 +43,6 @@ public static class SwaggerExtensions
                 apiDesc.TryGetMethodInfo(out var methodInfo)
                     ? $"{methodInfo.Name}{apiDesc.GroupName!.ToUpper()}"
                     : null);
-
-            options.SwaggerGeneratorOptions.DescribeAllParametersInCamelCase = true;
 
             options.ConfigureSecurity();
         });

@@ -23,7 +23,6 @@
   <ItemGroup>
     <Folder Include="Common\Behaviors\" />
     <Folder Include="Common\Mapper\" />
-    <Folder Include="Common\Exceptions\" />
     <Folder Include="Common\ExtensionsQueryable\" />
     <Folder Include="Common\Extensions\" />
     <Folder Include="Common\Models\" />

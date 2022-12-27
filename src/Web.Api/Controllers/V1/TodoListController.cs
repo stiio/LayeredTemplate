@@ -56,8 +56,8 @@ public class TodoListController : AppControllerBase
     /// </summary>
     /// <param name="request">Request body</param>
     /// <returns>Return <see cref="TodoListDto"/></returns>
-    [HttpPut]
-    public async Task<ActionResult<TodoListDto>> UpdateTodoList([Required] TodoListUpdateRequest request)
+    [HttpPut("{id}")]
+    public async Task<ActionResult<TodoListDto>> UpdateTodoList([FromRoute] TodoListUpdateRequest request)
     {
         return await this.sender.Send(request);
     }
@@ -65,25 +65,22 @@ public class TodoListController : AppControllerBase
     /// <summary>
     /// Get TodoList by id
     /// </summary>
-    /// <param name="todoListId">Id of TodoList</param>
+    /// <param name="request"></param>
     /// <returns>Return <see cref="TodoListDto"/></returns>
-    [HttpGet("{todoListId}")]
-    public async Task<ActionResult<TodoListDto>> GetTodoList(Guid todoListId)
+    [HttpGet("{id}")]
+    public async Task<ActionResult<TodoListDto>> GetTodoList([FromRoute] TodoListGetRequest request)
     {
-        var request = new TodoListGetRequest(todoListId);
-
         return await this.sender.Send(request);
     }
 
     /// <summary>
     /// Delete TodoList
     /// </summary>
-    /// <param name="todoListId">Id of TodoList</param>
+    /// <param name="request"></param>
     /// <returns></returns>
-    [HttpDelete("{todoListId}")]
-    public async Task<ActionResult<SuccessfulResult>> DeleteTodoList(Guid todoListId)
+    [HttpDelete("{id}")]
+    public async Task<ActionResult<SuccessfulResult>> DeleteTodoList([FromRoute] TodoListDeleteRequest request)
     {
-        var request = new TodoListDeleteRequest(todoListId);
         await this.sender.Send(request);
 
         return this.Response200();
@@ -92,12 +89,12 @@ public class TodoListController : AppControllerBase
     /// <summary>
     /// Get TodoList Csv
     /// </summary>
-    /// <param name="todoListId"></param>
+    /// <param name="request"></param>
     /// <returns></returns>
-    [HttpGet("{todoListId}/csv")]
+    [HttpGet("{id}/csv")]
     [Produces(MediaTypeNames.Application.Octet, Type = typeof(FileResult))]
     [Authorize(Policies.Example)]
-    public Task<ActionResult> GetTodoListCsv(Guid todoListId)
+    public Task<ActionResult> GetTodoListCsv([FromRoute] TodoListCsvGetRequest request)
     {
         throw new NotImplementedException();
     }

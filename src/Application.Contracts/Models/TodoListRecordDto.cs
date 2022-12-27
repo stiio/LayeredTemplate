@@ -18,6 +18,11 @@ public class TodoListRecordDto
     public Guid UserId { get; set; }
 
     /// <summary>
+    /// User
+    /// </summary>
+    public UserShortInfo User { get; set; } = null!;
+
+    /// <summary>
     /// Name of TodoList
     /// </summary>
     public string? Name { get; set; }
