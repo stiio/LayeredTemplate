@@ -28,7 +28,7 @@ internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, To
 
     public async Task<TodoListDto> Handle(TodoListUpdateRequest request, CancellationToken cancellationToken)
     {
-        await using var transaction = await this.dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await this.dbContext.BeginTransactionAsync(cancellationToken);
 
         var todoList = await this.dbContext.TodoLists.SelectForUpdate(request.Id);
         if (todoList is null)

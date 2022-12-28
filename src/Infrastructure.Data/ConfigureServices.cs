@@ -19,7 +19,6 @@ public static class ConfigureServices
                 .UseNpgsql(connectionString, x =>
                 {
                     x.MigrationsAssembly(Assembly.GetExecutingAssembly().FullName);
-                    x.EnableRetryOnFailure(5);
                 })
                 .UseSnakeCaseNamingConvention();
         });

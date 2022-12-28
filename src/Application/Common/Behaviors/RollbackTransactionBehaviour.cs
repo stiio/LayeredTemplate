@@ -26,7 +26,7 @@ public class RollbackTransactionBehaviour<TRequest, TResponse> : IPipelineBehavi
         }
         catch (Exception)
         {
-            this.dbContext.Database.CurrentTransaction?.RollbackAsync(cancellationToken);
+            this.dbContext.CurrentTransaction?.RollbackAsync(cancellationToken);
             throw;
         }
     }

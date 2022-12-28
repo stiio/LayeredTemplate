@@ -8,24 +8,23 @@ namespace LayeredTemplate.Application.Common.ExtensionsQueryable;
 
 internal static class QueryableExtensions
 {
-    public static Task<T?> SelectForUpdate<T>(this DbSet<T> dbSet, Guid id)
-        where T : class, IBaseEntity<Guid>
+    public static Task<T?> SelectForUpdate<T, TKey>(this DbSet<T> dbSet, TKey id)
+        where T : class, IBaseEntity<TKey>
     {
         var tableName = dbSet.EntityType.GetTableName();
         return dbSet.FromSqlRaw(@$"
-                SELECT * FROM ""{tableName}""
-                WHERE ""Id"" = '{id}'
+                SELECT * FROM {tableName}
+                WHERE id = '{id}'
                 FOR UPDATE")
-            .Where(entity => entity.Id == id)
+            .Where(entity => entity.Id!.Equals(id))
             .FirstOrDefaultAsync();
     }
 
-    public static async Task<T[]> Page<T>(this IQueryable<T> query, PaginationRequest pagination, CancellationToken cancellationToken = default)
+    public static IQueryable<T> Page<T>(this IQueryable<T> query, PaginationRequest pagination, CancellationToken cancellationToken = default)
     {
-        return await query
+        return query
             .Skip((pagination.Page - 1) * pagination.Limit)
-            .Take(pagination.Limit)
-            .ToArrayAsync(cancellationToken);
+            .Take(pagination.Limit);
     }
 
     public static IQueryable<T> Sort<T>(this IQueryable<T> query, Sorting sorting)
@@ -42,7 +41,7 @@ internal static class QueryableExtensions
         return query.Provider.CreateQuery<T>(orderBy);
     }
 
-    public static async Task<PaginationResponse> PaginationResponse<T>(
+    public static async Task<PaginationResponse> ToPaginationResponse<T>(
         this IQueryable<T> query,
         PaginationRequest pagination,
         CancellationToken cancellationToken = default)

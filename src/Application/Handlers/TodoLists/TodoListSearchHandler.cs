@@ -3,6 +3,7 @@ using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace LayeredTemplate.Application.Handlers.TodoLists;
 
@@ -30,9 +31,11 @@ internal class TodoListSearchHandler : IRequestHandler<TodoListSearchRequest, To
         return new TodoListSearchResponse()
         {
             Filter = request.Filter,
-            Pagination = await query.PaginationResponse(request.Pagination, cancellationToken),
+            Pagination = await query.ToPaginationResponse(request.Pagination, cancellationToken),
             Sorting = request.Sorting,
-            Data = await query.Page(request.Pagination, cancellationToken),
+            Data = await query
+                .Page(request.Pagination, cancellationToken)
+                .ToArrayAsync(cancellationToken),
         };
     }
 }

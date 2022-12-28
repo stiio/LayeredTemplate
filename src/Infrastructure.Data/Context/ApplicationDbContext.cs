@@ -3,6 +3,7 @@ using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Infrastructure.Data.Interceptors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LayeredTemplate.Infrastructure.Data.Context;
@@ -29,11 +30,30 @@ internal class ApplicationDbContext : DbContext, IApplicationDbContext
 
     public DbSet<TodoList> TodoLists { get; set; } = null!;
 
+    public IDbContextTransaction? CurrentTransaction => this.Database.CurrentTransaction;
+
+    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        return this.Database.BeginTransactionAsync(cancellationToken);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
         base.OnModelCreating(modelBuilder);
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<string>()
+            .HaveMaxLength(255);
+
+        configurationBuilder.Properties<Enum>()
+            .HaveConversion<string>()
+            .HaveMaxLength(255);
+
+        base.ConfigureConventions(configurationBuilder);
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

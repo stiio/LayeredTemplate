@@ -8,9 +8,6 @@ internal class TodoListConfiguration : IEntityTypeConfiguration<TodoList>
 {
     public void Configure(EntityTypeBuilder<TodoList> builder)
     {
-        builder.Property(todoList => todoList.Name)
-            .HasMaxLength(255);
-
         builder.Property(todoList => todoList.Type)
             .HasConversion<string>()
             .HasMaxLength(8);
