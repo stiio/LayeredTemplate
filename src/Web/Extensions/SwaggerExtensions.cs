@@ -38,6 +38,7 @@ public static class SwaggerExtensions
 
             options.OperationFilter<DefaultApplicationResponsesFilter>();
             options.SchemaFilter<SortingToEnumFilter>();
+            options.DocumentFilter<AdditionalSchemasFilter>();
 
             options.CustomOperationIds(apiDesc =>
                 apiDesc.TryGetMethodInfo(out var methodInfo)

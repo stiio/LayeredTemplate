@@ -21,36 +21,43 @@ public class SortingToEnumFilter : ISchemaFilter
 
     private IList<IOpenApiAny> CreateOpenApiEnum(Type type)
     {
-        var result = new List<IOpenApiAny>();
+        var result = new List<OpenApiString>();
 
         foreach (var property in type.GetProperties())
         {
             this.FillOpenApiEnum(property, result);
         }
 
-        return result;
+        return result.ToList<IOpenApiAny>();
     }
 
-    private void FillOpenApiEnum(PropertyInfo propertyInfo, List<IOpenApiAny> result, string? prefix = null, int level = 0)
+    private void FillOpenApiEnum(PropertyInfo propertyInfo, List<OpenApiString> result, string? prefix = null, int level = 0)
     {
         if (level == 3)
         {
             return;
         }
 
-        if (!propertyInfo.PropertyType.IsClass || propertyInfo.PropertyType == typeof(string))
+        if (propertyInfo.PropertyType.IsClass && propertyInfo.PropertyType != typeof(string))
         {
-            result.Add(new OpenApiString(prefix is null ? propertyInfo.Name : $"{prefix}.{propertyInfo.Name}"));
+            foreach (var nestedProperty in propertyInfo.PropertyType.GetProperties())
+            {
+                this.FillOpenApiEnum(
+                    nestedProperty,
+                    result,
+                    prefix is null ? propertyInfo.Name : $"{prefix}.{propertyInfo.Name}",
+                    level++);
+            }
+
             return;
         }
 
-        foreach (var nestedProperty in propertyInfo.PropertyType.GetProperties())
+        var enumValue = prefix is null ? propertyInfo.Name : $"{prefix}.{propertyInfo.Name}";
+        if (result.Any(x => x.Value.Replace(".", string.Empty) == enumValue.Replace(".", string.Empty)))
         {
-            this.FillOpenApiEnum(
-                nestedProperty,
-                result,
-                prefix is null ? propertyInfo.Name : $"{prefix}.{propertyInfo.Name}",
-                level++);
+            return;
         }
+
+        result.Add(new OpenApiString(enumValue));
     }
 }
