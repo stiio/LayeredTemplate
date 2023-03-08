@@ -1,7 +1,7 @@
-﻿using LayeredTemplate.Application.Common.ExtensionsQueryable;
-using LayeredTemplate.Application.Common.Interfaces;
+﻿using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
+using LayeredTemplate.Application.QueryableExtensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

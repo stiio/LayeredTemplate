@@ -8,6 +8,7 @@
   <Import Project="../common.targets" />
 
   <ItemGroup>
+	<PackageReference Include="AutoBogus" Version="2.13.1" />
 	<PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
@@ -20,6 +21,7 @@
   <ItemGroup>
     <Folder Include="Controllers\V1\" />
     <Folder Include="Controllers\V2\" />
+    <Folder Include="Bogus\" />
   </ItemGroup>
 
 </Project>

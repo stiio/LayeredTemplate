@@ -28,7 +28,7 @@ internal class TodoListDeleteHandler : IRequestHandler<TodoListDeleteRequest>
             throw new AppNotFoundException(nameof(TodoList), request.Id);
         }
 
-        var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.FullAccess);
+        var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.Delete);
         if (!authorizationResult.Succeeded)
         {
             throw new AccessDeniedException();

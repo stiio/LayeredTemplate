@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using LayeredTemplate.Application.Common.Exceptions;
-using LayeredTemplate.Application.Common.ExtensionsQueryable;
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
+using LayeredTemplate.Application.QueryableExtensions;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Shared.Constants;
 using MediatR;
@@ -36,7 +36,7 @@ internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, To
             throw new AppNotFoundException(nameof(TodoList), request.Id);
         }
 
-        var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.FullAccess);
+        var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.Update);
         if (!authorizationResult.Succeeded)
         {
             throw new AccessDeniedException();

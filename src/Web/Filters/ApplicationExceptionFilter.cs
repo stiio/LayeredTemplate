@@ -1,4 +1,6 @@
-﻿using LayeredTemplate.Application.Common.Exceptions;
+﻿using Amazon.CognitoIdentityProvider;
+using LayeredTemplate.Application.Common.Exceptions;
+using LayeredTemplate.Domain.Exceptions;
 using LayeredTemplate.Web.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -13,63 +15,92 @@ internal class ApplicationExceptionFilter : IExceptionFilter
         switch (context.Exception)
         {
             case HttpStatusException httpStatusException:
+            {
+                context.ExceptionHandled = true;
+
+                var applicationError = new ErrorResult()
                 {
-                    context.ExceptionHandled = true;
+                    Message = httpStatusException.Message,
+                    TraceId = context.HttpContext.TraceIdentifier,
+                };
 
-                    var applicationError = new ErrorResult()
-                    {
-                        Message = httpStatusException.Message,
-                        TraceId = context.HttpContext.TraceIdentifier,
-                    };
+                context.Result = new ObjectResult(applicationError)
+                {
+                    StatusCode = (int)httpStatusException.StatusCode,
+                };
+                break;
+            }
 
-                    context.Result = new ObjectResult(applicationError)
-                    {
-                        StatusCode = (int)httpStatusException.StatusCode,
-                    };
-                    break;
-                }
+            case DomainException domainException:
+            {
+                context.ExceptionHandled = true;
+
+                var applicationError = new ErrorResult()
+                {
+                    Message = domainException.Message,
+                    TraceId = context.HttpContext.TraceIdentifier,
+                };
+
+                context.Result = new BadRequestObjectResult(applicationError);
+                break;
+            }
+
+            case AmazonCognitoIdentityProviderException e:
+            {
+                logger.LogError(e, "An unhandled exception has occurred while executing the request.");
+                context.ExceptionHandled = true;
+
+                var applicationError = new ErrorResult()
+                {
+                    Message = e.Message,
+                    TraceId = context.HttpContext.TraceIdentifier,
+                };
+
+                context.Result = new BadRequestObjectResult(applicationError);
+                break;
+            }
 
             case NotImplementedException e:
+            {
+                logger.LogError(e, "An unhandled exception has occurred while executing the request.");
+
+                context.ExceptionHandled = true;
+
+                var applicationError = new ErrorResult()
                 {
-                    logger.LogError(e, "An unhandled exception has occurred while executing the request.");
+                    Message = "Not implemented.",
+                    TraceId = context.HttpContext.TraceIdentifier,
+                };
 
-                    context.ExceptionHandled = true;
-
-                    var applicationError = new ErrorResult()
-                    {
-                        Message = "Not implemented.",
-                        TraceId = context.HttpContext.TraceIdentifier,
-                    };
-
-                    context.Result = new BadRequestObjectResult(applicationError);
-                    break;
-                }
+                context.Result = new BadRequestObjectResult(applicationError);
+                break;
+            }
 
             // ReSharper disable once ConvertTypeCheckPatternToNullCheck
             case Exception e:
+            {
+                var env = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
+                if (env.IsDevelopment())
                 {
-                    var env = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
-                    if (env.IsDevelopment())
-                    {
-                        break;
-                    }
-
-                    logger.LogError(e, "An unhandled exception has occurred while executing the request.");
-
-                    context.ExceptionHandled = true;
-
-                    var applicationError = new ErrorResult()
-                    {
-                        Message = "Something went wrong.",
-                        TraceId = context.HttpContext.TraceIdentifier,
-                    };
-
-                    context.Result = new ObjectResult(applicationError)
-                    {
-                        StatusCode = 500,
-                    };
                     break;
                 }
+
+                logger.LogError(e, "An unhandled exception has occurred while executing the request.");
+
+                context.ExceptionHandled = true;
+
+                var applicationError = new ErrorResult()
+                {
+                    Message = "Something went wrong.",
+                    TraceId = context.HttpContext.TraceIdentifier,
+                };
+
+                context.Result = new ObjectResult(applicationError)
+                {
+                    StatusCode = 500,
+                };
+                break;
+            }
         }
     }
 }

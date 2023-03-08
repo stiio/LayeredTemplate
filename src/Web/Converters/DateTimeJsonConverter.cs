@@ -19,7 +19,7 @@ public class DateTimeJsonConverter : JsonConverter<DateTime>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
     {
-        var stringDate = value.ToString("O", CultureInfo.InvariantCulture);
+        var stringDate = value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
         writer.WriteStringValue(stringDate);
     }
 }

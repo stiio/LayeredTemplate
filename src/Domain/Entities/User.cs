@@ -3,7 +3,7 @@ using LayeredTemplate.Domain.Enums;
 
 namespace LayeredTemplate.Domain.Entities;
 
-public class User : IBaseEntity<Guid>
+public class User : IBaseAuditableEntity<Guid>
 {
     public Guid Id { get; set; }
 

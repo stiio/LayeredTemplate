@@ -3,7 +3,7 @@ using LayeredTemplate.Domain.Enums;
 
 namespace LayeredTemplate.Domain.Entities;
 
-public class TodoList : IBaseEntity<Guid>
+public class TodoList : IBaseAuditableEntity<Guid>
 {
     public Guid Id { get; set; }
 

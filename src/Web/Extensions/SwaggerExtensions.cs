@@ -9,15 +9,18 @@ namespace LayeredTemplate.Web.Extensions;
 
 public static class SwaggerExtensions
 {
+    private static readonly string[] Versions = { "v1", "v2", "development", "merged_api" };
+
     public static void ConfigureSwagger(this IServiceCollection services)
     {
         services.AddSwaggerGen(options =>
         {
-            var version = typeof(AppControllerBase).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            var packageVersion = typeof(AppControllerBase).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
-            options.SwaggerDoc("v1", new OpenApiInfo { Title = "Api - V1", Version = version });
-            options.SwaggerDoc("v2", new OpenApiInfo { Title = "Api - V2", Version = version });
-            options.SwaggerDoc("merged_api", new OpenApiInfo() { Title = "Merged Api", Version = version });
+            foreach (var version in Versions)
+            {
+                options.SwaggerDoc(version, new OpenApiInfo() { Title = $"Api - {version}", Version = packageVersion });
+            }
 
             options.SwaggerDoc("development", new OpenApiInfo() { Title = "API Development", Version = "v1" });
 
@@ -54,9 +57,10 @@ public static class SwaggerExtensions
         app.UseSwagger(options => options.RouteTemplate = "/api-docs/{documentName}/swagger.json");
         app.UseSwaggerUI(c =>
         {
-            c.SwaggerEndpoint("/api-docs/v1/swagger.json", "Api v1");
-            c.SwaggerEndpoint("/api-docs/v2/swagger.json", "Api v2");
-            c.SwaggerEndpoint("/api-docs/merged_api/swagger.json", "Merged Api");
+            foreach (string version in Versions.Where(version => version != "development"))
+            {
+                c.SwaggerEndpoint($"/api-docs/{version}/swagger.json", $"Api - {version}");
+            }
 
             if (env.IsDevelopment())
             {

@@ -1,5 +1,5 @@
-﻿using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Infrastructure.AuthorizationHandlers;
+﻿using System.Reflection;
+using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Infrastructure.Services;
 using LayeredTemplate.Shared.Constants;
 using Microsoft.AspNetCore.Authentication;
@@ -15,9 +15,14 @@ internal static class AuthorizationExtensions
         services.AddScoped<IClaimsTransformation, AppClaimTransformation>();
 
         services.AddScoped<IResourceAuthorizationService, ResourceAuthorizationService>();
-        services.AddScoped<IAuthorizationHandler, TodoListAuthorizationHandler>();
 
         services.AddAuthorization(ConfigurePolicies);
+
+        var authorizationHandlers = Assembly.GetExecutingAssembly().GetTypes().Where(type => type.IsAssignableTo(typeof(IAuthorizationHandler))).ToArray();
+        foreach (var authorizationHandler in authorizationHandlers)
+        {
+            services.AddScoped(typeof(IAuthorizationHandler), authorizationHandler);
+        }
     }
 
     private static void ConfigurePolicies(AuthorizationOptions options)

@@ -1,7 +1,7 @@
 ﻿using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Domain.Entities;
 
-namespace LayeredTemplate.Application.Common.ExtensionsQueryable;
+namespace LayeredTemplate.Application.QueryableExtensions;
 
 internal static class TodoListExtensions
 {

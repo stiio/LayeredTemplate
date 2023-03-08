@@ -11,14 +11,13 @@ public static class ConfigureServices
 {
     public static void RegisterDbContext(this IServiceCollection services, string connectionString)
     {
-        services.AddScoped<BaseEntitySaveChangesInterceptor>();
-
         services.AddDbContext<ApplicationDbContext>(options =>
         {
             options
                 .UseNpgsql(connectionString, x =>
                 {
                     x.MigrationsAssembly(Assembly.GetExecutingAssembly().FullName);
+                    x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                 })
                 .UseSnakeCaseNamingConvention();
         });

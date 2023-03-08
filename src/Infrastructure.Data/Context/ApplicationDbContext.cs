@@ -1,29 +1,20 @@
 ﻿using System.Reflection;
+using Humanizer;
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Domain.Entities;
+using LayeredTemplate.Domain.Exceptions;
 using LayeredTemplate.Infrastructure.Data.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace LayeredTemplate.Infrastructure.Data.Context;
 
 internal class ApplicationDbContext : DbContext, IApplicationDbContext
 {
-    private readonly BaseEntitySaveChangesInterceptor? baseEntitySaveChangesInterceptor;
-
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
-    }
-
-    [ActivatorUtilitiesConstructor]
-    public ApplicationDbContext(
-        DbContextOptions<ApplicationDbContext> options,
-        BaseEntitySaveChangesInterceptor baseEntitySaveChangesInterceptor)
-        : base(options)
-    {
-        this.baseEntitySaveChangesInterceptor = baseEntitySaveChangesInterceptor;
     }
 
     public DbSet<User> Users { get; set; } = null!;
@@ -35,6 +26,23 @@ internal class ApplicationDbContext : DbContext, IApplicationDbContext
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         return this.Database.BeginTransactionAsync(cancellationToken);
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await base.SaveChangesAsync(cancellationToken);
+            return result;
+        }
+        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: "23503" } postgresException)
+        {
+            throw new ForeignKeyViolationException(postgresException.ConstraintName);
+        }
+        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: "23505" } postgresException)
+        {
+            throw new DuplicateUniqueColumnException(postgresException.TableName?.Humanize(LetterCasing.Title), postgresException.ColumnName?.Humanize());
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -58,10 +66,7 @@ internal class ApplicationDbContext : DbContext, IApplicationDbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        if (this.baseEntitySaveChangesInterceptor is not null)
-        {
-            optionsBuilder.AddInterceptors(this.baseEntitySaveChangesInterceptor);
-        }
+        optionsBuilder.AddInterceptors(new BaseEntitySaveChangesInterceptor());
 
         base.OnConfiguring(optionsBuilder);
     }

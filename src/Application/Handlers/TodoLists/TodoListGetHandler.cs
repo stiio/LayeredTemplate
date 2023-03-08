@@ -33,7 +33,7 @@ internal class TodoListGetHandler : IRequestHandler<TodoListGetRequest, TodoList
             throw new AppNotFoundException(nameof(TodoList), request.Id);
         }
 
-        var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.FullAccess);
+        var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.Read);
         if (!authorizationResult.Succeeded)
         {
             throw new AccessDeniedException();

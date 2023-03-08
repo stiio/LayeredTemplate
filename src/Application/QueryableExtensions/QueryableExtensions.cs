@@ -4,12 +4,12 @@ using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 
-namespace LayeredTemplate.Application.Common.ExtensionsQueryable;
+namespace LayeredTemplate.Application.QueryableExtensions;
 
 internal static class QueryableExtensions
 {
     public static Task<T?> SelectForUpdate<T, TKey>(this DbSet<T> dbSet, TKey id)
-        where T : class, IBaseEntity<TKey>
+        where T : class, IBaseAuditableEntity<TKey>
     {
         var tableName = dbSet.EntityType.GetTableName();
         return dbSet.FromSqlRaw(@$"

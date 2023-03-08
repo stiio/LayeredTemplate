@@ -7,9 +7,9 @@
   <Import Project="../common.targets" />
 
   <ItemGroup>
-    <PackageReference Include="libphonenumber-csharp" Version="8.13.1" />
+    <PackageReference Include="libphonenumber-csharp" Version="8.13.7" />
     <PackageReference Include="MediatR.Contracts" Version="1.0.1" />
-    <PackageReference Include="Stio.JsonMultipartFormDataSupport" Version="1.0.3" />
+    <PackageReference Include="Stio.JsonMultipartFormDataSupport" Version="1.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
   </ItemGroup>
 

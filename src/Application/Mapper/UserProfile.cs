@@ -2,7 +2,7 @@
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Domain.Entities;
 
-namespace LayeredTemplate.Application.Common.Mapper;
+namespace LayeredTemplate.Application.Mapper;
 
 internal class UserProfile : Profile
 {

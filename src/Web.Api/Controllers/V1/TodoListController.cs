@@ -2,7 +2,9 @@
 using System.Net.Mime;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
+using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Shared.Constants;
+using LayeredTemplate.Web.Api.Attributes;
 using LayeredTemplate.Web.Api.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +17,7 @@ namespace LayeredTemplate.Web.Api.Controllers.V1;
 /// </summary>
 [ApiController]
 [Route("api/v1/todo_lists")]
-[Authorize(Roles = $"{Roles.Client}, {Roles.Admin}")]
+[RoleAuthorize(Role.Client, Role.Admin)]
 public class TodoListController : AppControllerBase
 {
     private readonly ISender sender;

@@ -1,9 +1,8 @@
 ﻿using AutoMapper;
 using LayeredTemplate.Application.Contracts.Models;
-using LayeredTemplate.Application.Contracts.Requests;
 using LayeredTemplate.Domain.Entities;
 
-namespace LayeredTemplate.Application.Common.Mapper;
+namespace LayeredTemplate.Application.Mapper;
 
 public class TodoListProfile : Profile
 {
