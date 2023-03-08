@@ -25,16 +25,16 @@ internal class TodoListSearchHandler : IRequestHandler<TodoListSearchRequest, To
         var query = this.dbsContext.TodoLists
             .ForUser(this.currentUserService.UserId)
             .MapTodoListRecordDto()
-            .ApplyFilter(request.Filter)
-            .Sort(request.Sorting);
+            .ApplyFilter(request.Body.Filter)
+            .Sort(request.Body.Sorting);
 
         return new TodoListSearchResponse()
         {
-            Filter = request.Filter,
-            Pagination = await query.ToPaginationResponse(request.Pagination, cancellationToken),
-            Sorting = request.Sorting,
+            Filter = request.Body.Filter,
+            Pagination = await query.ToPaginationResponse(request.Body.Pagination, cancellationToken),
+            Sorting = request.Body.Sorting,
             Data = await query
-                .Page(request.Pagination, cancellationToken)
+                .Page(request.Body.Pagination, cancellationToken)
                 .ToArrayAsync(cancellationToken),
         };
     }

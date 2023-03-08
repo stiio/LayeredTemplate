@@ -7,11 +7,5 @@ public class TodoListCreateValidator : AbstractValidator<TodoListCreateRequest>
 {
     public TodoListCreateValidator()
     {
-        this.RuleFor(x => x.Name)
-            .NotEmpty()
-            .MaximumLength(15);
-
-        this.RuleFor(x => x.Type)
-            .NotNull();
     }
 }

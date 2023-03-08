@@ -1,6 +1,6 @@
 openapi: 3.0.1
 info:
-  title: Merged Api
+  title: Api - merged_api
   version: 1.0.1
 paths:
   /api/v1/todo_lists/search:
@@ -10,17 +10,17 @@ paths:
       summary: Search TodoList
       operationId: SearchTodoListV1
       requestBody:
-        description: Request body
+        description: Body
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TodoListSearchRequest'
+              $ref: '#/components/schemas/TodoListSearchRequestBody'
           text/json:
             schema:
-              $ref: '#/components/schemas/TodoListSearchRequest'
+              $ref: '#/components/schemas/TodoListSearchRequestBody'
           application/*+json:
             schema:
-              $ref: '#/components/schemas/TodoListSearchRequest'
+              $ref: '#/components/schemas/TodoListSearchRequestBody'
         required: true
       responses:
         '200':
@@ -60,17 +60,17 @@ paths:
       summary: Create TodoList
       operationId: CreateTodoListV1
       requestBody:
-        description: Request body
+        description: Body
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TodoListCreateRequest'
+              $ref: '#/components/schemas/TodoListCreateRequestBody'
           text/json:
             schema:
-              $ref: '#/components/schemas/TodoListCreateRequest'
+              $ref: '#/components/schemas/TodoListCreateRequestBody'
           application/*+json:
             schema:
-              $ref: '#/components/schemas/TodoListCreateRequest'
+              $ref: '#/components/schemas/TodoListCreateRequestBody'
         required: true
       responses:
         '200':
@@ -447,7 +447,7 @@ components:
           nullable: true
       additionalProperties: false
       description: Successful Result
-    TodoListCreateRequest:
+    TodoListCreateRequestBody:
       required:
         - name
         - type
@@ -462,7 +462,7 @@ components:
         type:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
-      description: TodoListCreateRequest
+      description: TodoList Create Request Body
     TodoListDto:
       type: object
       properties:
@@ -541,7 +541,7 @@ components:
           $ref: '#/components/schemas/DirectionType'
       additionalProperties: false
       description: Sorting
-    TodoListSearchRequest:
+    TodoListSearchRequestBody:
       type: object
       properties:
         pagination:
@@ -551,7 +551,7 @@ components:
         filter:
           $ref: '#/components/schemas/TodoListRecordDtoFilter'
       additionalProperties: false
-      description: Search TodoList Request
+      description: TodoList Search Request Body
     TodoListSearchResponse:
       required:
         - data

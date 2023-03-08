@@ -28,8 +28,8 @@ internal class TodoListCreateHandler : IRequestHandler<TodoListCreateRequest, To
         var todoList = new TodoList()
         {
             UserId = this.currentUserService.UserId,
-            Name = request.Name,
-            Type = request.Type,
+            Name = request.Body.Name,
+            Type = request.Body.Type,
         };
 
         await this.dbsContext.TodoLists.AddAsync(todoList, cancellationToken);

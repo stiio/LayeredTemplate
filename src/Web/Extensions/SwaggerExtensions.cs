@@ -22,8 +22,6 @@ public static class SwaggerExtensions
                 options.SwaggerDoc(version, new OpenApiInfo() { Title = $"Api - {version}", Version = packageVersion });
             }
 
-            options.SwaggerDoc("development", new OpenApiInfo() { Title = "API Development", Version = "v1" });
-
             options.DocInclusionPredicate((documentName, apiDescription) =>
             {
                 return documentName switch

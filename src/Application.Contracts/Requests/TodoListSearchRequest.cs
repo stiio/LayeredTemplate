@@ -1,5 +1,7 @@
-﻿using LayeredTemplate.Application.Contracts.Models;
+﻿using System.ComponentModel.DataAnnotations;
+using LayeredTemplate.Application.Contracts.Models;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.Application.Contracts.Requests;
 
@@ -9,17 +11,9 @@ namespace LayeredTemplate.Application.Contracts.Requests;
 public class TodoListSearchRequest : IRequest<TodoListSearchResponse>
 {
     /// <summary>
-    /// Pagination
+    /// Body
     /// </summary>
-    public PaginationRequest Pagination { get; set; } = new();
-
-    /// <summary>
-    /// Sorting
-    /// </summary>
-    public Sorting<TodoListRecordDto> Sorting { get; set; } = new();
-
-    /// <summary>
-    /// Filter
-    /// </summary>
-    public TodoListRecordDtoFilter? Filter { get; set; }
+    [Required]
+    [FromBody]
+    public TodoListSearchRequestBody Body { get; set; } = null!;
 }

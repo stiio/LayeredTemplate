@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.Application.Contracts.Models;
-using LayeredTemplate.Domain.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.Application.Contracts.Requests;
 
@@ -11,16 +11,9 @@ namespace LayeredTemplate.Application.Contracts.Requests;
 public class TodoListCreateRequest : IRequest<TodoListDto>
 {
     /// <summary>
-    /// Name of TodoList
+    /// Body
     /// </summary>
-    /// <example>Example Name</example>
+    [FromBody]
     [Required]
-    [MaxLength(255)]
-    public string Name { get; set; } = null!;
-
-    /// <summary>
-    /// Type of TodoList
-    /// </summary>
-    [Required]
-    public TodoListType Type { get; set; }
+    public TodoListCreateRequestBody Body { get; set; } = null!;
 }

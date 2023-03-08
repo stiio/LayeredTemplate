@@ -37,7 +37,7 @@ public class TodoListController : AppControllerBase
     /// <param name="request">Request body</param>
     /// <returns></returns>
     [HttpPost("search")]
-    public async Task<ActionResult<TodoListSearchResponse>> SearchTodoList([Required] TodoListSearchRequest request)
+    public async Task<ActionResult<TodoListSearchResponse>> SearchTodoList([FromRoute] TodoListSearchRequest request)
     {
         return await this.sender.Send(request);
     }
@@ -48,7 +48,7 @@ public class TodoListController : AppControllerBase
     /// <param name="request">Request body</param>
     /// <returns>Return <see cref="TodoListDto"/></returns>
     [HttpPost]
-    public async Task<ActionResult<TodoListDto>> CreateTodoList([Required] TodoListCreateRequest request)
+    public async Task<ActionResult<TodoListDto>> CreateTodoList([FromRoute] TodoListCreateRequest request)
     {
         return await this.sender.Send(request);
     }
