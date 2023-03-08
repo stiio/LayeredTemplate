@@ -4,9 +4,9 @@
 [-ASPNETCORE_ENVIRONMENT=Staging | Production-]  
 
 ## Project settings
-For all new projects add to *.cs and remove duplicate props.
+For all new projects add to *.csproj and remove duplicate props.
 ```xml
-<Import Project="../common.targets" />
+ <Import Project="../common.targets" />
 ```
 
 ## Naming convensions
