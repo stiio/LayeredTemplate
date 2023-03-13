@@ -7,7 +7,9 @@ public interface IUserPoolService
 {
     Task<Guid> CreateUser(UserPoolCreateUserRequest request);
 
-    Task AddUserToGroup(Guid userId, Role role);
+    Task UpdateUserProperties(UserPoolUpdateUserRequest request);
 
-    Task RemoveUserFromGroup(Guid userId, Role role);
+    Task<bool> ExistsUser(Guid userId);
+
+    Task DeleteUser(Guid userId);
 }

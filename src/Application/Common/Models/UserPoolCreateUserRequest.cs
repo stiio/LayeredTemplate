@@ -1,8 +1,14 @@
-﻿namespace LayeredTemplate.Application.Common.Models;
+﻿using LayeredTemplate.Domain.Enums;
+
+namespace LayeredTemplate.Application.Common.Models;
 
 public class UserPoolCreateUserRequest
 {
     public string Email { get; set; } = null!;
+
+    public string Phone { get; set; } = null!;
+
+    public Role Role { get; set; }
 
     public bool NotSendEmail { get; set; }
 

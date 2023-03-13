@@ -1,4 +1,6 @@
-﻿using AutoMapper;
+﻿using System.Net;
+using AutoMapper;
+using LayeredTemplate.Application.Common.Exceptions;
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
@@ -11,17 +13,20 @@ namespace LayeredTemplate.Application.Handlers.Users;
 internal class CurrentUserGetHandler : IRequestHandler<CurrentUserGetRequest, CurrentUser>
 {
     private readonly ICurrentUserService currentUserService;
+    private readonly IUserPoolService userPoolService;
     private readonly IApplicationDbContext dbContext;
     private readonly IMapper mapper;
     private readonly IPublisher publisher;
 
     public CurrentUserGetHandler(
         ICurrentUserService currentUserService,
+        IUserPoolService userPoolService,
         IApplicationDbContext dbContext,
         IMapper mapper,
         IPublisher publisher)
     {
         this.currentUserService = currentUserService;
+        this.userPoolService = userPoolService;
         this.dbContext = dbContext;
         this.mapper = mapper;
         this.publisher = publisher;
@@ -32,6 +37,11 @@ internal class CurrentUserGetHandler : IRequestHandler<CurrentUserGetRequest, Cu
         var user = await this.dbContext.Users.FindAsync(this.currentUserService.UserId);
         if (user is null)
         {
+            if (!await this.userPoolService.ExistsUser(this.currentUserService.UserId))
+            {
+                throw new HttpStatusException("User does not exists.", HttpStatusCode.Unauthorized);
+            }
+
             user = new User()
             {
                 Id = this.currentUserService.UserId,
@@ -45,6 +55,23 @@ internal class CurrentUserGetHandler : IRequestHandler<CurrentUserGetRequest, Cu
             await this.publisher.Publish(new UserCreatedEvent(user.Id), cancellationToken);
         }
 
+        await this.UpdateChanges(user);
+
         return this.mapper.Map<CurrentUser>(user);
+    }
+
+    private async Task UpdateChanges(User user)
+    {
+        if (user.Id == this.currentUserService.UserId
+            && (user.Email != this.currentUserService.Email
+                || user.Phone != this.currentUserService.Phone
+                || user.Role != this.currentUserService.Role))
+        {
+            user.Email = this.currentUserService.Email;
+            user.Phone = this.currentUserService.Phone;
+            user.Role = this.currentUserService.Role;
+
+            await this.dbContext.SaveChangesAsync();
+        }
     }
 }
