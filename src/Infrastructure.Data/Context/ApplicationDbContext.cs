@@ -1,13 +1,16 @@
-﻿using System.Reflection;
+﻿using System.Data;
+using System.Reflection;
+using Dapper;
 using Humanizer;
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Domain.Exceptions;
-using LayeredTemplate.Infrastructure.Data.Interceptors;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
+using StackExchange.Profiling;
+using StackExchange.Profiling.Data;
 
 namespace LayeredTemplate.Infrastructure.Data.Context;
 
@@ -24,7 +27,7 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
 
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
-    public IDbContextTransaction? CurrentTransaction => this.Database.CurrentTransaction;
+    internal IDbConnection DbConnection => new ProfiledDbConnection(this.Database.GetDbConnection(), MiniProfiler.Current);
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
@@ -48,6 +51,36 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
         }
     }
 
+    public Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null)
+    {
+        return this.DbConnection.QueryAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+    }
+
+    public Task<T> QueryFirstOrDefaultAsync<T>(string sql, object? param = null)
+    {
+        return this.DbConnection.QueryFirstOrDefaultAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+    }
+
+    public async Task<T> QueryFirstAsync<T>(string sql, object? param = null)
+    {
+        return await this.DbConnection.QueryFirstAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+    }
+
+    public async Task<T> QuerySingleAsync<T>(string sql, object? param = null)
+    {
+        return await this.DbConnection.QuerySingleAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+    }
+
+    public async Task<int> ExecuteAsync(string sql, object? param = null)
+    {
+        return await this.DbConnection.ExecuteAsync(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+    }
+
+    public async Task<T> ExecuteScalarAsync<T>(string sql, object? param = null)
+    {
+        return await this.DbConnection.ExecuteScalarAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
@@ -65,12 +98,5 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
             .HaveMaxLength(255);
 
         base.ConfigureConventions(configurationBuilder);
-    }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.AddInterceptors(new BaseEntitySaveChangesInterceptor());
-
-        base.OnConfiguring(optionsBuilder);
     }
 }

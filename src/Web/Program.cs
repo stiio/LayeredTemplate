@@ -63,6 +63,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     services.ConfigureControllers();
     services.ConfigureSwagger();
+    services.ConfigureMiniProfiler();
 
     services.AddEndpointsApiExplorer();
     services.AddHttpClient();
@@ -77,6 +78,7 @@ void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env)
     {
         app.UseDeveloperExceptionPage();
         app.UseConfiguredSwagger(env);
+        app.UseMiniProfiler();
     }
 
     app.UseHttpsRedirection();

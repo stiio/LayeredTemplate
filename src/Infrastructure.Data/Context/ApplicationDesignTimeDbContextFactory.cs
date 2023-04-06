@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace LayeredTemplate.Infrastructure.Data.Context;
 
-internal class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
+internal class ApplicationDesignTimeDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
 {
     public ApplicationDbContext CreateDbContext(string[] args)
     {

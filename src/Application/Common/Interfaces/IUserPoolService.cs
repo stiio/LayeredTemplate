@@ -1,5 +1,4 @@
 ﻿using LayeredTemplate.Application.Common.Models;
-using LayeredTemplate.Domain.Enums;
 
 namespace LayeredTemplate.Application.Common.Interfaces;
 

@@ -53,6 +53,11 @@ internal static class QueryableExtensions
             .Take(pagination.Limit);
     }
 
+    public static string Page(this string query, PaginationRequest pagination)
+    {
+        return query += $"\nLIMIT {pagination.Limit} OFFSET {(pagination.Page - 1) * pagination.Limit}";
+    }
+
     public static IQueryable<T> Sort<T>(this IQueryable<T> query, Sorting sorting)
     {
         var keySelector = CreateKeySelector(typeof(T), sorting.Column);
@@ -65,6 +70,12 @@ internal static class QueryableExtensions
             Expression.Quote(keySelector));
 
         return query.Provider.CreateQuery<T>(orderBy);
+    }
+
+    public static string Sort(this string query, Sorting sorting)
+    {
+        var column = "\"" + sorting.Column.Replace("\"", "\"\"") + "\"";
+        return query += $"\nORDER BY {column} {sorting.Direction}";
     }
 
     public static async Task<PaginationResponse> ToPaginationResponse<T>(

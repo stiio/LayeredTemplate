@@ -4,13 +4,11 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace LayeredTemplate.Application.Common.Interfaces;
 
-public interface IApplicationDbContext
+public interface IApplicationDbContext : IApplicationDbConnection, IDisposable, IAsyncDisposable
 {
     DbSet<User> Users { get; }
 
     DbSet<TodoList> TodoLists { get; }
-
-    IDbContextTransaction? CurrentTransaction { get; }
 
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
 
