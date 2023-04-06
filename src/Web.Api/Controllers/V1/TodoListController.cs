@@ -85,7 +85,7 @@ public class TodoListController : AppControllerBase
     {
         await this.sender.Send(request);
 
-        return this.Response200();
+        return this.SuccessfulResult();
     }
 
     /// <summary>

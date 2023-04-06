@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Infrastructure.Data.Context;
-using LayeredTemplate.Infrastructure.Data.Interceptors;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,5 +23,8 @@ public static class ConfigureServices
         });
 
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+
+        services.AddDataProtection()
+            .PersistKeysToDbContext<ApplicationDbContext>();
     }
 }

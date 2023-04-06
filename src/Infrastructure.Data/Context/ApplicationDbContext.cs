@@ -4,13 +4,14 @@ using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Domain.Exceptions;
 using LayeredTemplate.Infrastructure.Data.Interceptors;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 
 namespace LayeredTemplate.Infrastructure.Data.Context;
 
-internal class ApplicationDbContext : DbContext, IApplicationDbContext
+internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApplicationDbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -20,6 +21,8 @@ internal class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<User> Users { get; set; } = null!;
 
     public DbSet<TodoList> TodoLists { get; set; } = null!;
+
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     public IDbContextTransaction? CurrentTransaction => this.Database.CurrentTransaction;
 

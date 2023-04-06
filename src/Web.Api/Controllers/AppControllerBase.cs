@@ -9,12 +9,12 @@ namespace LayeredTemplate.Web.Api.Controllers;
 public abstract class AppControllerBase : ControllerBase
 {
     /// <summary>
-    /// Response 200
+    /// Successful Result
     /// </summary>
     /// <param name="message">Message</param>
-    /// <returns>Return <see cref="SuccessfulResult"/></returns>
+    /// <returns>Return <see cref="Models.SuccessfulResult"/></returns>
     [NonAction]
-    public OkObjectResult Response200(string? message = "Successful operation.")
+    public OkObjectResult SuccessfulResult(string? message = "Successful operation.")
     {
         return this.Ok(new SuccessfulResult()
         {
@@ -23,12 +23,12 @@ public abstract class AppControllerBase : ControllerBase
     }
 
     /// <summary>
-    /// Response 400
+    /// Error Result
     /// </summary>
     /// <param name="message">Message</param>
-    /// <returns>Return <see cref="ErrorResult"/></returns>
+    /// <returns>Return <see cref="Models.ErrorResult"/></returns>
     [NonAction]
-    public BadRequestObjectResult Response400(string message = "Validation Error.")
+    public BadRequestObjectResult ErrorResult(string message = "Validation Error.")
     {
         return this.BadRequest(
             new ErrorResult()
