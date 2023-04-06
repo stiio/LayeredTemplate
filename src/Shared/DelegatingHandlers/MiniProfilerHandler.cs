@@ -24,7 +24,7 @@ public class MiniProfilerHandler : DelegatingHandler
             requestContent = $"\nRequest Body:\n{requestContent}";
         }
 
-        using var timing = MiniProfiler.Current?.CustomTiming("http", $"{request}{requestContent}");
+        using var timing = MiniProfiler.Current?.CustomTiming("http_client", $"{request}{requestContent}", request.Method.ToString());
 
         var response = await base.SendAsync(request, cancellationToken);
 
