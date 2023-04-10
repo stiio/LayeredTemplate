@@ -1,34 +1,64 @@
-﻿using FluentValidation;
+﻿using System.Linq.Expressions;
+using FluentValidation;
+using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.QueryableExtensions;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using PhoneNumbers;
 
 namespace LayeredTemplate.Application.Common.Extensions;
 
 public static class RuleBuilderExtensions
 {
-    public static IRuleBuilderOptions<T, string> NormalizedPhone<T>(this IRuleBuilder<T, string> ruleBuilder)
+    public static IRuleBuilderOptions<T, TKey> ExistsEntity<T, TKey, TEntity>(
+        this IRuleBuilder<T, TKey> ruleBuilder, IApplicationDbContext dbContext)
+        where TEntity : class
     {
-        return ruleBuilder
-            .Must((rootObject, src, context) =>
+        return ruleBuilder.MustAsync(async (request, entityId, context, stopToken) =>
             {
-                if (src == null)
+                if (entityId == null)
                 {
                     return true;
                 }
 
-                var phoneNumberUtil = PhoneNumberUtil.GetInstance();
+                context.MessageFormatter.AppendArgument("entityName", typeof(TEntity).Name);
+                context.MessageFormatter.AppendArgument("id", entityId);
 
-                PhoneNumber phone;
-                try
-                {
-                    phone = phoneNumberUtil.Parse(src, null);
-                }
-                catch
-                {
-                    return false;
-                }
+                var parameter = Expression.Parameter(typeof(TEntity), "x");
+                var targetPropertyExpression = Expression.Property(parameter, "Id");
+                var sourceValueExpression = Expression.Constant(entityId);
 
-                return phoneNumberUtil.IsValidNumber(phone);
+                var finalExpression = Expression.Equal(targetPropertyExpression, sourceValueExpression);
+                var lambda = Expression.Lambda<Func<TEntity, bool>>(finalExpression, parameter);
+
+                return await dbContext.Set<TEntity>().AnyAsync(lambda, stopToken);
             })
-            .WithMessage("'{PropertyName}' must be a phone in E164 format.");
+            .WithMessage("Entity '{entityName}' ({id}) was not found.");
+    }
+
+    public static IRuleBuilderOptions<T, TKey> RequireAccess<T, TKey, TEntity>(
+        this IRuleBuilder<T, TKey> ruleBuilder,
+        OperationAuthorizationRequirement requirement,
+        IApplicationDbContext dbContext,
+        IResourceAuthorizationService resourceAuthorizationService)
+        where TEntity : class
+    {
+        return ruleBuilder.MustAsync(async (request, entityId, context, stopToken) =>
+            {
+                if (entityId is null)
+                {
+                    return true;
+                }
+
+                var entity = await dbContext.Set<TEntity>().FindByIdOrDefault(entityId, stopToken);
+                if (entity is null)
+                {
+                    return true;
+                }
+
+                var authorizationService = await resourceAuthorizationService.Authorize(entity, requirement);
+                return authorizationService.Succeeded;
+            })
+            .WithMessage("Access denied.");
     }
 }

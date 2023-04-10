@@ -6,6 +6,16 @@
 	<Import Project="../common.targets" />
 
 	<ItemGroup>
+	  <None Remove="SqlScripts\quartz_tables_script_psql.sql" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Include="SqlScripts\quartz_tables_script_psql.sql">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
 	  <PackageReference Include="Quartz.Extensions.Hosting" Version="3.6.2" />
 	  <PackageReference Include="Quartz.Serialization.Json" Version="3.6.2" />
 	</ItemGroup>
@@ -17,12 +27,6 @@
 	<ItemGroup>
 	  <Folder Include="Jobs\" />
 	  <Folder Include="Services\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Update="SqlScripts\quartz_tables_script_psql.sql">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
 	</ItemGroup>
 
 </Project>

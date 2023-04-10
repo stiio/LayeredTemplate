@@ -19,7 +19,7 @@ namespace Infrastructure.Data.Migrations
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     friendly_name = table.Column<string>(type: "text", maxLength: 255, nullable: true),
-                    xml = table.Column<string>(type: "text", maxLength: 255, nullable: true)
+                    xml = table.Column<string>(type: "text", maxLength: 255, nullable: true),
                 },
                 constraints: table =>
                 {
@@ -36,7 +36,7 @@ namespace Infrastructure.Data.Migrations
                     phone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
                     role = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -52,7 +52,7 @@ namespace Infrastructure.Data.Migrations
                     name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     type = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                 },
                 constraints: table =>
                 {

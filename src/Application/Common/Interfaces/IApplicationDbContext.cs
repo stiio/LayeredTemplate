@@ -10,6 +10,9 @@ public interface IApplicationDbContext : IApplicationDbConnection, IDisposable, 
 
     DbSet<TodoList> TodoLists { get; }
 
+    DbSet<T> Set<T>()
+        where T : class;
+
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
