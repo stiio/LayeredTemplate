@@ -1,4 +1,5 @@
 ﻿{
   "npmName": "@npmClientName/api-docs",
-  "useSingleRequestParameter": false
+  "useSingleRequestParameter": false,
+  "prefixParameterInterfaces": true
 }

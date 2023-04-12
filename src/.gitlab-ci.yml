@@ -1,0 +1,60 @@
+stages:
+  - package-codegen
+  - package-deploy
+  
+  - deploy-aws-staging
+  - deploy-aws-ecs-staging
+
+package-codegen:
+  stage: package-codegen
+  image: openapitools/openapi-generator-cli:v6.5.0
+  only:
+    - package-release
+  artifacts:
+    paths:
+      - front/
+  script:
+    - /usr/local/bin/docker-entrypoint.sh generate -g typescript-fetch -i ./Web/specs/api_merged.yaml -o front -c ts-gen-config.json --global-property skipFormModel=false
+
+package-deploy:
+  stage: package-deploy
+  image: node:latest
+  only:
+    - package-release
+  dependencies:
+    - package-codegen
+  script:
+    - cd front
+    - npm install
+    - npm config set '//<BASE_GIT_HOST>/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken' "${CI_JOB_TOKEN}"
+    - npm config set '//<BASE_GIT_HOST>/api/v4/packages/npm/:_authToken' "${CI_JOB_TOKEN}"
+    - npm config set @npmClientName:registry https://<BASE_GIT_HOST>/api/v4/projects/${CI_PROJECT_ID}/packages/npm/
+    - npm run build
+    - npm publish
+
+
+
+
+deploy-aws-staging:
+  stage: deploy-aws-staging
+  image:
+    name: cappers/awscli-docker-nodejs    
+    entrypoint: [""]
+  only:
+    - staging
+  environment:
+    name: staging
+  script:
+    - docker build -t $AWS_REGISTRY$AWS_ECR_TAG -f Web/Dockerfile .
+    - docker login -u AWS -p $(aws ecr get-login-password --region $AWS_DEFAULT_REGION) $AWS_REGISTRY
+    - docker push $AWS_REGISTRY$AWS_ECR_TAG
+
+deploy-aws-ecs-staging:
+  stage: deploy-aws-ecs-staging
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+  only:
+    - staging
+  environment:
+    name: staging
+  script:
+    - aws ecs update-service --cluster $AWS_ECS_CLUSTER --service $AWS_ECS_SERVICE --force-new-deployment

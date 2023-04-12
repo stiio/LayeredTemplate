@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1D2C94EF-7195-4156-90B4-BCC8C467A0D8}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		.gitlab-ci.yml = .gitlab-ci.yml
 		common.targets = common.targets
 		env.example.json = env.example.json
 		README.md = README.md
@@ -34,7 +35,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Web.IntegrationTests", "Web
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{3C48C1E8-1250-4CEB-B469-D03D23724243}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Scheduler", "Infrastructure.Scheduler\Infrastructure.Scheduler.csproj", "{E4985C9D-9F10-47DE-8C89-AA70AF0C305C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure.Scheduler", "Infrastructure.Scheduler\Infrastructure.Scheduler.csproj", "{E4985C9D-9F10-47DE-8C89-AA70AF0C305C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
