@@ -15,7 +15,7 @@ public static class ConfigureServices
             options.SchedulerName = "Scheduler-Core";
             options.SchedulerId = "AUTO";
             options.UseMicrosoftDependencyInjectionJobFactory();
-            options.UseDedicatedThreadPool(1);
+            options.UseDefaultThreadPool(1);
 
             options.UsePersistentStore(x =>
             {
