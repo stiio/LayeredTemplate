@@ -12,6 +12,7 @@
   <ItemGroup>
     <Folder Include="Services\" />
     <Folder Include="AuthorizationHandlers\" />
+    <Folder Include="Workers\" />
   </ItemGroup>
 
   <ItemGroup>

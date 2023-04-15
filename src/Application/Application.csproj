@@ -25,7 +25,6 @@
     <Folder Include="Common\Behaviors\" />
     <Folder Include="Mapper\" />
     <Folder Include="Common\Extensions\" />
-    <Folder Include="Common\Models\" />
   </ItemGroup>
 
 </Project>

@@ -20,5 +20,7 @@ public static class ConfigureServices
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IUserPoolService, UserPoolService>();
+
+        services.AddSingleton<IQueueService, QueueServiceMemory>();
     }
 }
