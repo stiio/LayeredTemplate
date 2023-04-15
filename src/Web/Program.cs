@@ -1,3 +1,4 @@
+using Asp.Versioning.ApiExplorer;
 using LayeredTemplate.Application;
 using LayeredTemplate.Infrastructure;
 using LayeredTemplate.Infrastructure.Data.Extensions;
@@ -31,7 +32,7 @@ try
 
     var webApplication = builder.Build();
 
-    ConfigureMiddleware(webApplication, webApplication.Environment);
+    ConfigureMiddleware(webApplication, webApplication.Environment, webApplication.Services.GetRequiredService<IApiVersionDescriptionProvider>());
 
     ConfigureEndpoints(webApplication);
 
@@ -71,13 +72,13 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddHealthChecks();
 }
 
-void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env)
+void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env, IApiVersionDescriptionProvider apiVersionDescriptionProvider)
 {
     app.EnsureDbExists();
     if (env.IsDevelopment() || env.IsStaging())
     {
         app.UseDeveloperExceptionPage();
-        app.UseConfiguredSwagger(env);
+        app.UseConfiguredSwagger(env, apiVersionDescriptionProvider);
         app.UseMiniProfiler();
     }
 
@@ -112,9 +113,6 @@ void ConfigureSerilog(IHostBuilder host)
     });
 }
 
-namespace LayeredTemplate.Web
+public partial class Program
 {
-    public partial class Program
-    {
-    }
 }

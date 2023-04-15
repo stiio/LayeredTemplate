@@ -10,7 +10,7 @@ namespace LayeredTemplate.Web.Api.Controllers.V1;
 /// User Controller
 /// </summary>
 [ApiController]
-[Route("api/v1/users")]
+[Route("users")]
 [Authorize]
 public class UserController : AppControllerBase
 {
@@ -30,8 +30,8 @@ public class UserController : AppControllerBase
     /// </summary>
     /// <returns>Return <see cref="CurrentUser"/></returns>
     [HttpGet("current_user")]
-    public async Task<ActionResult<CurrentUser>> GetCurrentUser()
+    public Task<CurrentUser> GetCurrentUser()
     {
-        return await this.sender.Send(new CurrentUserGetRequest());
+        return this.sender.Send(new CurrentUserGetRequest());
     }
 }

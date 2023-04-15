@@ -1,4 +1,6 @@
 ﻿using System.Text.Json.Serialization;
+using Asp.Versioning;
+using Asp.Versioning.Conventions;
 using LayeredTemplate.Web.Conventions;
 using LayeredTemplate.Web.Converters;
 using LayeredTemplate.Web.Filters;
@@ -13,8 +15,10 @@ public static class ConfigureControllerExtensions
     {
         services.AddControllers(opts =>
             {
-                opts.Conventions.Add(new ApiExplorerGroupPerVersionConvention());
+                opts.Conventions.Add(new RoutePrefixConvention());
+
                 opts.Filters.Add<ApplicationExceptionFilter>();
+                opts.Filters.Add<DevelopmentOnlyFilter>();
             })
             .AddJsonOptions(options =>
             {
@@ -26,5 +30,21 @@ public static class ConfigureControllerExtensions
             .UseCustomValidationErrorResponses();
 
         services.AddJsonMultipartFormDataSupport(JsonSerializerChoice.SystemText);
+
+        services.AddApiVersioning(opts =>
+        {
+            opts.DefaultApiVersion = new ApiVersion(1);
+            opts.ApiVersionReader = new UrlSegmentApiVersionReader();
+            opts.ReportApiVersions = true;
+        }).AddMvc(opts =>
+        {
+            opts.Conventions.Add(new VersionByNamespaceConvention());
+        }).AddApiExplorer(opts =>
+        {
+            opts.GroupNameFormat = "'v'VVV";
+            opts.SubstituteApiVersionInUrl = true;
+            opts.DefaultApiVersion = new ApiVersion(1);
+            opts.SubstitutionFormat = "VVV";
+        });
     }
 }

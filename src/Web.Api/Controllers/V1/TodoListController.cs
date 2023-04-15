@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Net.Mime;
+﻿using System.Net.Mime;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
 using LayeredTemplate.Domain.Enums;
@@ -16,7 +15,7 @@ namespace LayeredTemplate.Web.Api.Controllers.V1;
 /// TodoListController
 /// </summary>
 [ApiController]
-[Route("api/v1/todo_lists")]
+[Route("todo_lists")]
 [RoleAuthorize(Role.Client, Role.Admin)]
 public class TodoListController : AppControllerBase
 {
@@ -37,9 +36,9 @@ public class TodoListController : AppControllerBase
     /// <param name="request">Request body</param>
     /// <returns></returns>
     [HttpPost("search")]
-    public async Task<ActionResult<TodoListSearchResponse>> SearchTodoList([FromRoute] TodoListSearchRequest request)
+    public Task<TodoListSearchResponse> SearchTodoList([FromRoute] TodoListSearchRequest request)
     {
-        return await this.sender.Send(request);
+        return this.sender.Send(request);
     }
 
     /// <summary>
@@ -48,9 +47,9 @@ public class TodoListController : AppControllerBase
     /// <param name="request">Request body</param>
     /// <returns>Return <see cref="TodoListDto"/></returns>
     [HttpPost]
-    public async Task<ActionResult<TodoListDto>> CreateTodoList([FromRoute] TodoListCreateRequest request)
+    public Task<TodoListDto> CreateTodoList([FromRoute] TodoListCreateRequest request)
     {
-        return await this.sender.Send(request);
+        return this.sender.Send(request);
     }
 
     /// <summary>
@@ -59,9 +58,9 @@ public class TodoListController : AppControllerBase
     /// <param name="request">Request body</param>
     /// <returns>Return <see cref="TodoListDto"/></returns>
     [HttpPut("{id}")]
-    public async Task<ActionResult<TodoListDto>> UpdateTodoList([FromRoute] TodoListUpdateRequest request)
+    public Task<TodoListDto> UpdateTodoList([FromRoute] TodoListUpdateRequest request)
     {
-        return await this.sender.Send(request);
+        return this.sender.Send(request);
     }
 
     /// <summary>
@@ -70,9 +69,9 @@ public class TodoListController : AppControllerBase
     /// <param name="request"></param>
     /// <returns>Return <see cref="TodoListDto"/></returns>
     [HttpGet("{id}")]
-    public async Task<ActionResult<TodoListDto>> GetTodoList([FromRoute] TodoListGetRequest request)
+    public Task<TodoListDto> GetTodoList([FromRoute] TodoListGetRequest request)
     {
-        return await this.sender.Send(request);
+        return this.sender.Send(request);
     }
 
     /// <summary>

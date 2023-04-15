@@ -8,6 +8,7 @@
   <Import Project="../common.targets" />
 
   <ItemGroup>
+	<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="6.4.0" />
 	<PackageReference Include="AutoBogus" Version="2.13.1" />
 	<PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />

@@ -8,8 +8,8 @@
   <Import Project="../common.targets" />
 
   <Target Name="OpenAPI" AfterTargets="Build" Condition="$(Configuration)=='Debug'">
-  	<Exec Command="dotnet tool restore" />
-  	<Exec Command="dotnet swagger tofile --output ./specs/api_merged.yaml --yaml $(OutputPath)$(AssemblyName).dll merged_api" WorkingDirectory="$(ProjectDir)" />
+	  <Exec Command="dotnet tool restore" />
+	  <Exec Command="dotnet swagger tofile --output ./specs/api_merged.yaml --yaml $(OutputPath)$(AssemblyName).dll merged_api" WorkingDirectory="$(ProjectDir)" />
   </Target>
 
   <ItemGroup>
@@ -35,8 +35,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\Development\" />
+    <Folder Include="Controllers\V1_dev\" />
     <Folder Include="specs\" />
+    <Folder Include="ConfigureOptions\" />
+    <Folder Include="Conventions\" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties properties_4launchsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>

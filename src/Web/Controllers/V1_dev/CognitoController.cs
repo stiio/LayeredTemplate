@@ -6,10 +6,10 @@ using LayeredTemplate.Web.Api.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace LayeredTemplate.Web.Controllers.Development;
+namespace LayeredTemplate.Web.Controllers.V1_dev;
 
 [ApiController]
-[Route("development/cognito")]
+[Route("cognito")]
 public class CognitoController : AppControllerBase
 {
     private readonly IAmazonCognitoIdentityProvider cognitoIdentityProvider;

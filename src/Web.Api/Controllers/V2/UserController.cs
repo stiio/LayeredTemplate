@@ -8,14 +8,17 @@ namespace LayeredTemplate.Web.Api.Controllers.V2;
 /// User Controller
 /// </summary>
 [ApiController]
-[Route("api/v2/users")]
+[Route("users")]
 [Authorize]
-public abstract class UserController : AppControllerBase
+public class UserController : AppControllerBase
 {
     /// <summary>
     /// Get Current User
     /// </summary>
     /// <returns>Return <see cref="CurrentUser"/></returns>
     [HttpGet("current_user")]
-    public abstract Task<ActionResult<CurrentUser>> GetCurrentUser();
+    public Task<CurrentUser> GetCurrentUser()
+    {
+        return Task.FromResult(new CurrentUser());
+    }
 }
