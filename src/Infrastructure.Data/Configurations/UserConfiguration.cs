@@ -14,5 +14,8 @@ internal class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.Role)
             .HasConversion<string>()
             .HasMaxLength(20);
+
+        builder.Property(user => user.SecurityStamp)
+            .HasMaxLength(32);
     }
 }

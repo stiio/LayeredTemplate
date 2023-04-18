@@ -15,6 +15,8 @@ public class User : IBaseAuditableEntity<Guid>
 
     public Role Role { get; set; }
 
+    public string? SecurityStamp { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

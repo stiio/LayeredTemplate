@@ -1,5 +1,7 @@
-﻿using LayeredTemplate.Application.Contracts.Models;
+﻿using System.ComponentModel.DataAnnotations;
+using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
+using LayeredTemplate.Web.Api.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,5 +35,29 @@ public class UserController : AppControllerBase
     public Task<CurrentUser> GetCurrentUser()
     {
         return this.sender.Send(new CurrentUserGetRequest());
+    }
+
+    /// <summary>
+    /// Send User Update Email Code
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    [HttpPost("email/send_code")]
+    public async Task<ActionResult<SuccessfulResult>> SendUserEmailCode([Required] UserEmailCodeSendRequest request)
+    {
+        await this.sender.Send(request);
+        return this.SuccessfulResult();
+    }
+
+    /// <summary>
+    /// Verify User Update Email Code
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    [HttpPut("email/verify_code")]
+    public async Task<ActionResult<SuccessfulResult>> VerifyUserEmailCode([Required] UserEmailCodeVerifyRequest request)
+    {
+        await this.sender.Send(request);
+        return this.SuccessfulResult();
     }
 }

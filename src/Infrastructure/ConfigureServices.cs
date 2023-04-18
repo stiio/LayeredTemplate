@@ -1,6 +1,7 @@
 ﻿using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Extensions;
+using LayeredTemplate.Infrastructure.Mocks.Services;
 using LayeredTemplate.Infrastructure.Services;
 using LayeredTemplate.Shared.Constants;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +20,25 @@ public static class ConfigureServices
         services.ConfigureAwsServices(configuration);
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddScoped<IUserPoolService, UserPoolService>();
+        services.AddScoped<IUserManager, UserManager>();
+
+        if (configuration.GetValue<bool>("USE_MOCK_AUTH"))
+        {
+            services.AddScoped<IUserPoolService, UserPoolServiceMock>();
+        }
+        else
+        {
+            services.AddScoped<IUserPoolService, UserPoolService>();
+        }
+
+        if (configuration.GetValue<bool>("MOCK_EMAIL_SENDER"))
+        {
+            services.AddScoped<IEmailSender, EmailSenderMock>();
+        }
+        else
+        {
+            services.AddScoped<IEmailSender, EmailSender>();
+        }
 
         services.AddSingleton<IQueueService, QueueServiceMemory>();
     }

@@ -10,12 +10,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Mocks\Services\" />
     <Folder Include="Services\" />
     <Folder Include="AuthorizationHandlers\" />
     <Folder Include="Workers\" />
+    <Folder Include="Utilities\" />
   </ItemGroup>
 
   <ItemGroup>
+	<PackageReference Include="MailKit" Version="4.0.0" />
 	<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.14" />
 	<PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="3.0.1" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.5" />

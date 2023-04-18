@@ -9,5 +9,6 @@ public static class ConfigureServices
     public static void RegisterSharedOptions(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<CognitoSettings>(configuration.GetSection(nameof(CognitoSettings)));
+        services.Configure<SmtpSettings>(configuration.GetSection(nameof(SmtpSettings)));
     }
 }

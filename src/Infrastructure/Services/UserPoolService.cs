@@ -142,11 +142,6 @@ internal class UserPoolService : IUserPoolService
     {
         try
         {
-            if (this.configuration.GetValue<bool>("USE_MOCK_AUTH"))
-            {
-                return true;
-            }
-
             var response = await this.cognitoIdentityProvider.AdminGetUserAsync(new AdminGetUserRequest()
             {
                 UserPoolId = this.cognitoSettings.UserPoolId,

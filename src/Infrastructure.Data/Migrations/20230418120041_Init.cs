@@ -35,6 +35,7 @@ namespace Infrastructure.Data.Migrations
                     email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     phone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
                     role = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    security_stamp = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                 },
