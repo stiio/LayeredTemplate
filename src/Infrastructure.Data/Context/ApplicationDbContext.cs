@@ -25,6 +25,8 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
 
     public DbSet<TodoList> TodoLists { get; set; } = null!;
 
+    public DbSet<AuditEvent> AuditEvents { get; set; } = null!;
+
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     internal IDbConnection DbConnection => new ProfiledDbConnection(this.Database.GetDbConnection(), MiniProfiler.Current);

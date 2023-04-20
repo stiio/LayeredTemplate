@@ -13,13 +13,29 @@ namespace Infrastructure.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "audit_events",
+                columns: table => new
+                {
+                    id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    event_type = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    data = table.Column<string>(type: "jsonb", maxLength: 255, nullable: true),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_audit_events", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "data_protection_keys",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     friendly_name = table.Column<string>(type: "text", maxLength: 255, nullable: true),
-                    xml = table.Column<string>(type: "text", maxLength: 255, nullable: true),
+                    xml = table.Column<string>(type: "text", maxLength: 255, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -37,7 +53,7 @@ namespace Infrastructure.Data.Migrations
                     role = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     security_stamp = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -53,7 +69,7 @@ namespace Infrastructure.Data.Migrations
                     name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     type = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -75,6 +91,9 @@ namespace Infrastructure.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "audit_events");
+
             migrationBuilder.DropTable(
                 name: "data_protection_keys");
 
