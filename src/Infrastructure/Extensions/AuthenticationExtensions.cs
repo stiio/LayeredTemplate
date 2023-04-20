@@ -1,6 +1,8 @@
-﻿using LayeredTemplate.Infrastructure.Mocks.Authentication;
+﻿using LayeredTemplate.Infrastructure.AuthenticationHandlers;
+using LayeredTemplate.Infrastructure.Mocks.Authentication;
 using LayeredTemplate.Shared.Constants;
 using LayeredTemplate.Shared.Options;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,7 +18,7 @@ internal static class AuthenticationExtensions
         if (useMockAuth)
         {
             services.AddAuthentication(AppAuthenticationSchemes.User)
-                .AddScheme<MockAuthAuthenticationOptions, MockAuthHandler>(MockAuthAuthenticationOptions.DefaultScheme, _ => { });
+                .AddScheme<AuthenticationSchemeOptions, MockAuthHandler>(AppAuthenticationSchemes.User, _ => { });
         }
         else
         {
@@ -29,5 +31,8 @@ internal static class AuthenticationExtensions
                     options.TokenValidationParameters.AuthenticationType = AppAuthenticationTypes.User;
                 });
         }
+
+        services.AddAuthentication()
+            .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(AppAuthenticationSchemes.ApiKey, _ => { });
     }
 }

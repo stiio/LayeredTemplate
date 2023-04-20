@@ -14,6 +14,9 @@ public class RoleAuthorize : AuthorizeAttribute
     /// <param name="roles"></param>
     public RoleAuthorize(params Role[] roles)
     {
-        this.Roles = string.Join(", ", roles);
+        if (roles.Any())
+        {
+            this.Roles = string.Join(", ", roles);
+        }
     }
 }

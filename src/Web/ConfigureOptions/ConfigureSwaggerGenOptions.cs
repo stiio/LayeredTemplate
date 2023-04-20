@@ -59,7 +59,7 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
                 ? $"{methodInfo.Name}{apiDesc.GroupName!.ToUpper()}"
                 : null);
 
-        options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme()
+        options.AddSecurityDefinition(AppAuthenticationSchemes.User, new OpenApiSecurityScheme()
         {
             Name = AppAuthenticationSchemes.User,
             BearerFormat = "JWT",
@@ -67,6 +67,14 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
             Description = "Specify the authorization token.",
             In = ParameterLocation.Header,
             Type = SecuritySchemeType.Http,
+        });
+
+        options.AddSecurityDefinition(AppAuthenticationSchemes.ApiKey, new OpenApiSecurityScheme()
+        {
+            Name = "X-Api-Key",
+            Description = "Specify the api key.",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.ApiKey,
         });
 
         options.OperationFilter<AuthOperationFilter>();

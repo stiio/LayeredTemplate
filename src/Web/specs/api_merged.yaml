@@ -3,6 +3,34 @@ info:
   title: Merged Api
   version: 1.0.1
 paths:
+  /api/v1/example/auth_type:
+    get:
+      tags:
+        - Example
+      summary: Get Auth Type
+      operationId: GetAuthTypeV1
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
+        - ApiKey: [ ]
   /api/v1/todo_lists/search:
     post:
       tags:
@@ -782,3 +810,8 @@ components:
       description: Specify the authorization token.
       scheme: Bearer
       bearerFormat: JWT
+    ApiKey:
+      type: apiKey
+      description: Specify the api key.
+      name: X-Api-Key
+      in: header

@@ -7,13 +7,13 @@ using Microsoft.Extensions.Options;
 
 namespace LayeredTemplate.Infrastructure.Mocks.Authentication;
 
-internal class MockAuthHandler : AuthenticationHandler<MockAuthAuthenticationOptions>
+internal class MockAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     private readonly MockUserSettings mockUser;
 
     public MockAuthHandler(
         IOptions<MockUserSettings> mockUserOptions,
-        IOptionsMonitor<MockAuthAuthenticationOptions> options,
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
         ISystemClock clock)
@@ -24,6 +24,17 @@ internal class MockAuthHandler : AuthenticationHandler<MockAuthAuthenticationOpt
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        if (!this.Request.Headers.ContainsKey("Authorization"))
+        {
+            return Task.FromResult(AuthenticateResult.Fail("Unauthorized"));
+        }
+
+        var authorizationHeader = this.Request.Headers["Authorization"].FirstOrDefault();
+        if (string.IsNullOrEmpty(authorizationHeader))
+        {
+            return Task.FromResult(AuthenticateResult.Fail("Unauthorized"));
+        }
+
         var claims = new[]
         {
             new Claim(TokenKeys.UserId, this.mockUser.Id!),
@@ -32,9 +43,9 @@ internal class MockAuthHandler : AuthenticationHandler<MockAuthAuthenticationOpt
             new Claim(TokenKeys.Phone, this.mockUser.Phone ?? string.Empty),
         };
 
-        var identity = new ClaimsIdentity(claims, this.Options.AuthenticationType);
+        var identity = new ClaimsIdentity(claims, AppAuthenticationTypes.User);
         var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, this.Options.Scheme);
+        var ticket = new AuthenticationTicket(principal, AppAuthenticationSchemes.User);
 
         var result = AuthenticateResult.Success(ticket);
 

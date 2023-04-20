@@ -14,7 +14,6 @@ public class TestSchemeProvider : AuthenticationSchemeProvider
     protected TestSchemeProvider(IOptions<AuthenticationOptions> options, IDictionary<string, AuthenticationScheme> schemes)
         : base(options, schemes)
     {
-
     }
 
     public override Task<AuthenticationScheme?> GetSchemeAsync(string name)

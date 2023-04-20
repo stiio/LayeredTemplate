@@ -2,7 +2,7 @@
 using System.Text.Json;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Infrastructure.Mocks.Authentication;
-using LayeredTemplate.Web.IntegrationTests.TestAuthHandler;
+using LayeredTemplate.Shared.Constants;
 
 namespace LayeredTemplate.Web.IntegrationTests.Utils;
 
@@ -17,6 +17,6 @@ public static class TestAuthUtils
             Role = user.Role.ToString(),
         };
 
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(TestAuthAuthenticationOptions.DefaultScheme, JsonSerializer.Serialize(mockUser));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AppAuthenticationSchemes.User, JsonSerializer.Serialize(mockUser));
     }
 }
