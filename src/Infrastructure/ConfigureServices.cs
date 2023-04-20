@@ -22,7 +22,7 @@ public static class ConfigureServices
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IUserManager, UserManager>();
 
-        if (configuration.GetValue<bool>("USE_MOCK_AUTH"))
+        if (configuration.GetValue<bool>("MOCK_USER_POOL"))
         {
             services.AddScoped<IUserPoolService, UserPoolServiceMock>();
         }

@@ -1,6 +1,6 @@
 ﻿namespace LayeredTemplate.Shared.Constants;
 
-public class AppAuthenticationTypes
+public static class AppAuthenticationTypes
 {
-    public const string Jwt = nameof(Jwt);
+    public const string User = nameof(User);
 }

@@ -18,7 +18,7 @@ internal class AppClaimTransformation : IClaimsTransformation
     {
         switch (principal.Identity?.AuthenticationType)
         {
-            case AppAuthenticationTypes.Jwt:
+            case AppAuthenticationTypes.User:
             {
                 var role = principal.FindFirstValue(TokenKeys.Role);
                 if (!string.IsNullOrEmpty(role) && principal.Claims.All(claim => claim.Type != ClaimTypes.Role))

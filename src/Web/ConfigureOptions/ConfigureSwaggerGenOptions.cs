@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Text;
 using Asp.Versioning.ApiExplorer;
+using LayeredTemplate.Shared.Constants;
 using LayeredTemplate.Web.Api.Controllers;
 using LayeredTemplate.Web.OpenApiFilters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -60,9 +61,9 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
 
         options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme()
         {
-            Name = "Bearer",
+            Name = AppAuthenticationSchemes.User,
             BearerFormat = "JWT",
-            Scheme = "bearer",
+            Scheme = AppAuthenticationSchemes.User,
             Description = "Specify the authorization token.",
             In = ParameterLocation.Header,
             Type = SecuritySchemeType.Http,

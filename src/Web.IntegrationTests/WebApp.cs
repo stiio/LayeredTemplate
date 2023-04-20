@@ -8,6 +8,7 @@ using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Data.Context;
 using LayeredTemplate.Web.IntegrationTests.TestAuthHandler;
 using LayeredTemplate.Web.IntegrationTests.Utils;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -72,8 +73,10 @@ public class WebApp : WebApplicationFactory<Program>, IAsyncLifetime
             services.RegisterDbContext(this.postgreSqlTestContainer.ConnectionString);
 
             // --
-            services.AddAuthentication(TestAuthAuthenticationOptions.DefaultScheme)
+            services.AddAuthentication()
                 .AddScheme<TestAuthAuthenticationOptions, TestAuthHandler.TestAuthHandler>(TestAuthAuthenticationOptions.DefaultScheme, _ => { });
+
+            services.AddTransient<IAuthenticationSchemeProvider, TestSchemeProvider>();
 
             DataSeeder.SeedData(services);
         });

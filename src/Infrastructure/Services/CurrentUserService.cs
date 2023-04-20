@@ -20,8 +20,7 @@ internal class CurrentUserService : ICurrentUserService
 
     public string? Phone => this.httpContextAccessor.HttpContext!.User!.FindFirst(TokenKeys.Phone)?.Value;
 
-    public bool IsAuthenticate => this.httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true
-                                  && this.httpContextAccessor.HttpContext?.User.Identity?.AuthenticationType == AppAuthenticationTypes.Jwt;
+    public bool IsAuthenticate => this.httpContextAccessor.HttpContext?.User.Identity is { IsAuthenticated: true, AuthenticationType: AppAuthenticationTypes.User };
 
     public Role Role => this.GetRole();
 

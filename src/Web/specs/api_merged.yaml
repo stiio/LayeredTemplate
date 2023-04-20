@@ -326,6 +326,106 @@ paths:
           description: Forbidden
       security:
         - Bearer: [ ]
+  /api/v1/users/email/send_code:
+    post:
+      tags:
+        - User
+      summary: Send User Update Email Code
+      operationId: SendUserEmailCodeV1
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeSendRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeSendRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeSendRequest'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
+  /api/v1/users/email/verify_code:
+    put:
+      tags:
+        - User
+      summary: Verify User Update Email Code
+      operationId: VerifyUserEmailCodeV1
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
   /api/v2/users/current_user:
     get:
       tags:
@@ -629,6 +729,40 @@ components:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
       description: TodoList Update Request Body
+    UserEmailCodeSendRequest:
+      required:
+        - email
+      type: object
+      properties:
+        email:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Email
+          format: email
+          example: example@email.com
+      additionalProperties: false
+      description: User Email Code Send Request
+    UserEmailCodeVerifyRequest:
+      required:
+        - code
+        - email
+      type: object
+      properties:
+        email:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Email
+          format: email
+          example: example@email.com
+        code:
+          type: integer
+          description: Code
+          format: int32
+          example: 124567
+      additionalProperties: false
+      description: User Email Code Verify Request
     UserShortInfo:
       type: object
       properties:
@@ -646,5 +780,5 @@ components:
     Bearer:
       type: http
       description: Specify the authorization token.
-      scheme: bearer
+      scheme: Bearer
       bearerFormat: JWT

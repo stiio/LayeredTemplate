@@ -5,9 +5,9 @@ namespace LayeredTemplate.Infrastructure.Mocks.Authentication;
 
 internal class MockAuthAuthenticationOptions : AuthenticationSchemeOptions
 {
-    public const string DefaultScheme = "MockAuth";
+    public const string DefaultScheme = AppAuthenticationSchemes.User;
 
     public string Scheme => DefaultScheme;
 
-    public string AuthenticationType => AppAuthenticationTypes.Jwt;
+    public string AuthenticationType => AppAuthenticationTypes.User;
 }
