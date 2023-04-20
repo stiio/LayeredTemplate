@@ -17,6 +17,7 @@
 
 	<ItemGroup>
 		<InternalsVisibleTo Include="Web.IntegrationTests" />
+		<InternalsVisibleTo Include="FunctionalTests" />
 	</ItemGroup>
 
 </Project>

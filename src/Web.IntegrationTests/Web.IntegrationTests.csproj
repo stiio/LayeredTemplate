@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsPackable>false</IsPackable>
+	  <IsPackable>false</IsPackable>
+	  <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <Import Project="../common.targets" />

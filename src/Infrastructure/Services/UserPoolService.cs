@@ -4,7 +4,6 @@ using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Common.Models;
 using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Shared.Options;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PasswordGenerator;
@@ -15,18 +14,15 @@ internal class UserPoolService : IUserPoolService
 {
     private readonly IAmazonCognitoIdentityProvider cognitoIdentityProvider;
     private readonly CognitoSettings cognitoSettings;
-    private readonly IConfiguration configuration;
     private readonly ILogger<UserPoolService> logger;
 
     public UserPoolService(
         IAmazonCognitoIdentityProvider cognitoIdentityProvider,
         IOptions<CognitoSettings> cognitoSettings,
-        IConfiguration configuration,
         ILogger<UserPoolService> logger)
     {
         this.cognitoIdentityProvider = cognitoIdentityProvider;
         this.cognitoSettings = cognitoSettings.Value;
-        this.configuration = configuration;
         this.logger = logger;
     }
 
