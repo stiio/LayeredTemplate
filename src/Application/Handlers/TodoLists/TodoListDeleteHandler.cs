@@ -1,41 +1,24 @@
-﻿using LayeredTemplate.Application.Common.Exceptions;
-using LayeredTemplate.Application.Common.Interfaces;
+﻿using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Contracts.Requests;
-using LayeredTemplate.Domain.Entities;
-using LayeredTemplate.Shared.Constants;
+using LayeredTemplate.Application.QueryableExtensions;
 using MediatR;
 
 namespace LayeredTemplate.Application.Handlers.TodoLists;
 
 internal class TodoListDeleteHandler : IRequestHandler<TodoListDeleteRequest>
 {
-    private readonly IApplicationDbContext dbContext;
-    private readonly IResourceAuthorizationService resourceAuthorizationService;
+    private readonly IApplicationDbContext context;
 
-    public TodoListDeleteHandler(
-        IApplicationDbContext dbContext,
-        IResourceAuthorizationService resourceAuthorizationService)
+    public TodoListDeleteHandler(IApplicationDbContext context)
     {
-        this.dbContext = dbContext;
-        this.resourceAuthorizationService = resourceAuthorizationService;
+        this.context = context;
     }
 
     public async Task<Unit> Handle(TodoListDeleteRequest request, CancellationToken cancellationToken)
     {
-        var todoList = await this.dbContext.TodoLists.FindAsync(request.Id);
-        if (todoList is null)
-        {
-            throw new AppNotFoundException(nameof(TodoList), request.Id);
-        }
-
-        var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.Delete);
-        if (!authorizationResult.Succeeded)
-        {
-            throw new AccessDeniedException();
-        }
-
-        this.dbContext.TodoLists.Remove(todoList);
-        await this.dbContext.SaveChangesAsync(cancellationToken);
+        var todoList = await this.context.TodoLists.FindById(request.Id, cancellationToken);
+        this.context.TodoLists.Remove(todoList);
+        await this.context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

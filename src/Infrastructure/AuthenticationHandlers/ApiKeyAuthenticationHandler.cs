@@ -26,7 +26,7 @@ internal class ApiKeyAuthenticationHandler : AuthenticationHandler<Authenticatio
     {
         if (this.Request.Headers.ContainsKey(HeaderNames.Authorization))
         {
-            return AuthenticateResult.Fail("OAuth token already provided");
+            return AuthenticateResult.NoResult();
         }
 
         if (!this.Request.Headers.ContainsKey(ApiKeyHeaderName))
@@ -47,7 +47,7 @@ internal class ApiKeyAuthenticationHandler : AuthenticationHandler<Authenticatio
         catch (Exception e)
         {
             this.Logger.LogError(e, "Validate api key exception.");
-            return AuthenticateResult.Fail(e.Message);
+            return AuthenticateResult.Fail("Validate api key exception");
         }
     }
 

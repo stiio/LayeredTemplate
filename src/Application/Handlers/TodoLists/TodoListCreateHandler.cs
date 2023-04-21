@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
+using LayeredTemplate.Application.QueryableExtensions;
 using LayeredTemplate.Domain.Entities;
 using MediatR;
 
@@ -10,16 +12,16 @@ namespace LayeredTemplate.Application.Handlers.TodoLists;
 internal class TodoListCreateHandler : IRequestHandler<TodoListCreateRequest, TodoListDto>
 {
     private readonly ICurrentUserService currentUserService;
-    private readonly IApplicationDbContext dbsContext;
+    private readonly IApplicationDbContext context;
     private readonly IMapper mapper;
 
     public TodoListCreateHandler(
         ICurrentUserService currentUserService,
-        IApplicationDbContext dbsContext,
+        IApplicationDbContext context,
         IMapper mapper)
     {
         this.currentUserService = currentUserService;
-        this.dbsContext = dbsContext;
+        this.context = context;
         this.mapper = mapper;
     }
 
@@ -32,9 +34,11 @@ internal class TodoListCreateHandler : IRequestHandler<TodoListCreateRequest, To
             Type = request.Body.Type,
         };
 
-        await this.dbsContext.TodoLists.AddAsync(todoList, cancellationToken);
-        await this.dbsContext.SaveChangesAsync(cancellationToken);
+        await this.context.TodoLists.AddAsync(todoList, cancellationToken);
+        await this.context.SaveChangesAsync(cancellationToken);
 
-        return this.mapper.Map<TodoListDto>(todoList);
+        return await this.context.TodoLists
+            .ProjectTo<TodoListDto>(this.mapper.ConfigurationProvider)
+            .FindById(todoList.Id, cancellationToken);
     }
 }

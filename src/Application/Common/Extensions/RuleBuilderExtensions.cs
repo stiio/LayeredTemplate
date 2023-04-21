@@ -4,14 +4,13 @@ using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.QueryableExtensions;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using PhoneNumbers;
 
 namespace LayeredTemplate.Application.Common.Extensions;
 
 public static class RuleBuilderExtensions
 {
-    public static IRuleBuilderOptions<T, TKey> ExistsEntity<T, TKey, TEntity>(
-        this IRuleBuilder<T, TKey> ruleBuilder, IApplicationDbContext dbContext)
+    public static IRuleBuilderOptions<TRequest, TKey> ExistsEntity<TRequest, TKey, TEntity>(
+        this IRuleBuilder<TRequest, TKey> ruleBuilder, IApplicationDbContext dbContext)
         where TEntity : class
     {
         return ruleBuilder.MustAsync(async (request, entityId, context, stopToken) =>
@@ -36,8 +35,8 @@ public static class RuleBuilderExtensions
             .WithMessage("Entity '{entityName}' ({id}) was not found.");
     }
 
-    public static IRuleBuilderOptions<T, TKey> RequireAccess<T, TKey, TEntity>(
-        this IRuleBuilder<T, TKey> ruleBuilder,
+    public static IRuleBuilderOptions<TRequest, TKey> RequireAccess<TRequest, TKey, TEntity>(
+        this IRuleBuilder<TRequest, TKey> ruleBuilder,
         OperationAuthorizationRequirement requirement,
         IApplicationDbContext dbContext,
         IResourceAuthorizationService resourceAuthorizationService)

@@ -1,4 +1,6 @@
-﻿using LayeredTemplate.Application.Common.Interfaces;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
 using LayeredTemplate.Application.QueryableExtensions;
@@ -9,22 +11,25 @@ namespace LayeredTemplate.Application.Handlers.TodoLists;
 
 internal class TodoListSearchHandler : IRequestHandler<TodoListSearchRequest, TodoListSearchResponse>
 {
-    private readonly IApplicationDbContext dbsContext;
+    private readonly IApplicationDbContext context;
     private readonly ICurrentUserService currentUserService;
+    private readonly IMapper mapper;
 
     public TodoListSearchHandler(
-        IApplicationDbContext dbsContext,
-        ICurrentUserService currentUserService)
+        IApplicationDbContext context,
+        ICurrentUserService currentUserService,
+        IMapper mapper)
     {
-        this.dbsContext = dbsContext;
+        this.context = context;
         this.currentUserService = currentUserService;
+        this.mapper = mapper;
     }
 
     public async Task<TodoListSearchResponse> Handle(TodoListSearchRequest request, CancellationToken cancellationToken)
     {
-        var query = this.dbsContext.TodoLists
+        var query = this.context.TodoLists
             .ForUser(this.currentUserService.UserId)
-            .MapTodoListRecordDto()
+            .ProjectTo<TodoListRecordDto>(this.mapper.ConfigurationProvider)
             .ApplyFilter(request.Body.Filter)
             .Sort(request.Body.Sorting);
 

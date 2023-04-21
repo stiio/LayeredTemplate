@@ -1,52 +1,45 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using LayeredTemplate.Application.Common.Exceptions;
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
 using LayeredTemplate.Application.QueryableExtensions;
 using LayeredTemplate.Domain.Entities;
-using LayeredTemplate.Shared.Constants;
 using MediatR;
 
 namespace LayeredTemplate.Application.Handlers.TodoLists;
 
 internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, TodoListDto>
 {
-    private readonly IApplicationDbContext dbContext;
-    private readonly IResourceAuthorizationService resourceAuthorizationService;
+    private readonly IApplicationDbContext context;
     private readonly IMapper mapper;
 
     public TodoListUpdateHandler(
-        IApplicationDbContext dbContext,
-        IResourceAuthorizationService resourceAuthorizationService,
+        IApplicationDbContext context,
         IMapper mapper)
     {
-        this.dbContext = dbContext;
-        this.resourceAuthorizationService = resourceAuthorizationService;
+        this.context = context;
         this.mapper = mapper;
     }
 
     public async Task<TodoListDto> Handle(TodoListUpdateRequest request, CancellationToken cancellationToken)
     {
-        await using var transaction = await this.dbContext.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await this.context.BeginTransactionAsync(cancellationToken);
 
-        var todoList = await this.dbContext.TodoLists.SelectForUpdate(request.Id);
+        var todoList = await this.context.TodoLists.SelectForUpdate(request.Id);
         if (todoList is null)
         {
             throw new AppNotFoundException(nameof(TodoList), request.Id);
         }
 
-        var authorizationResult = await this.resourceAuthorizationService.Authorize(todoList, Operations.Update);
-        if (!authorizationResult.Succeeded)
-        {
-            throw new AccessDeniedException();
-        }
-
         this.mapper.Map(request.Body, todoList);
 
-        await this.dbContext.SaveChangesAsync(cancellationToken);
+        await this.context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return this.mapper.Map<TodoListDto>(todoList);
+        return await this.context.TodoLists
+            .ProjectTo<TodoListDto>(this.mapper.ConfigurationProvider)
+            .FindById(request.Id, cancellationToken);
     }
 }
