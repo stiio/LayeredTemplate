@@ -1,5 +1,7 @@
 ﻿using System.Security.Claims;
+using LayeredTemplate.Infrastructure.Extensions;
 using LayeredTemplate.Shared.Constants;
+using LayeredTemplate.Shared.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 
@@ -20,17 +22,26 @@ internal class AppClaimTransformation : IClaimsTransformation
         {
             case AppAuthenticationTypes.User:
             {
-                var role = principal.FindFirstValue(TokenKeys.Role);
-                if (!string.IsNullOrEmpty(role) && principal.Claims.All(claim => claim.Type != ClaimTypes.Role))
-                {
-                    var roleClaim = new Claim[]
-                    {
-                        new Claim(ClaimTypes.Role, role),
-                    };
+                var targetIdentity = principal.Identities.First(x => x.AuthenticationType == principal.Identity?.AuthenticationType);
+                var claims = new List<Claim>();
+                claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.UserId, AppClaims.UserId));
+                claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.Email, AppClaims.Email));
+                claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.Phone, AppClaims.Phone));
+                claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.Role, AppClaims.Role));
+                claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.EmailVerified, AppClaims.EmailVerified));
+                claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.PhoneNumberVerified, AppClaims.PhoneNumberVerified));
+                claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.NameKey, AppClaims.NameKey));
+                claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.FirstNameKey, AppClaims.FirstNameKey));
+                claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.LastNameKey, AppClaims.LastNameKey));
 
-                    principal.AddIdentity(new ClaimsIdentity(roleClaim));
-                }
+                var identity = new ClaimsIdentity(claims, principal.Identity.AuthenticationType);
+                var result = new ClaimsPrincipal(identity);
 
+                return Task.FromResult(result);
+            }
+
+            case AppAuthenticationTypes.ApiKey:
+            {
                 return Task.FromResult(principal);
             }
 

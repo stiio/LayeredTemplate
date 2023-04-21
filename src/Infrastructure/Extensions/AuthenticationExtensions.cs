@@ -18,7 +18,8 @@ internal static class AuthenticationExtensions
         if (useMockAuth)
         {
             services.AddAuthentication(AppAuthenticationSchemes.User)
-                .AddScheme<AuthenticationSchemeOptions, MockAuthHandler>(AppAuthenticationSchemes.User, _ => { });
+                .AddScheme<AuthenticationSchemeOptions, MockAuthHandler>(AppAuthenticationSchemes.User, _ => { })
+                .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(AppAuthenticationSchemes.ApiKey, _ => { });
         }
         else
         {
@@ -29,10 +30,8 @@ internal static class AuthenticationExtensions
                     options.Authority = $"https://cognito-idp.{configuration["AWS_REGION"]}.amazonaws.com/{cognitoSettings.UserPoolId}";
                     options.Audience = cognitoSettings.Audience;
                     options.TokenValidationParameters.AuthenticationType = AppAuthenticationTypes.User;
-                });
+                })
+                .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(AppAuthenticationSchemes.ApiKey, _ => { });
         }
-
-        services.AddAuthentication()
-            .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(AppAuthenticationSchemes.ApiKey, _ => { });
     }
 }

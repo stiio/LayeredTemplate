@@ -5,6 +5,7 @@ using LayeredTemplate.Shared.Constants;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Net.Http.Headers;
 
 namespace LayeredTemplate.Infrastructure.AuthenticationHandlers;
 
@@ -23,20 +24,20 @@ internal class ApiKeyAuthenticationHandler : AuthenticationHandler<Authenticatio
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        if (this.Request.Headers.ContainsKey(HeaderNames.Authorization))
+        {
+            return AuthenticateResult.Fail("OAuth token already provided");
+        }
+
         if (!this.Request.Headers.ContainsKey(ApiKeyHeaderName))
         {
-            return AuthenticateResult.Fail("Unauthorized");
+            return AuthenticateResult.Fail($"Header {ApiKeyHeaderName} not provided");
         }
 
         var apiKey = this.Request.Headers[ApiKeyHeaderName].FirstOrDefault();
         if (string.IsNullOrEmpty(apiKey))
         {
-            return AuthenticateResult.Fail("Unauthorized");
-        }
-
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            return AuthenticateResult.Fail("Unauthorized");
+            return AuthenticateResult.Fail("Api key not provided");
         }
 
         try
@@ -55,9 +56,8 @@ internal class ApiKeyAuthenticationHandler : AuthenticationHandler<Authenticatio
         // TODO: Add validate api key
         var claims = new List<Claim>
         {
-            new Claim(TokenKeys.UserId, "D87F1AD8-7F86-4FDD-B721-F69B05226DB4"),
-            new Claim(TokenKeys.Role, Role.Client.ToString()),
-            new Claim(ClaimTypes.Role, Role.Client.ToString()),
+            new Claim(AppClaims.UserId, "D87F1AD8-7F86-4FDD-B721-F69B05226DB4"),
+            new Claim(AppClaims.Role, Role.Client.ToString()),
         };
 
         var identity = new ClaimsIdentity(claims, AppAuthenticationTypes.ApiKey);

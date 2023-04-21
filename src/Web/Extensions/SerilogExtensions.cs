@@ -21,8 +21,8 @@ public static class SerilogExtensions
                         "User",
                         new
                         {
-                            UserId = httpContext.User.FindFirstValue(TokenKeys.UserId),
-                            Role = httpContext.User.FindFirstValue(TokenKeys.Role),
+                            UserId = httpContext.User.FindFirstValue(AppClaims.UserId),
+                            Role = httpContext.User.FindFirstValue(AppClaims.Role),
                         },
                         true);
                 }
