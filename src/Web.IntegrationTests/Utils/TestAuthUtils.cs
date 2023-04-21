@@ -17,6 +17,6 @@ public static class TestAuthUtils
             Role = user.Role.ToString(),
         };
 
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AppAuthenticationSchemes.User, JsonSerializer.Serialize(mockUser));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AppAuthenticationSchemes.OAuth, JsonSerializer.Serialize(mockUser));
     }
 }

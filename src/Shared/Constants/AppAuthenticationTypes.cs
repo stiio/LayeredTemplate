@@ -2,7 +2,7 @@
 
 public static class AppAuthenticationTypes
 {
-    public const string User = nameof(User);
+    public const string OAuth = "OAuth";
 
-    public const string ApiKey = nameof(ApiKey);
+    public const string ApiKey = "Api Key";
 }

@@ -29,8 +29,8 @@ paths:
         '403':
           description: Forbidden
       security:
-        - Bearer: [ ]
-        - ApiKey: [ ]
+        - OAuth: [ ]
+        - Api Key: [ ]
   /api/v1/todo_lists/search:
     post:
       tags:
@@ -80,7 +80,7 @@ paths:
         '403':
           description: Forbidden
       security:
-        - Bearer: [ ]
+        - OAuth: [ ]
   /api/v1/todo_lists:
     post:
       tags:
@@ -130,7 +130,7 @@ paths:
         '403':
           description: Forbidden
       security:
-        - Bearer: [ ]
+        - OAuth: [ ]
   '/api/v1/todo_lists/{id}':
     put:
       tags:
@@ -188,7 +188,7 @@ paths:
         '403':
           description: Forbidden
       security:
-        - Bearer: [ ]
+        - OAuth: [ ]
     get:
       tags:
         - TodoList
@@ -232,7 +232,7 @@ paths:
         '403':
           description: Forbidden
       security:
-        - Bearer: [ ]
+        - OAuth: [ ]
     delete:
       tags:
         - TodoList
@@ -276,7 +276,7 @@ paths:
         '403':
           description: Forbidden
       security:
-        - Bearer: [ ]
+        - OAuth: [ ]
   '/api/v1/todo_lists/{id}/csv':
     get:
       tags:
@@ -316,7 +316,7 @@ paths:
         '403':
           description: Forbidden
       security:
-        - Bearer: [ ]
+        - OAuth: [ ]
   /api/v1/users/current_user:
     get:
       tags:
@@ -353,7 +353,7 @@ paths:
         '403':
           description: Forbidden
       security:
-        - Bearer: [ ]
+        - OAuth: [ ]
   /api/v1/users/email/send_code:
     post:
       tags:
@@ -403,7 +403,7 @@ paths:
         '403':
           description: Forbidden
       security:
-        - Bearer: [ ]
+        - OAuth: [ ]
   /api/v1/users/email/verify_code:
     put:
       tags:
@@ -453,7 +453,7 @@ paths:
         '403':
           description: Forbidden
       security:
-        - Bearer: [ ]
+        - OAuth: [ ]
   /api/v2/users/current_user:
     get:
       tags:
@@ -490,7 +490,7 @@ paths:
         '403':
           description: Forbidden
       security:
-        - Bearer: [ ]
+        - OAuth: [ ]
 components:
   schemas:
     CurrentUser:
@@ -805,12 +805,12 @@ components:
       additionalProperties: false
       description: User Short Info
   securitySchemes:
-    Bearer:
+    OAuth:
       type: http
       description: Specify the authorization token.
       scheme: Bearer
       bearerFormat: JWT
-    ApiKey:
+    Api Key:
       type: apiKey
       description: Specify the api key.
       name: X-Api-Key

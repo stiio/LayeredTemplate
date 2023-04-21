@@ -20,7 +20,7 @@ internal class AppClaimTransformation : IClaimsTransformation
     {
         switch (principal.Identity?.AuthenticationType)
         {
-            case AppAuthenticationTypes.User:
+            case AppAuthenticationTypes.OAuth:
             {
                 var targetIdentity = principal.Identities.First(x => x.AuthenticationType == principal.Identity?.AuthenticationType);
                 var claims = new List<Claim>();

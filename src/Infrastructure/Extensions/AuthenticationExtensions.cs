@@ -17,19 +17,19 @@ internal static class AuthenticationExtensions
         var useMockAuth = configuration.GetValue<bool>("USE_MOCK_AUTH");
         if (useMockAuth)
         {
-            services.AddAuthentication(AppAuthenticationSchemes.User)
-                .AddScheme<AuthenticationSchemeOptions, MockAuthHandler>(AppAuthenticationSchemes.User, _ => { })
+            services.AddAuthentication(AppAuthenticationSchemes.OAuth)
+                .AddScheme<AuthenticationSchemeOptions, MockAuthHandler>(AppAuthenticationSchemes.OAuth, _ => { })
                 .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(AppAuthenticationSchemes.ApiKey, _ => { });
         }
         else
         {
             var cognitoSettings = configuration.GetSection(nameof(CognitoSettings)).Get<CognitoSettings>()!;
-            services.AddAuthentication(AppAuthenticationSchemes.User)
+            services.AddAuthentication(AppAuthenticationSchemes.OAuth)
                 .AddJwtBearer(options =>
                 {
                     options.Authority = $"https://cognito-idp.{configuration["AWS_REGION"]}.amazonaws.com/{cognitoSettings.UserPoolId}";
                     options.Audience = cognitoSettings.Audience;
-                    options.TokenValidationParameters.AuthenticationType = AppAuthenticationTypes.User;
+                    options.TokenValidationParameters.AuthenticationType = AppAuthenticationTypes.OAuth;
                 })
                 .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(AppAuthenticationSchemes.ApiKey, _ => { });
         }

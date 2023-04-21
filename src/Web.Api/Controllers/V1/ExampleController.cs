@@ -10,7 +10,7 @@ namespace LayeredTemplate.Web.Api.Controllers.V1;
 /// </summary>
 [ApiController]
 [Route("example")]
-[RoleAuthorize(Role.Client, AuthenticationSchemes = $"{AppAuthenticationSchemes.User},{AppAuthenticationSchemes.ApiKey}")]
+[RoleAuthorize(Role.Client, AuthenticationSchemes = $"{AppAuthenticationSchemes.OAuth},{AppAuthenticationSchemes.ApiKey}")]
 public class ExampleController : AppControllerBase
 {
     /// <summary>

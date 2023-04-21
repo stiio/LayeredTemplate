@@ -18,7 +18,7 @@ public class TestSchemeProvider : AuthenticationSchemeProvider
 
     public override Task<AuthenticationScheme?> GetSchemeAsync(string name)
     {
-        if (name == AppAuthenticationSchemes.User)
+        if (name == AppAuthenticationSchemes.OAuth)
         {
             return base.GetSchemeAsync("TestAuth");
         }
