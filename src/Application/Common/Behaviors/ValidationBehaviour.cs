@@ -5,7 +5,7 @@ using MediatR;
 namespace LayeredTemplate.Application.Common.Behaviors;
 
 internal class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+    where TRequest : notnull
 {
     private readonly IEnumerable<IValidator<TRequest>> validators;
 
@@ -16,25 +16,27 @@ internal class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TReq
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        if (this.validators.Any())
+        if (!this.validators.Any())
         {
-            var validationResults = await Task.WhenAll(
-                this.validators.Select(v =>
-                    v.ValidateAsync(request, cancellationToken)));
-
-            var errors = validationResults
-                .Where(r => r.Errors.Any())
-                .SelectMany(r => r.Errors)
-                .Select(error => error.ErrorMessage)
-                .ToArray();
-
-            if (errors.Any())
-            {
-                var exceptionMessage = string.Join("\n", errors);
-                throw new HttpStatusException(exceptionMessage);
-            }
+            return await next();
         }
 
-        return await next();
+        var validationResults = await Task.WhenAll(
+            this.validators.Select(v =>
+                v.ValidateAsync(request, cancellationToken)));
+
+        var errors = validationResults
+            .Where(r => r.Errors.Any())
+            .SelectMany(r => r.Errors)
+            .Select(error => error.ErrorMessage)
+            .ToArray();
+
+        if (!errors.Any())
+        {
+            return await next();
+        }
+
+        var exceptionMessage = string.Join("\n", errors);
+        throw new HttpStatusException(exceptionMessage);
     }
 }

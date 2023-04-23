@@ -14,12 +14,10 @@ internal class TodoListDeleteHandler : IRequestHandler<TodoListDeleteRequest>
         this.context = context;
     }
 
-    public async Task<Unit> Handle(TodoListDeleteRequest request, CancellationToken cancellationToken)
+    public async Task Handle(TodoListDeleteRequest request, CancellationToken cancellationToken)
     {
         var todoList = await this.context.TodoLists.FindById(request.Id, cancellationToken);
         this.context.TodoLists.Remove(todoList);
         await this.context.SaveChangesAsync(cancellationToken);
-
-        return Unit.Value;
     }
 }

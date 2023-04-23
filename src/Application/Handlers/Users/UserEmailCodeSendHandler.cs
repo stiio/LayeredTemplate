@@ -26,7 +26,7 @@ internal class UserEmailCodeSendHandler : IRequestHandler<UserEmailCodeSendReque
         this.emailSender = emailSender;
     }
 
-    public async Task<Unit> Handle(UserEmailCodeSendRequest request, CancellationToken cancellationToken)
+    public async Task Handle(UserEmailCodeSendRequest request, CancellationToken cancellationToken)
     {
         var user = await this.dbContext.Users.FindByIdOrDefault(this.currentUserService.UserId, cancellationToken);
         if (user == null)
@@ -36,7 +36,5 @@ internal class UserEmailCodeSendHandler : IRequestHandler<UserEmailCodeSendReque
 
         var code = await this.userManager.GenerateChangeEmailCode(user, request.Email);
         await this.emailSender.SendEmail(request.Email, "Change Email", code.ToString());
-
-        return Unit.Value;
     }
 }

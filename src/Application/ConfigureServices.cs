@@ -15,8 +15,10 @@ public static class ConfigureServices
 
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly(), includeInternalTypes: true);
-        services.AddMediatR(Assembly.GetExecutingAssembly());
-
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
+        services.AddMediatR(opts =>
+        {
+            opts.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+            opts.AddOpenBehavior(typeof(ValidationBehaviour<,>));
+        });
     }
 }

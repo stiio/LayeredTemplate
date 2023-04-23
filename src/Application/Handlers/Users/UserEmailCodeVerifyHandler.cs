@@ -27,7 +27,7 @@ internal class UserEmailCodeVerifyHandler : IRequestHandler<UserEmailCodeVerifyR
         this.userPoolService = userPoolService;
     }
 
-    public async Task<Unit> Handle(UserEmailCodeVerifyRequest request, CancellationToken cancellationToken)
+    public async Task Handle(UserEmailCodeVerifyRequest request, CancellationToken cancellationToken)
     {
         var user = await this.dbContext.Users.FindByIdOrDefault(this.currentUserService.UserId, cancellationToken);
         if (user == null)
@@ -53,7 +53,5 @@ internal class UserEmailCodeVerifyHandler : IRequestHandler<UserEmailCodeVerifyR
         await this.dbContext.SaveChangesAsync(cancellationToken);
 
         await this.userManager.UpdateSecurityStamp(user);
-
-        return Unit.Value;
     }
 }
