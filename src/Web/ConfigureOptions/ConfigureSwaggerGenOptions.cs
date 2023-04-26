@@ -45,6 +45,24 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
             };
         });
 
+        options.CustomSchemaIds(type =>
+        {
+            var typeName = type.Name;
+            if (!type.GetTypeInfo().IsGenericType)
+            {
+                return typeName;
+            }
+
+            var genericArgumentIds = type.GetGenericArguments()
+                .Select(t => t.Name)
+                .ToArray();
+
+            return new StringBuilder(typeName)
+                .Replace($"`{genericArgumentIds.Count()}", string.Empty)
+                .Append($"{string.Join(string.Empty, genericArgumentIds)}")
+                .ToString();
+        });
+
         options.DescribeAllParametersInCamelCase();
 
         options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Web.Api.xml"));

@@ -603,6 +603,27 @@ components:
         - Admin
         - Client
       type: string
+    SortingTodoListRecordDto:
+      required:
+        - column
+        - direction
+      type: object
+      properties:
+        column:
+          minLength: 1
+          enum:
+            - Id
+            - UserId
+            - User.Email
+            - Name
+            - Type
+            - CreatedAt
+          type: string
+          description: Name of field for sort
+        direction:
+          $ref: '#/components/schemas/DirectionType'
+      additionalProperties: false
+      description: Sorting
     SuccessfulResult:
       type: object
       properties:
@@ -685,34 +706,13 @@ components:
           nullable: true
       additionalProperties: false
       description: TodoListRecordDtoFilter
-    TodoListRecordDtoSorting:
-      required:
-        - column
-        - direction
-      type: object
-      properties:
-        column:
-          minLength: 1
-          enum:
-            - Id
-            - UserId
-            - User.Email
-            - Name
-            - Type
-            - CreatedAt
-          type: string
-          description: Name of field for sort
-        direction:
-          $ref: '#/components/schemas/DirectionType'
-      additionalProperties: false
-      description: Sorting
     TodoListSearchRequestBody:
       type: object
       properties:
         pagination:
           $ref: '#/components/schemas/PaginationRequest'
         sorting:
-          $ref: '#/components/schemas/TodoListRecordDtoSorting'
+          $ref: '#/components/schemas/SortingTodoListRecordDto'
         filter:
           $ref: '#/components/schemas/TodoListRecordDtoFilter'
       additionalProperties: false
@@ -727,7 +727,7 @@ components:
         pagination:
           $ref: '#/components/schemas/PaginationResponse'
         sorting:
-          $ref: '#/components/schemas/TodoListRecordDtoSorting'
+          $ref: '#/components/schemas/SortingTodoListRecordDto'
         filter:
           $ref: '#/components/schemas/TodoListRecordDtoFilter'
         data:
