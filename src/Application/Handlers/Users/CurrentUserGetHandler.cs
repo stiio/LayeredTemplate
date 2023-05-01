@@ -55,23 +55,19 @@ internal class CurrentUserGetHandler : IRequestHandler<CurrentUserGetRequest, Cu
             await this.publisher.Publish(new UserCreatedEvent(user.Id), cancellationToken);
         }
 
-        await this.UpdateChanges(user);
+        this.ThrowUnauthorizedIfAttributesNotMatch(user);
 
         return this.mapper.Map<CurrentUser>(user);
     }
 
-    private async Task UpdateChanges(User user)
+    private void ThrowUnauthorizedIfAttributesNotMatch(User user)
     {
         if (user.Id == this.currentUserService.UserId
             && (user.Email != this.currentUserService.Email
                 || user.Phone != this.currentUserService.Phone
                 || user.Role != this.currentUserService.Role))
         {
-            user.Email = this.currentUserService.Email;
-            user.Phone = this.currentUserService.Phone;
-            user.Role = this.currentUserService.Role;
-
-            await this.dbContext.SaveChangesAsync();
+            throw new HttpStatusException("Attributes in token and database do not match.", HttpStatusCode.Unauthorized);
         }
     }
 }
