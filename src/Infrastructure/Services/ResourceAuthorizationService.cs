@@ -1,5 +1,4 @@
-﻿using LayeredTemplate.Application.Common.Exceptions;
-using LayeredTemplate.Application.Common.Interfaces;
+﻿using LayeredTemplate.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;

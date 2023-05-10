@@ -10,23 +10,6 @@ internal static class TodoListExtensions
         return query.Where(todoList => todoList.UserId == userId);
     }
 
-    public static IQueryable<TodoListRecordDto> MapTodoListRecordDto(this IQueryable<TodoList> query)
-    {
-        return query.Select(todoList => new TodoListRecordDto()
-        {
-            Id = todoList.Id,
-            UserId = todoList.UserId,
-            User = new UserShortInfo()
-            {
-                Id = todoList.User!.Id,
-                Email = todoList.User.Email,
-            },
-            Name = todoList.Name,
-            Type = todoList.Type,
-            CreatedAt = todoList.CreatedAt,
-        });
-    }
-
     public static IQueryable<TodoListRecordDto> ApplyFilter(this IQueryable<TodoListRecordDto> query, TodoListRecordDtoFilter? filter)
     {
         if (filter == null)

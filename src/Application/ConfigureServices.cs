@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using FluentValidation;
 using LayeredTemplate.Application.Common.Behaviors;
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

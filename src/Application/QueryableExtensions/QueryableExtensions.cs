@@ -46,14 +46,14 @@ internal static class QueryableExtensions
             .FirstOrDefaultAsync();
     }
 
-    public static IQueryable<T> Page<T>(this IQueryable<T> query, PaginationRequest pagination, CancellationToken cancellationToken = default)
+    public static IQueryable<T> Page<T>(this IQueryable<T> query, PaginationRequest pagination)
     {
         return query
             .Skip((pagination.Page - 1) * pagination.Limit)
             .Take(pagination.Limit);
     }
 
-    public static string Page(this string query, PaginationRequest pagination)
+    public static string PageSql(this string query, PaginationRequest pagination)
     {
         return query += $"\nLIMIT {pagination.Limit} OFFSET {(pagination.Page - 1) * pagination.Limit}";
     }
@@ -72,7 +72,7 @@ internal static class QueryableExtensions
         return query.Provider.CreateQuery<T>(orderBy);
     }
 
-    public static string Sort(this string query, Sorting sorting)
+    public static string SortSql(this string query, Sorting sorting)
     {
         var column = "\"" + sorting.Column.Replace("\"", "\"\"") + "\"";
         return query += $"\nORDER BY {column} {sorting.Direction}";
