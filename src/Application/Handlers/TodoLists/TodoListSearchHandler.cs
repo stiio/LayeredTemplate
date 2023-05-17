@@ -39,7 +39,7 @@ internal class TodoListSearchHandler : IRequestHandler<TodoListSearchRequest, To
             Pagination = await query.ToPaginationResponse(request.Body.Pagination, cancellationToken),
             Sorting = request.Body.Sorting,
             Data = await query
-                .Page(request.Body.Pagination, cancellationToken)
+                .Page(request.Body.Pagination)
                 .ToArrayAsync(cancellationToken),
         };
     }

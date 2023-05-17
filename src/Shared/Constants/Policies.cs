@@ -8,6 +8,6 @@ public static class Policies
 
     public static AuthorizationPolicy ExamplePolicy => new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
-        .RequireClaim(AppClaims.Role, Roles.Admin)
+        .RequireClaim(AppClaims.Role, "Admin")
         .Build();
 }

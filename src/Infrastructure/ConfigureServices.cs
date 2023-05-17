@@ -39,7 +39,5 @@ public static class ConfigureServices
         {
             services.AddScoped<IEmailSender, EmailSender>();
         }
-
-        services.AddSingleton<IQueueService, QueueServiceMemory>();
     }
 }

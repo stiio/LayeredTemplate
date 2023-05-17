@@ -5,8 +5,6 @@ namespace LayeredTemplate.Web.Extensions;
 
 public static class SwaggerExtensions
 {
-    private static readonly string[] Versions = { "v1", "v2", "development", "merged_api" };
-
     public static void ConfigureSwagger(this IServiceCollection services)
     {
         services.AddSwaggerGen();

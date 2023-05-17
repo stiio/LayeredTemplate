@@ -2,7 +2,6 @@
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Infrastructure.Data.Context;
 using LayeredTemplate.Infrastructure.Data.Interceptors;
-using LayeredTemplate.Infrastructure.Data.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,11 +25,8 @@ public static class ConfigureServices
             options.AddInterceptors(new BaseEntitySaveChangesInterceptor());
         });
 
-        services.AddDbContextFactory<ApplicationDbContext>();
-
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IApplicationDbConnection>(provider => provider.GetRequiredService<ApplicationDbContext>());
-        services.AddScoped<IApplicationDbContextFactory, ApplicationDbContextFactory>();
 
         services.AddDataProtection()
             .PersistKeysToDbContext<ApplicationDbContext>();

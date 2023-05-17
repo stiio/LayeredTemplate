@@ -58,7 +58,7 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
                 .ToArray();
 
             return new StringBuilder(typeName)
-                .Replace($"`{genericArgumentIds.Count()}", string.Empty)
+                .Replace($"`{genericArgumentIds.Length}", string.Empty)
                 .Append($"{string.Join(string.Empty, genericArgumentIds)}")
                 .ToString();
         });
