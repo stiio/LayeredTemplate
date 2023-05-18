@@ -12,7 +12,7 @@ public static class TokenKeys
 
     public const string EmailVerified = "email_verified";
 
-    public const string PhoneNumberVerified = "phone_number_verified";
+    public const string PhoneVerified = "phone_number_verified";
 
     public const string NameKey = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
 

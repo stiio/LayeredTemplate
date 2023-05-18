@@ -14,11 +14,11 @@ public static class AppClaims
 
     public const string EmailVerified = "email_verified";
 
-    public const string PhoneNumberVerified = "phone_number_verified";
+    public const string PhoneVerified = "phone_verified";
 
-    public const string NameKey = ClaimTypes.Name;
+    public const string Name = ClaimTypes.Name;
 
-    public const string FirstNameKey = ClaimTypes.GivenName;
+    public const string FirstName = ClaimTypes.GivenName;
 
-    public const string LastNameKey = ClaimTypes.Surname;
+    public const string LastName = ClaimTypes.Surname;
 }

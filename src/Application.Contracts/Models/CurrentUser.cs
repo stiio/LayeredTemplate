@@ -19,15 +19,31 @@ public class CurrentUser
     public string? Email { get; set; }
 
     /// <summary>
+    /// Email Verified
+    /// </summary>
+    public bool EmailVerified { get; set; }
+
+    /// <summary>
     /// Phone of user
     /// </summary>
     public string? Phone { get; set; }
 
     /// <summary>
-    /// Name of user
+    /// Phone Verified
     /// </summary>
-    /// <example>John Doe</example>
-    public string? Name { get; set; }
+    public bool PhoneVerified { get; set; }
+
+    /// <summary>
+    /// First Name of user
+    /// </summary>
+    /// <example>John</example>
+    public string? FirstName { get; set; }
+
+    /// <summary>
+    /// Last Name of user
+    /// </summary>
+    /// <example>Doe</example>
+    public string? LastName { get; set; }
 
     /// <summary>
     /// Role of user

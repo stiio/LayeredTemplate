@@ -1,4 +1,5 @@
-﻿using LayeredTemplate.Application.Common.Interfaces;
+﻿using System.Security.Claims;
+using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Shared.Constants;
 using Microsoft.AspNetCore.Http;
@@ -16,9 +17,19 @@ internal class CurrentUserService : ICurrentUserService
 
     public Guid UserId => new(this.httpContextAccessor.HttpContext!.User!.FindFirst(AppClaims.UserId)!.Value);
 
-    public string? Email => this.httpContextAccessor.HttpContext!.User!.FindFirst(AppClaims.Email)?.Value;
+    public string Email => this.httpContextAccessor.HttpContext!.User!.FindFirst(AppClaims.Email)!.Value;
+
+    public bool EmailVerified => this.httpContextAccessor.HttpContext!.User!.FindFirstValue(AppClaims.EmailVerified) == "true";
 
     public string? Phone => this.httpContextAccessor.HttpContext!.User!.FindFirst(AppClaims.Phone)?.Value;
+
+    public bool PhoneVerified => this.httpContextAccessor.HttpContext!.User!.FindFirstValue(AppClaims.PhoneVerified) == "true";
+
+    public string? FirstName => this.httpContextAccessor.HttpContext!.User!.FindFirstValue(AppClaims.FirstName);
+
+    public string? LastName => this.httpContextAccessor.HttpContext!.User!.FindFirstValue(AppClaims.LastName);
+
+    public string? Name => this.httpContextAccessor.HttpContext!.User!.FindFirstValue(AppClaims.Name);
 
     public Role Role => this.GetRole();
 

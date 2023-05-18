@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230518080336_Init")]
+    [Migration("20230518085132_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -108,19 +108,33 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnName("created_at");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("email");
 
-                    b.Property<string>("Name")
+                    b.Property<bool>("EmailVerified")
+                        .HasColumnType("boolean")
+                        .HasColumnName("email_verified");
+
+                    b.Property<string>("FirstName")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
-                        .HasColumnName("name");
+                        .HasColumnName("first_name");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("last_name");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("phone");
+
+                    b.Property<bool>("PhoneVerified")
+                        .HasColumnType("boolean")
+                        .HasColumnName("phone_verified");
 
                     b.Property<string>("Role")
                         .IsRequired()

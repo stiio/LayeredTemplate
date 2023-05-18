@@ -43,7 +43,12 @@ internal class CurrentUserGetHandler : IRequestHandler<CurrentUserGetRequest, Cu
             {
                 Id = this.currentUserService.UserId,
                 Email = this.currentUserService.Email,
+                EmailVerified = this.currentUserService.EmailVerified,
+                Phone = this.currentUserService.Phone,
+                PhoneVerified = this.currentUserService.PhoneVerified,
                 Role = this.currentUserService.Role,
+                FirstName = this.currentUserService.FirstName,
+                LastName = this.currentUserService.LastName,
             };
 
             await this.dbContext.Users.AddAsync(user, cancellationToken);

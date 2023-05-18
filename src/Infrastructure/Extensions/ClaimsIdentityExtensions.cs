@@ -12,4 +12,14 @@ internal static class ClaimsIdentityExtensions
             ? new Claim(newClaimType, value)
             : null;
     }
+
+    public static Claim? CreateClaimIfNotNull(this string? value, string claimType)
+    {
+        if (value != null)
+        {
+            return new Claim(claimType, value);
+        }
+
+        return null;
+    }
 }
