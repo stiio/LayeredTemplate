@@ -22,14 +22,14 @@ public class AuthOperationFilter : IOperationFilter
             operation.Responses.Add("403", new OpenApiResponse { Description = "Forbidden" });
 
             operation.Security = new List<OpenApiSecurityRequirement>();
-            if (authAttributes.Any(x => x.AuthenticationSchemes == null || x.AuthenticationSchemes.Contains(AppAuthenticationSchemes.OAuth)))
+            if (authAttributes.Any(x => x.AuthenticationSchemes == null || x.AuthenticationSchemes.Contains(AppAuthenticationSchemes.Bearer)))
             {
                 operation.Security.Add(new()
                 {
                     {
                         new OpenApiSecurityScheme
                         {
-                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = AppAuthenticationTypes.OAuth },
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = AppAuthenticationSchemes.Bearer },
                         },
                         System.Array.Empty<string>()
                     },
@@ -43,7 +43,7 @@ public class AuthOperationFilter : IOperationFilter
                     {
                         new OpenApiSecurityScheme
                         {
-                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = AppAuthenticationTypes.ApiKey },
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = AppAuthenticationSchemes.ApiKey },
                         },
                         System.Array.Empty<string>()
                     },

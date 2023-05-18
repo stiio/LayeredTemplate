@@ -9,5 +9,5 @@ public class TestAuthAuthenticationOptions : AuthenticationSchemeOptions
 
     public string Scheme => DefaultScheme;
 
-    public string AuthenticationType => AppAuthenticationTypes.OAuth;
+    public string AuthenticationType => AppAuthenticationSchemes.Bearer;
 }

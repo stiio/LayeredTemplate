@@ -60,7 +60,7 @@ internal class ApiKeyAuthenticationHandler : AuthenticationHandler<Authenticatio
             new Claim(AppClaims.Role, Role.Client.ToString()),
         };
 
-        var identity = new ClaimsIdentity(claims, AppAuthenticationTypes.ApiKey);
+        var identity = new ClaimsIdentity(claims, AppAuthenticationSchemes.ApiKey);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, this.Scheme.Name);
         return Task.FromResult(AuthenticateResult.Success(ticket));

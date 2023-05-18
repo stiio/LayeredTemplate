@@ -20,7 +20,7 @@ internal class AppClaimTransformation : IClaimsTransformation
     {
         switch (principal.Identity?.AuthenticationType)
         {
-            case AppAuthenticationTypes.OAuth:
+            case AppAuthenticationSchemes.Bearer:
             {
                 var targetIdentity = principal.Identities.First(x => x.AuthenticationType == principal.Identity?.AuthenticationType);
                 var claims = new List<Claim>();
@@ -40,7 +40,7 @@ internal class AppClaimTransformation : IClaimsTransformation
                 return Task.FromResult(result);
             }
 
-            case AppAuthenticationTypes.ApiKey:
+            case AppAuthenticationSchemes.ApiKey:
             {
                 return Task.FromResult(principal);
             }

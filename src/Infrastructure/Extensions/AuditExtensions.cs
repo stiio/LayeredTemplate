@@ -40,7 +40,7 @@ public static class AuditExtensions
 
         Audit.Core.Configuration.AddOnCreatedAction((scope) =>
         {
-            if (httpContextAccessor.HttpContext?.User.Identity?.AuthenticationType != AppAuthenticationTypes.ApiKey)
+            if (httpContextAccessor.HttpContext?.User.Identity?.AuthenticationType != AppAuthenticationSchemes.ApiKey)
             {
                 scope.Discard();
             }
@@ -50,7 +50,7 @@ public static class AuditExtensions
 
         app.Use(async (context, next) =>
         {
-            if (context.User?.Identity?.AuthenticationType == AppAuthenticationTypes.ApiKey)
+            if (context.User?.Identity?.AuthenticationType == AppAuthenticationSchemes.ApiKey)
             {
                 context.Request.EnableBuffering();
                 await next();

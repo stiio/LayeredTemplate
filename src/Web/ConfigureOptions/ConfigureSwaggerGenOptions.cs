@@ -77,17 +77,17 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
                 ? $"{methodInfo.Name}{apiDesc.GroupName!.ToUpper()}"
                 : null);
 
-        options.AddSecurityDefinition(AppAuthenticationTypes.OAuth, new OpenApiSecurityScheme()
+        options.AddSecurityDefinition(AppAuthenticationSchemes.Bearer, new OpenApiSecurityScheme()
         {
-            Name = AppAuthenticationSchemes.OAuth,
+            Name = AppAuthenticationSchemes.Bearer,
             BearerFormat = "JWT",
-            Scheme = AppAuthenticationSchemes.OAuth,
+            Scheme = AppAuthenticationSchemes.Bearer,
             Description = "Specify the authorization token.",
             In = ParameterLocation.Header,
             Type = SecuritySchemeType.Http,
         });
 
-        options.AddSecurityDefinition(AppAuthenticationTypes.ApiKey, new OpenApiSecurityScheme()
+        options.AddSecurityDefinition(AppAuthenticationSchemes.ApiKey, new OpenApiSecurityScheme()
         {
             Name = "X-Api-Key",
             Description = "Specify the api key.",

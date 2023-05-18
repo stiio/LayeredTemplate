@@ -43,9 +43,9 @@ internal class MockAuthHandler : AuthenticationHandler<AuthenticationSchemeOptio
             new Claim(TokenKeys.Phone, this.mockUser.Phone ?? string.Empty),
         };
 
-        var identity = new ClaimsIdentity(claims, AppAuthenticationTypes.OAuth);
+        var identity = new ClaimsIdentity(claims, AppAuthenticationSchemes.Bearer);
         var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, AppAuthenticationSchemes.OAuth);
+        var ticket = new AuthenticationTicket(principal, AppAuthenticationSchemes.Bearer);
 
         var result = AuthenticateResult.Success(ticket);
 

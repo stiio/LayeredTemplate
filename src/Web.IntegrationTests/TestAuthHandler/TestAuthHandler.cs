@@ -29,12 +29,12 @@ public class TestAuthHandler : AuthenticationHandler<TestAuthAuthenticationOptio
             return Task.FromResult(AuthenticateResult.Fail("Token not provided"));
         }
 
-        if (!token.StartsWith(AppAuthenticationSchemes.OAuth))
+        if (!token.StartsWith(AppAuthenticationSchemes.Bearer))
         {
             return Task.FromResult(AuthenticateResult.Fail("Invalid scheme"));
         }
 
-        token = token.Replace($"{AppAuthenticationSchemes.OAuth} ", string.Empty);
+        token = token.Replace($"{AppAuthenticationSchemes.Bearer} ", string.Empty);
 
         var mockUser = JsonSerializer.Deserialize<MockUserSettings>(token!)!;
 
@@ -46,7 +46,7 @@ public class TestAuthHandler : AuthenticationHandler<TestAuthAuthenticationOptio
             new Claim(TokenKeys.Phone, mockUser.Phone ?? string.Empty),
         };
 
-        var identity = new ClaimsIdentity(claims, AppAuthenticationTypes.OAuth);
+        var identity = new ClaimsIdentity(claims, AppAuthenticationSchemes.Bearer);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, this.Options.Scheme);
 
