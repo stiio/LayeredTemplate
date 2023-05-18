@@ -35,9 +35,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Web.IntegrationTests", "Web
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{3C48C1E8-1250-4CEB-B469-D03D23724243}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure.Scheduler", "Infrastructure.Scheduler\Infrastructure.Scheduler.csproj", "{E4985C9D-9F10-47DE-8C89-AA70AF0C305C}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionalTests", "FunctionalTests\FunctionalTests.csproj", "{6C7AE384-28C8-419C-8A22-A0EFEB88FF5F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionalTests", "FunctionalTests\FunctionalTests.csproj", "{6C7AE384-28C8-419C-8A22-A0EFEB88FF5F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,10 +83,6 @@ Global
 		{3C48C1E8-1250-4CEB-B469-D03D23724243}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C48C1E8-1250-4CEB-B469-D03D23724243}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C48C1E8-1250-4CEB-B469-D03D23724243}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E4985C9D-9F10-47DE-8C89-AA70AF0C305C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E4985C9D-9F10-47DE-8C89-AA70AF0C305C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E4985C9D-9F10-47DE-8C89-AA70AF0C305C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E4985C9D-9F10-47DE-8C89-AA70AF0C305C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6C7AE384-28C8-419C-8A22-A0EFEB88FF5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6C7AE384-28C8-419C-8A22-A0EFEB88FF5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C7AE384-28C8-419C-8A22-A0EFEB88FF5F}.Release|Any CPU.ActiveCfg = Release|Any CPU

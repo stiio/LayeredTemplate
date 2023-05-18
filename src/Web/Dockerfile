@@ -22,7 +22,6 @@ COPY ["Shared/*.csproj", "Shared/"]
 COPY ["Infrastructure/*.csproj", "Infrastructure/"]
 COPY ["Infrastructure.Data/*.csproj", "Infrastructure.Data/"]
 COPY ["Web.Api/*.csproj", "Web.Api/"]
-COPY ["Infrastructure.Scheduler/*.csproj", "Infrastructure.Scheduler/"]
 
 RUN dotnet restore "Web/Web.csproj"
 

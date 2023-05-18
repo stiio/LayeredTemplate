@@ -14,6 +14,9 @@ internal class TodoListUpdateValidator : AbstractValidator<TodoListUpdateRequest
         IResourceAuthorizationService resourceAuthorizationService)
     {
         this.RuleFor(x => x.Id)
+            .ExistsEntity<TodoListUpdateRequest, Guid, TodoList>(context);
+
+        this.RuleFor(x => x.Id)
             .RequireAccess<TodoListUpdateRequest, Guid, TodoList>(Operations.Update, context, resourceAuthorizationService);
     }
 }

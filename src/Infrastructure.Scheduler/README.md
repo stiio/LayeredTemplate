@@ -1,1 +1,0 @@
-﻿To enable the scheduler, add a script to create tables in the migration and connect the services to the di container.
