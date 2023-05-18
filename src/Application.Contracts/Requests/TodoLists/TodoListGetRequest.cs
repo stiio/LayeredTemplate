@@ -1,7 +1,7 @@
-﻿using LayeredTemplate.Application.Contracts.Models;
+﻿using LayeredTemplate.Application.Contracts.Models.TodoLists;
 using MediatR;
 
-namespace LayeredTemplate.Application.Contracts.Requests;
+namespace LayeredTemplate.Application.Contracts.Requests.TodoLists;
 
 /// <summary>
 /// Get TodoList Request

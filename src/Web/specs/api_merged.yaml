@@ -505,15 +505,26 @@ components:
           description: Email of user
           nullable: true
           example: example@email.com
+        emailVerified:
+          type: boolean
+          description: Email Verified
         phone:
           type: string
           description: Phone of user
           nullable: true
-        name:
+        phoneVerified:
+          type: boolean
+          description: Phone Verified
+        firstName:
           type: string
-          description: Name of user
+          description: First Name of user
           nullable: true
-          example: John Doe
+          example: John
+        lastName:
+          type: string
+          description: Last Name of user
+          nullable: true
+          example: Doe
         role:
           $ref: '#/components/schemas/Role'
       additionalProperties: false

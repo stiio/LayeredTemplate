@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace LayeredTemplate.Application.Contracts.Requests;
+namespace LayeredTemplate.Application.Contracts.Requests.TodoLists;
 
 /// <summary>
 /// Delete TodoList Request

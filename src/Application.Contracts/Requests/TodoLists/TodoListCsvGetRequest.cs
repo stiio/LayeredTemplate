@@ -1,4 +1,4 @@
-﻿namespace LayeredTemplate.Application.Contracts.Requests;
+﻿namespace LayeredTemplate.Application.Contracts.Requests.TodoLists;
 
 /// <summary>
 /// TodoList Csv Get Request

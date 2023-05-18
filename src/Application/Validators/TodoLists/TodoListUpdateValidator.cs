@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using LayeredTemplate.Application.Common.Extensions;
 using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Application.Contracts.Requests;
+using LayeredTemplate.Application.Contracts.Requests.TodoLists;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Shared.Constants;
 

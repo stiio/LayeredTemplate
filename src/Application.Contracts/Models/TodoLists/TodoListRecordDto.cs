@@ -1,6 +1,7 @@
-﻿using LayeredTemplate.Domain.Enums;
+﻿using LayeredTemplate.Application.Contracts.Models.Users;
+using LayeredTemplate.Domain.Enums;
 
-namespace LayeredTemplate.Application.Contracts.Models;
+namespace LayeredTemplate.Application.Contracts.Models.TodoLists;
 
 /// <summary>
 /// TodoList Record

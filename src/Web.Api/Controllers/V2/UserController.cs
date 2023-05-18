@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.Application.Contracts.Models;
+﻿using LayeredTemplate.Application.Contracts.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

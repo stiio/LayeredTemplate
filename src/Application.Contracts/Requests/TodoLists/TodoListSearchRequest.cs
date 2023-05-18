@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using LayeredTemplate.Application.Contracts.Models;
+using LayeredTemplate.Application.Contracts.Models.TodoLists;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LayeredTemplate.Application.Contracts.Requests;
+namespace LayeredTemplate.Application.Contracts.Requests.TodoLists;
 
 /// <summary>
 /// Search TodoList Request

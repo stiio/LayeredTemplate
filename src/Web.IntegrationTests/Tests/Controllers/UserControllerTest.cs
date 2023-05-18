@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using LayeredTemplate.Application.Contracts.Models;
+using LayeredTemplate.Application.Contracts.Models.Users;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Web.IntegrationTests.Utils;
 using Microsoft.AspNetCore.Mvc;

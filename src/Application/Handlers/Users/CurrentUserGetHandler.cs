@@ -2,8 +2,8 @@
 using AutoMapper;
 using LayeredTemplate.Application.Common.Exceptions;
 using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Application.Contracts.Models;
-using LayeredTemplate.Application.Contracts.Requests;
+using LayeredTemplate.Application.Contracts.Models.Users;
+using LayeredTemplate.Application.Contracts.Requests.Users;
 using LayeredTemplate.Application.QueryableExtensions;
 using LayeredTemplate.Domain.Entities;
 using MediatR;

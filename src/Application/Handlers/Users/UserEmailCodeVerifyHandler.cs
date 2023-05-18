@@ -1,7 +1,7 @@
 ﻿using LayeredTemplate.Application.Common.Exceptions;
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Common.Models;
-using LayeredTemplate.Application.Contracts.Requests;
+using LayeredTemplate.Application.Contracts.Requests.Users;
 using LayeredTemplate.Application.QueryableExtensions;
 using LayeredTemplate.Domain.Entities;
 using MediatR;

@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using LayeredTemplate.Application.Contracts.Models;
+using LayeredTemplate.Application.Contracts.Models.TodoLists;
 using LayeredTemplate.Domain.Entities;
 
 namespace LayeredTemplate.Application.Mapper;

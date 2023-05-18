@@ -1,5 +1,5 @@
 ﻿using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Application.Contracts.Requests;
+using LayeredTemplate.Application.Contracts.Requests.TodoLists;
 using LayeredTemplate.Application.QueryableExtensions;
 using MediatR;
 

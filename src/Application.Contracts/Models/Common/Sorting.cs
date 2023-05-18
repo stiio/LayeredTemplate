@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.Application.Contracts.Enums;
 
-namespace LayeredTemplate.Application.Contracts.Models;
+namespace LayeredTemplate.Application.Contracts.Models.Common;
 
 #pragma warning disable SA1402 // File may only contain a single type
 

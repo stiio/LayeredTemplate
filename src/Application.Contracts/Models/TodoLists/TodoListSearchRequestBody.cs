@@ -1,4 +1,6 @@
-﻿namespace LayeredTemplate.Application.Contracts.Models;
+﻿using LayeredTemplate.Application.Contracts.Models.Common;
+
+namespace LayeredTemplate.Application.Contracts.Models.TodoLists;
 
 /// <summary>
 /// TodoList Search Request Body

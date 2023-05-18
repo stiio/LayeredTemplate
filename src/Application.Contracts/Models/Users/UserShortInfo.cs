@@ -1,4 +1,4 @@
-﻿namespace LayeredTemplate.Application.Contracts.Models;
+﻿namespace LayeredTemplate.Application.Contracts.Models.Users;
 
 /// <summary>
 /// User Short Info

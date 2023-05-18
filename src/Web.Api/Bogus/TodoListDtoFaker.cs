@@ -1,5 +1,5 @@
 ﻿using AutoBogus;
-using LayeredTemplate.Application.Contracts.Models;
+using LayeredTemplate.Application.Contracts.Models.TodoLists;
 
 namespace LayeredTemplate.Web.Api.Bogus;
 

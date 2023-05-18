@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.Domain.Enums;
 
-namespace LayeredTemplate.Application.Contracts.Models;
+namespace LayeredTemplate.Application.Contracts.Models.TodoLists;
 
 /// <summary>
 /// TodoList Update Request Body

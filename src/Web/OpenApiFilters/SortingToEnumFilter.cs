@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using LayeredTemplate.Application.Contracts.Models;
+using LayeredTemplate.Application.Contracts.Models.Common;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;

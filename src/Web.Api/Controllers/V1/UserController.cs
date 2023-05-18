@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using LayeredTemplate.Application.Contracts.Models;
-using LayeredTemplate.Application.Contracts.Requests;
+using LayeredTemplate.Application.Contracts.Models.Users;
+using LayeredTemplate.Application.Contracts.Requests.Users;
 using LayeredTemplate.Web.Api.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

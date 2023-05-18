@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using LayeredTemplate.Application.Contracts.Models;
+using LayeredTemplate.Application.Contracts.Models.Users;
 using LayeredTemplate.Domain.Entities;
 
 namespace LayeredTemplate.Application.Mapper;

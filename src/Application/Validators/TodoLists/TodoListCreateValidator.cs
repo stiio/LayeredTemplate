@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using LayeredTemplate.Application.Contracts.Requests;
+using LayeredTemplate.Application.Contracts.Requests.TodoLists;
 
 namespace LayeredTemplate.Application.Validators.TodoLists;
 
