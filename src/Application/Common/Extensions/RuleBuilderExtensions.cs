@@ -9,8 +9,8 @@ namespace LayeredTemplate.Application.Common.Extensions;
 
 public static class RuleBuilderExtensions
 {
-    public static IRuleBuilderOptions<TRequest, TKey> ExistsEntity<TRequest, TKey, TEntity>(
-        this IRuleBuilder<TRequest, TKey> ruleBuilder, IApplicationDbContext dbContext)
+    public static IRuleBuilderOptions<TRequest, TProperty> ExistsEntity<TRequest, TProperty, TEntity>(
+        this IRuleBuilder<TRequest, TProperty> ruleBuilder, IApplicationDbContext dbContext)
         where TEntity : class
     {
         return ruleBuilder.MustAsync(async (request, entityId, context, stopToken) =>
@@ -35,8 +35,8 @@ public static class RuleBuilderExtensions
             .WithMessage("Entity '{entityName}' ({id}) was not found.");
     }
 
-    public static IRuleBuilderOptions<TRequest, TKey> RequireAccess<TRequest, TKey, TEntity>(
-        this IRuleBuilder<TRequest, TKey> ruleBuilder,
+    public static IRuleBuilderOptions<TRequest, TProperty> RequireAccess<TRequest, TProperty, TEntity>(
+        this IRuleBuilder<TRequest, TProperty> ruleBuilder,
         OperationAuthorizationRequirement requirement,
         IApplicationDbContext dbContext,
         IResourceAuthorizationService resourceAuthorizationService)
@@ -49,7 +49,7 @@ public static class RuleBuilderExtensions
                     return true;
                 }
 
-                var entity = await dbContext.Set<TEntity>().FindByIdOrDefault(entityId, stopToken);
+                var entity = await dbContext.Set<TEntity>().FirstByIdOrDefault(entityId, stopToken);
                 if (entity is null)
                 {
                     return true;

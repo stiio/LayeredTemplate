@@ -4,7 +4,7 @@ using LayeredTemplate.Application.Common.Exceptions;
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Application.Contracts.Models;
 using LayeredTemplate.Application.Contracts.Requests;
-using LayeredTemplate.Application.Events.Users;
+using LayeredTemplate.Application.QueryableExtensions;
 using LayeredTemplate.Domain.Entities;
 using MediatR;
 
@@ -16,25 +16,22 @@ internal class CurrentUserGetHandler : IRequestHandler<CurrentUserGetRequest, Cu
     private readonly IUserPoolService userPoolService;
     private readonly IApplicationDbContext dbContext;
     private readonly IMapper mapper;
-    private readonly IPublisher publisher;
 
     public CurrentUserGetHandler(
         ICurrentUserService currentUserService,
         IUserPoolService userPoolService,
         IApplicationDbContext dbContext,
-        IMapper mapper,
-        IPublisher publisher)
+        IMapper mapper)
     {
         this.currentUserService = currentUserService;
         this.userPoolService = userPoolService;
         this.dbContext = dbContext;
         this.mapper = mapper;
-        this.publisher = publisher;
     }
 
     public async Task<CurrentUser> Handle(CurrentUserGetRequest request, CancellationToken cancellationToken)
     {
-        var user = await this.dbContext.Users.FindAsync(this.currentUserService.UserId);
+        var user = await this.dbContext.Users.FirstByIdOrDefault(this.currentUserService.UserId, cancellationToken);
         if (user is null)
         {
             if (!await this.userPoolService.ExistsUser(this.currentUserService.UserId))
@@ -51,23 +48,8 @@ internal class CurrentUserGetHandler : IRequestHandler<CurrentUserGetRequest, Cu
 
             await this.dbContext.Users.AddAsync(user, cancellationToken);
             await this.dbContext.SaveChangesAsync(cancellationToken);
-
-            await this.publisher.Publish(new UserCreatedEvent(user.Id), cancellationToken);
         }
-
-        this.ThrowUnauthorizedIfAttributesNotMatch(user);
 
         return this.mapper.Map<CurrentUser>(user);
-    }
-
-    private void ThrowUnauthorizedIfAttributesNotMatch(User user)
-    {
-        if (user.Id == this.currentUserService.UserId
-            && (user.Email != this.currentUserService.Email
-                || user.Phone != this.currentUserService.Phone
-                || user.Role != this.currentUserService.Role))
-        {
-            throw new HttpStatusException("Attributes in token and database do not match.", HttpStatusCode.Unauthorized);
-        }
     }
 }

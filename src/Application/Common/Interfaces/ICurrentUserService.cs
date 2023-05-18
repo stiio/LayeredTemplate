@@ -10,7 +10,5 @@ public interface ICurrentUserService
 
     public string? Phone { get; }
 
-    public bool IsAuthenticate { get; }
-
     public Role Role { get; }
 }

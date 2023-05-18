@@ -40,6 +40,6 @@ internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, To
 
         return await this.context.TodoLists
             .ProjectTo<TodoListDto>(this.mapper.ConfigurationProvider)
-            .FindById(request.Id, cancellationToken);
+            .FirstById(request.Id, cancellationToken);
     }
 }

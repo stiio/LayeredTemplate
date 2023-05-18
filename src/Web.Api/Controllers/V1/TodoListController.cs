@@ -94,6 +94,7 @@ public class TodoListController : AppControllerBase
     /// <returns></returns>
     [HttpGet("{id}/csv")]
     [Produces(MediaTypeNames.Application.Octet, Type = typeof(FileResult))]
+    [Authorize(Policies.Example)]
     public Task<ActionResult> GetTodoListCsv([FromRoute] TodoListCsvGetRequest request)
     {
         throw new NotImplementedException();

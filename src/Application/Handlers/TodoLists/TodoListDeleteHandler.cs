@@ -16,7 +16,7 @@ internal class TodoListDeleteHandler : IRequestHandler<TodoListDeleteRequest>
 
     public async Task Handle(TodoListDeleteRequest request, CancellationToken cancellationToken)
     {
-        var todoList = await this.context.TodoLists.FindById(request.Id, cancellationToken);
+        var todoList = await this.context.TodoLists.FirstById(request.Id, cancellationToken);
         this.context.TodoLists.Remove(todoList);
         await this.context.SaveChangesAsync(cancellationToken);
     }

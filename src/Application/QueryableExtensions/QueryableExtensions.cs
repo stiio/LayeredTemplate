@@ -8,7 +8,7 @@ namespace LayeredTemplate.Application.QueryableExtensions;
 
 internal static class QueryableExtensions
 {
-    public static Task<T?> FindByIdOrDefault<T, TKey>(this IQueryable<T> query, TKey id, CancellationToken cancellationToken = default)
+    public static Task<T?> FirstByIdOrDefault<T, TKey>(this IQueryable<T> query, TKey id, CancellationToken cancellationToken = default)
         where T : class
     {
         var parameter = Expression.Parameter(typeof(T), "x");
@@ -21,7 +21,7 @@ internal static class QueryableExtensions
         return query.FirstOrDefaultAsync(lambda, cancellationToken);
     }
 
-    public static Task<T> FindById<T, TKey>(this IQueryable<T> query, TKey id, CancellationToken cancellationToken = default)
+    public static Task<T> FirstById<T, TKey>(this IQueryable<T> query, TKey id, CancellationToken cancellationToken = default)
         where T : class
     {
         var parameter = Expression.Parameter(typeof(T), "x");
@@ -35,7 +35,7 @@ internal static class QueryableExtensions
     }
 
     public static Task<T?> SelectForUpdate<T, TKey>(this DbSet<T> dbSet, TKey id)
-        where T : class, IBaseAuditableEntity<TKey>
+        where T : class, IBaseEntity<TKey>
     {
         var tableName = dbSet.EntityType.GetTableName();
         return dbSet.FromSqlRaw(@$"

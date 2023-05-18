@@ -39,6 +39,6 @@ internal class TodoListCreateHandler : IRequestHandler<TodoListCreateRequest, To
 
         return await this.context.TodoLists
             .ProjectTo<TodoListDto>(this.mapper.ConfigurationProvider)
-            .FindById(todoList.Id, cancellationToken);
+            .FirstById(todoList.Id, cancellationToken);
     }
 }

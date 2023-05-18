@@ -25,6 +25,6 @@ internal class TodoListGetHandler : IRequestHandler<TodoListGetRequest, TodoList
     {
         return this.context.TodoLists
             .ProjectTo<TodoListDto>(this.mapper.ConfigurationProvider)
-            .FindById(request.Id, cancellationToken);
+            .FirstById(request.Id, cancellationToken);
     }
 }

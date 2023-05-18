@@ -28,7 +28,7 @@ internal class UserEmailCodeSendHandler : IRequestHandler<UserEmailCodeSendReque
 
     public async Task Handle(UserEmailCodeSendRequest request, CancellationToken cancellationToken)
     {
-        var user = await this.dbContext.Users.FindByIdOrDefault(this.currentUserService.UserId, cancellationToken);
+        var user = await this.dbContext.Users.FirstByIdOrDefault(this.currentUserService.UserId, cancellationToken);
         if (user == null)
         {
             throw new AppNotFoundException(nameof(User), this.currentUserService.UserId);
