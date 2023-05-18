@@ -2,9 +2,9 @@
 
 namespace LayeredTemplate.Domain.Entities;
 
-public class AuditEvent : IBaseEntity<long>
+public class AuditEvent : IBaseEntity<Guid>
 {
-    public long Id { get; set; }
+    public Guid Id { get; set; }
 
     public string EventType { get; set; } = null!;
 

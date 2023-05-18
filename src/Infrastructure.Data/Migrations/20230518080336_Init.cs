@@ -16,8 +16,7 @@ namespace Infrastructure.Data.Migrations
                 name: "audit_events",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
                     event_type = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     data = table.Column<string>(type: "jsonb", maxLength: 255, nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),

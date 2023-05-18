@@ -33,6 +33,7 @@ public static class AuditExtensions
             LastUpdatedDateColumnName = "updated_at",
             CustomColumns = new List<CustomColumn>()
             {
+                new CustomColumn("id", ev => Guid.NewGuid()),
                 new CustomColumn("event_type", ev => ev.EventType),
                 new CustomColumn("created_at", ev => ev.StartDate),
             },
@@ -40,25 +41,19 @@ public static class AuditExtensions
 
         Audit.Core.Configuration.AddOnCreatedAction((scope) =>
         {
-            if (httpContextAccessor.HttpContext?.User.Identity?.AuthenticationType != AppAuthenticationSchemes.ApiKey)
-            {
-                scope.Discard();
-            }
-
             scope.SetCustomField(AuditCustomFields.IpAddress, httpContextAccessor.HttpContext?.GetRequestIp());
         });
 
         app.Use(async (context, next) =>
         {
-            if (context.User?.Identity?.AuthenticationType == AppAuthenticationSchemes.ApiKey)
-            {
-                context.Request.EnableBuffering();
-                await next();
-            }
+            context.Request.EnableBuffering();
+            await next();
         });
 
         app.UseAuditMiddleware(opts =>
-            opts.IncludeRequestBody()
+            opts
+                .FilterByRequest(request => request.HttpContext.User.Identity?.AuthenticationType == AppAuthenticationSchemes.ApiKey)
+                .IncludeRequestBody()
                 .IncludeResponseBody()
                 .WithEventType(context =>
                 {
