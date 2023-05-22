@@ -3,6 +3,7 @@ using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Extensions;
 using LayeredTemplate.Infrastructure.Mocks.Services;
 using LayeredTemplate.Infrastructure.Services;
+using LayeredTemplate.Messaging.Formatters;
 using LayeredTemplate.Shared.Constants;
 using MassTransit;
 using Microsoft.AspNetCore.Hosting;
@@ -45,7 +46,6 @@ public static class ConfigureServices
 
         services.AddMassTransit(opts =>
         {
-            opts.SetKebabCaseEndpointNameFormatter();
             opts.AddConsumers(typeof(Application.ConfigureServices).Assembly);
 
             if (env.IsDevelopment())
@@ -54,7 +54,9 @@ public static class ConfigureServices
                 {
                     cfg.UseMessageScope(ctx);
                     cfg.UseInMemoryOutbox();
-                    cfg.ConfigureEndpoints(ctx);
+
+                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.ToLower(), false));
+                    cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.ToLower(), false));
                 });
             }
             else
@@ -68,7 +70,8 @@ public static class ConfigureServices
                         _.Scope($"{env.EnvironmentName.ToLower()}", true);
                     });
 
-                    cfg.ConfigureEndpoints(ctx, new DefaultEndpointNameFormatter($"{env.EnvironmentName.ToLower()}-", true));
+                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.ToLower(), false));
+                    cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.ToLower(), false));
                 });
             }
         });

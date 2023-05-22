@@ -15,13 +15,14 @@ WORKDIR /src
 
 COPY ["*.targets", "."]
 COPY ["Web/*.csproj", "Web/"]
+COPY ["Web.Api/*.csproj", "Web.Api/"]
 COPY ["Application/*.csproj", "Application/"]
 COPY ["Application.Contracts/*.csproj", "Application.Contracts/"]
 COPY ["Domain/*.csproj", "Domain/"]
 COPY ["Shared/*.csproj", "Shared/"]
 COPY ["Infrastructure/*.csproj", "Infrastructure/"]
 COPY ["Infrastructure.Data/*.csproj", "Infrastructure.Data/"]
-COPY ["Web.Api/*.csproj", "Web.Api/"]
+COPY ["Messaging/*.csproj", "Messaging/"]
 
 RUN dotnet restore "Web/Web.csproj"
 

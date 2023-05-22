@@ -37,7 +37,7 @@ Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunctionalTests", "FunctionalTests\FunctionalTests.csproj", "{6C7AE384-28C8-419C-8A22-A0EFEB88FF5F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messaging.Contracts", "Messaging.Contracts\Messaging.Contracts.csproj", "{41BBB428-FD3B-4908-BAD2-AE899A9CD71A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Messaging", "Messaging\Messaging.csproj", "{41BBB428-FD3B-4908-BAD2-AE899A9CD71A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
