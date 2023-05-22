@@ -1,7 +1,5 @@
-﻿using System.Data;
-using LayeredTemplate.Application.Common.Interfaces;
+﻿using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Infrastructure.Data;
-using LayeredTemplate.Infrastructure.Data.Context;
 using LayeredTemplate.Infrastructure.Extensions;
 using LayeredTemplate.Infrastructure.Mocks.Services;
 using LayeredTemplate.Infrastructure.Services;
@@ -54,6 +52,7 @@ public static class ConfigureServices
             {
                 opts.UsingInMemory((ctx, cfg) =>
                 {
+                    cfg.UseMessageScope(ctx);
                     cfg.UseInMemoryOutbox();
                     cfg.ConfigureEndpoints(ctx);
                 });
@@ -62,6 +61,7 @@ public static class ConfigureServices
             {
                 opts.UsingAmazonSqs((ctx, cfg) =>
                 {
+                    cfg.UseMessageScope(ctx);
                     cfg.UseInMemoryOutbox();
                     cfg.Host(configuration["AWS_REGION"], _ =>
                     {
