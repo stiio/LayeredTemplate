@@ -65,7 +65,7 @@ public static class ConfigureServices
                     cfg.UseInMemoryOutbox();
                     cfg.Host(configuration["AWS_REGION"], _ =>
                     {
-                        _.Scope($"{env.EnvironmentName.ToLower()}");
+                        _.Scope($"{env.EnvironmentName.ToLower()}", true);
                     });
 
                     cfg.ConfigureEndpoints(ctx, new DefaultEndpointNameFormatter($"{env.EnvironmentName.ToLower()}-", true));
