@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+	</PropertyGroup>
+
+	<Import Project="../common.targets" />
+
+	<ItemGroup>
+	  <PackageReference Include="MassTransit" Version="8.0.15" />
+	  <PackageReference Include="MassTransit.AmazonSQS" Version="8.0.15" />
+	</ItemGroup>
+
+</Project>

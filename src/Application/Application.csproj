@@ -18,11 +18,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Application.Contracts\Application.Contracts.csproj" />
+    <ProjectReference Include="..\Messaging.Contracts\Messaging.Contracts.csproj" />
     <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Common\Behaviors\" />
+    <Folder Include="Consumers\TodoLists\" />
     <Folder Include="Mapper\" />
     <Folder Include="Common\Extensions\" />
   </ItemGroup>

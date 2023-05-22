@@ -28,7 +28,7 @@ try
 
     ConfigureConfiguration(builder.Configuration, builder.Environment);
 
-    ConfigureServices(builder.Services, builder.Configuration);
+    ConfigureServices(builder.Services, builder.Configuration, builder.Environment);
 
     var webApplication = builder.Build();
 
@@ -56,11 +56,11 @@ void ConfigureConfiguration(ConfigurationManager configuration, IWebHostEnvironm
         .AddEnvironmentVariables();
 }
 
-void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
 {
     services.RegisterSharedOptions(configuration);
 
-    services.AddInfrastructureServices(configuration);
+    services.AddInfrastructureServices(configuration, env);
     services.AddApplicationServices(configuration);
 
     services.ConfigureControllers();
