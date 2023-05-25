@@ -55,8 +55,7 @@ public static class ConfigureServices
                     cfg.UseMessageScope(ctx);
                     cfg.UseInMemoryOutbox();
 
-                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.ToLower(), false));
-                    cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.ToLower(), false));
+                    cfg.ConfigureEndpoints(ctx);
                 });
             }
             else

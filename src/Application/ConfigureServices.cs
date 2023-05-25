@@ -16,6 +16,7 @@ public static class ConfigureServices
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly(), includeInternalTypes: true);
         services.AddMediatR(opts =>
         {
+            opts.Lifetime = ServiceLifetime.Scoped;
             opts.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
             opts.AddOpenBehavior(typeof(ValidationBehaviour<,>));
         });
