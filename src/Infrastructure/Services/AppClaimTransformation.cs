@@ -65,13 +65,13 @@ internal class AppClaimTransformation : IClaimsTransformation
 
             case AppAuthenticationSchemes.ApiKey:
             {
-                result = principal;
+                result = principal.Clone();
                 break;
             }
 
             default:
             {
-                result = principal;
+                result = principal.Clone();
                 break;
             }
         }
