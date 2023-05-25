@@ -3,9 +3,9 @@ using LayeredTemplate.Application.Contracts.Requests.TodoLists;
 
 namespace LayeredTemplate.Application.Validators.TodoLists;
 
-internal class TodoListCreateValidator : AbstractValidator<TodoListCreateRequest>
+internal class TodoListCreateRequestValidator : AbstractValidator<TodoListCreateRequest>
 {
-    public TodoListCreateValidator()
+    public TodoListCreateRequestValidator()
     {
     }
 }

@@ -2,8 +2,8 @@
 
 public class ForeignKeyViolationException : DomainException
 {
-    public ForeignKeyViolationException(string? details = null)
-        : base(string.IsNullOrEmpty(details) ? "Foreign key violation." : $"Foreign key violation. ({details})")
+    public ForeignKeyViolationException(string message = "Foreign key violation.", Exception? innerException = null)
+        : base(message, innerException)
     {
     }
 }

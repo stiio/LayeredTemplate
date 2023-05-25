@@ -7,16 +7,16 @@ using LayeredTemplate.Shared.Constants;
 
 namespace LayeredTemplate.Application.Validators.TodoLists;
 
-internal class TodoListUpdateValidator : AbstractValidator<TodoListUpdateRequest>
+internal class TodoListGetRequestValidator : AbstractValidator<TodoListGetRequest>
 {
-    public TodoListUpdateValidator(
+    public TodoListGetRequestValidator(
         IApplicationDbContext context,
         IResourceAuthorizationService resourceAuthorizationService)
     {
         this.RuleFor(x => x.Id)
-            .ExistsEntity<TodoListUpdateRequest, Guid, TodoList>(context);
+            .ExistsEntity<TodoListGetRequest, Guid, TodoList>(context);
 
         this.RuleFor(x => x.Id)
-            .RequireAccess<TodoListUpdateRequest, Guid, TodoList>(Operations.Update, context, resourceAuthorizationService);
+            .RequireAccess<TodoListGetRequest, Guid, TodoList>(Operations.Read, context, resourceAuthorizationService);
     }
 }

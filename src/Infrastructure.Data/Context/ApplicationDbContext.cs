@@ -1,7 +1,6 @@
 ﻿using System.Data;
 using System.Reflection;
 using Dapper;
-using Humanizer;
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Domain.Exceptions;
@@ -43,13 +42,13 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
             var result = await base.SaveChangesAsync(cancellationToken);
             return result;
         }
-        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: "23503" } postgresException)
+        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: "23503" })
         {
-            throw new ForeignKeyViolationException(postgresException.ConstraintName);
+            throw new ForeignKeyViolationException(innerException: e);
         }
-        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: "23505" } postgresException)
+        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: "23505" })
         {
-            throw new DuplicateUniqueColumnException(postgresException.TableName?.Humanize(LetterCasing.Title), postgresException.ColumnName?.Humanize());
+            throw new AlreadyExistsException(innerException: e);
         }
     }
 

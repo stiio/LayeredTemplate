@@ -24,7 +24,6 @@
 
   <ItemGroup>
     <Folder Include="Common\Behaviors\" />
-    <Folder Include="Common\Attributes\" />
     <Folder Include="Consumers\TodoLists\" />
     <Folder Include="Mapper\" />
     <Folder Include="Common\Extensions\" />

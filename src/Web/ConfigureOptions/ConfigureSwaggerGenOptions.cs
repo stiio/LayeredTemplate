@@ -70,7 +70,6 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
 
         options.OperationFilter<DefaultApplicationResponsesFilter>();
         options.SchemaFilter<SortingToEnumFilter>();
-        options.DocumentFilter<AdditionalSchemasFilter>();
 
         options.CustomOperationIds(apiDesc =>
             apiDesc.TryGetMethodInfo(out var methodInfo)

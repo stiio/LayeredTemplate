@@ -7,9 +7,9 @@ using LayeredTemplate.Shared.Constants;
 
 namespace LayeredTemplate.Application.Validators.TodoLists;
 
-internal class TodoListDeleteValidator : AbstractValidator<TodoListDeleteRequest>
+internal class TodoListDeleteRequestValidator : AbstractValidator<TodoListDeleteRequest>
 {
-    public TodoListDeleteValidator(
+    public TodoListDeleteRequestValidator(
         IApplicationDbContext context,
         IResourceAuthorizationService resourceAuthorizationService)
     {
