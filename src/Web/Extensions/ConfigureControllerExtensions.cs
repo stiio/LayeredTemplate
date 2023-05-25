@@ -26,12 +26,12 @@ public static class ConfigureControllerExtensions
                 opts.Filters.Add<ApplicationExceptionFilter>();
                 opts.Filters.Add<DevelopmentOnlyFilter>();
             })
-            .AddJsonOptions(options =>
+            .AddJsonOptions(opts =>
             {
-                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-                options.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
-                options.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
-                options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                opts.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
+                opts.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
+                opts.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
             })
             .UseCustomValidationErrorResponses();
 
