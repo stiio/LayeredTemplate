@@ -4,6 +4,7 @@ using Asp.Versioning.Conventions;
 using LayeredTemplate.Web.Conventions;
 using LayeredTemplate.Web.Converters;
 using LayeredTemplate.Web.Filters;
+using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.JsonMultipartFormDataSupport.Extensions;
 using Swashbuckle.AspNetCore.JsonMultipartFormDataSupport.Integrations;
 
@@ -13,6 +14,11 @@ public static class ConfigureControllerExtensions
 {
     public static void ConfigureControllers(this IServiceCollection services)
     {
+        services.Configure<ApiBehaviorOptions>(opts =>
+        {
+            opts.SuppressInferBindingSourcesForParameters = true;
+        });
+
         services.AddControllers(opts =>
             {
                 opts.Conventions.Add(new RoutePrefixConvention());

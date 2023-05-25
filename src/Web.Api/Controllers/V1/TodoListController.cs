@@ -36,7 +36,7 @@ public class TodoListController : AppControllerBase
     /// <param name="request">Request body</param>
     /// <returns></returns>
     [HttpPost("search")]
-    public Task<TodoListSearchResponse> SearchTodoList([FromRoute] TodoListSearchRequest request)
+    public Task<TodoListSearchResponse> SearchTodoList(TodoListSearchRequest request)
     {
         return this.sender.Send(request);
     }
@@ -47,7 +47,7 @@ public class TodoListController : AppControllerBase
     /// <param name="request">Request body</param>
     /// <returns>Return <see cref="TodoListDto"/></returns>
     [HttpPost]
-    public Task<TodoListDto> CreateTodoList([FromRoute] TodoListCreateRequest request)
+    public Task<TodoListDto> CreateTodoList(TodoListCreateRequest request)
     {
         return this.sender.Send(request);
     }
@@ -58,7 +58,7 @@ public class TodoListController : AppControllerBase
     /// <param name="request">Request body</param>
     /// <returns>Return <see cref="TodoListDto"/></returns>
     [HttpPut("{id}")]
-    public Task<TodoListDto> UpdateTodoList([FromRoute] TodoListUpdateRequest request)
+    public Task<TodoListDto> UpdateTodoList(TodoListUpdateRequest request)
     {
         return this.sender.Send(request);
     }
@@ -69,7 +69,7 @@ public class TodoListController : AppControllerBase
     /// <param name="request"></param>
     /// <returns>Return <see cref="TodoListDto"/></returns>
     [HttpGet("{id}")]
-    public Task<TodoListDto> GetTodoList([FromRoute] TodoListGetRequest request)
+    public Task<TodoListDto> GetTodoList(TodoListGetRequest request)
     {
         return this.sender.Send(request);
     }
@@ -80,7 +80,7 @@ public class TodoListController : AppControllerBase
     /// <param name="request"></param>
     /// <returns></returns>
     [HttpDelete("{id}")]
-    public async Task<ActionResult<SuccessfulResult>> DeleteTodoList([FromRoute] TodoListDeleteRequest request)
+    public async Task<ActionResult<SuccessfulResult>> DeleteTodoList(TodoListDeleteRequest request)
     {
         await this.sender.Send(request);
 
@@ -95,7 +95,7 @@ public class TodoListController : AppControllerBase
     [HttpGet("{id}/csv")]
     [Produces(MediaTypeNames.Application.Octet, Type = typeof(FileResult))]
     [Authorize(Policies.Example)]
-    public Task<ActionResult> GetTodoListCsv([FromRoute] TodoListCsvGetRequest request)
+    public Task<ActionResult> GetTodoListCsv(TodoListCsvGetRequest request)
     {
         throw new NotImplementedException();
     }

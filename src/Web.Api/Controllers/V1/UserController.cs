@@ -43,7 +43,7 @@ public class UserController : AppControllerBase
     /// <param name="request"></param>
     /// <returns></returns>
     [HttpPost("email/send_code")]
-    public async Task<ActionResult<SuccessfulResult>> SendUserEmailCode([Required] UserEmailCodeSendRequest request)
+    public async Task<ActionResult<SuccessfulResult>> SendUserEmailCode([FromForm] UserEmailCodeSendRequest request)
     {
         await this.sender.Send(request);
         return this.SuccessfulResult();
@@ -55,7 +55,7 @@ public class UserController : AppControllerBase
     /// <param name="request"></param>
     /// <returns></returns>
     [HttpPut("email/verify_code")]
-    public async Task<ActionResult<SuccessfulResult>> VerifyUserEmailCode([Required] UserEmailCodeVerifyRequest request)
+    public async Task<ActionResult<SuccessfulResult>> VerifyUserEmailCode([FromForm] UserEmailCodeVerifyRequest request)
     {
         await this.sender.Send(request);
         return this.SuccessfulResult();

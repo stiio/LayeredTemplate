@@ -4,5 +4,5 @@ public static class AppAuthenticationSchemes
 {
     public const string Bearer = "Bearer";
 
-    public const string ApiKey = "Api Key";
+    public const string ApiKey = "ApiKey";
 }

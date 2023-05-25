@@ -30,7 +30,7 @@ paths:
           description: Forbidden
       security:
         - Bearer: [ ]
-        - Api Key: [ ]
+        - ApiKey: [ ]
   /api/v1/todo_lists/search:
     post:
       tags:
@@ -361,18 +361,22 @@ paths:
       summary: Send User Update Email Code
       operationId: SendUserEmailCodeV1
       requestBody:
-        description: ''
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UserEmailCodeSendRequest'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/UserEmailCodeSendRequest'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/UserEmailCodeSendRequest'
-        required: true
+              required:
+                - email
+              type: object
+              properties:
+                email:
+                  maxLength: 255
+                  type: string
+                  description: Email
+                  format: email
+                  example: example@email.com
+            encoding:
+              email:
+                style: form
       responses:
         '200':
           description: Success
@@ -411,18 +415,30 @@ paths:
       summary: Verify User Update Email Code
       operationId: VerifyUserEmailCodeV1
       requestBody:
-        description: ''
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
-        required: true
+              required:
+                - code
+                - email
+              type: object
+              properties:
+                email:
+                  maxLength: 255
+                  type: string
+                  description: Email
+                  format: email
+                  example: example@email.com
+                code:
+                  type: integer
+                  description: Code
+                  format: int32
+                  example: 124567
+            encoding:
+              email:
+                style: form
+              code:
+                style: form
       responses:
         '200':
           description: Success
@@ -758,40 +774,6 @@ components:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
       description: TodoList Update Request Body
-    UserEmailCodeSendRequest:
-      required:
-        - email
-      type: object
-      properties:
-        email:
-          maxLength: 255
-          minLength: 1
-          type: string
-          description: Email
-          format: email
-          example: example@email.com
-      additionalProperties: false
-      description: User Email Code Send Request
-    UserEmailCodeVerifyRequest:
-      required:
-        - code
-        - email
-      type: object
-      properties:
-        email:
-          maxLength: 255
-          minLength: 1
-          type: string
-          description: Email
-          format: email
-          example: example@email.com
-        code:
-          type: integer
-          description: Code
-          format: int32
-          example: 124567
-      additionalProperties: false
-      description: User Email Code Verify Request
     UserShortInfo:
       type: object
       properties:
@@ -811,7 +793,7 @@ components:
       description: Specify the authorization token.
       scheme: Bearer
       bearerFormat: JWT
-    Api Key:
+    ApiKey:
       type: apiKey
       description: Specify the api key.
       name: X-Api-Key
