@@ -55,7 +55,8 @@ public static class ConfigureServices
                     cfg.UseMessageScope(ctx);
                     cfg.UseInMemoryOutbox();
 
-                    cfg.ConfigureEndpoints(ctx);
+                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.ToLower(), false));
+                    cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.ToLower(), false));
                 });
             }
             else
@@ -64,6 +65,7 @@ public static class ConfigureServices
                 {
                     cfg.UseMessageScope(ctx);
                     cfg.UseInMemoryOutbox();
+
                     cfg.Host(configuration["AWS_REGION"], _ =>
                     {
                         _.Scope($"{env.EnvironmentName.ToLower()}", true);

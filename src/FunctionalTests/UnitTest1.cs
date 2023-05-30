@@ -1,4 +1,4 @@
-namespace FunctionalTests;
+namespace LayeredTemplate.FunctionalTests;
 
 public class UnitTest1
 {
