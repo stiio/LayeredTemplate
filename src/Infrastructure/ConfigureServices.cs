@@ -1,4 +1,5 @@
 ﻿using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Infrastructure.BusFilters;
 using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Extensions;
 using LayeredTemplate.Infrastructure.Mocks.Services;
@@ -47,6 +48,13 @@ public static class ConfigureServices
         services.AddMassTransit(opts =>
         {
             opts.AddConsumers(typeof(Application.ConfigureServices).Assembly);
+            opts.AddConfigureEndpointsCallback((name, configurator) =>
+            {
+                if (configurator is IAmazonSqsReceiveEndpointConfigurator sqsReceiveEndpointConfigurator)
+                {
+                    sqsReceiveEndpointConfigurator.WaitTimeSeconds = 20;
+                }
+            });
 
             if (env.IsDevelopment())
             {
@@ -54,6 +62,8 @@ public static class ConfigureServices
                 {
                     cfg.UseMessageScope(ctx);
                     cfg.UseInMemoryOutbox();
+
+                    cfg.UseConsumeFilter(typeof(LoggerScopeFilter<>), ctx);
 
                     cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.ToLower(), false));
                     cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.ToLower(), false));
@@ -63,6 +73,8 @@ public static class ConfigureServices
             {
                 opts.UsingAmazonSqs((ctx, cfg) =>
                 {
+                    cfg.WaitTimeSeconds = 20;
+
                     cfg.UseMessageScope(ctx);
                     cfg.UseInMemoryOutbox();
 
@@ -72,6 +84,8 @@ public static class ConfigureServices
                         _.SecretKey(configuration["AWS_SECRET_ACCESS_KEY"]);
                         _.Scope($"{env.EnvironmentName.ToLower()}", true);
                     });
+
+                    cfg.UseConsumeFilter(typeof(LoggerScopeFilter<>), ctx);
 
                     cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.ToLower(), false));
                     cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.ToLower(), false));

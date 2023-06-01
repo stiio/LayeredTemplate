@@ -15,6 +15,7 @@
     <Folder Include="AuthorizationHandlers\" />
     <Folder Include="Utilities\" />
     <Folder Include="AuthenticationHandlers\" />
+    <Folder Include="BusFilters\" />
   </ItemGroup>
 
   <ItemGroup>
