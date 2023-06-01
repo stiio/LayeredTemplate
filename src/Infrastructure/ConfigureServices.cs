@@ -68,6 +68,8 @@ public static class ConfigureServices
 
                     cfg.Host(configuration["AWS_REGION"], _ =>
                     {
+                        _.AccessKey(configuration["AWS_ACCESS_KEY_ID"]);
+                        _.SecretKey(configuration["AWS_SECRET_ACCESS_KEY"]);
                         _.Scope($"{env.EnvironmentName.ToLower()}", true);
                     });
 

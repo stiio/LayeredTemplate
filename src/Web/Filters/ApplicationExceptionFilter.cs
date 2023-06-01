@@ -79,12 +79,6 @@ internal class ApplicationExceptionFilter : IExceptionFilter
             // ReSharper disable once ConvertTypeCheckPatternToNullCheck
             case Exception e:
             {
-                var env = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
-                if (env.IsDevelopment())
-                {
-                    break;
-                }
-
                 logger.LogError(e, "An unhandled exception has occurred while executing the request.");
 
                 context.ExceptionHandled = true;
