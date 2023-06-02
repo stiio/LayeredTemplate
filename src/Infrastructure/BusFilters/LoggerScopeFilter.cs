@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace LayeredTemplate.Infrastructure.BusFilters;
 
-public class LoggerScopeFilter<T> : IFilter<ConsumeContext<T>>
+internal class LoggerScopeFilter<T> : IFilter<ConsumeContext<T>>
     where T : class
 {
     private readonly ILogger<LoggerScopeFilter<T>> logger;
