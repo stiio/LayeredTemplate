@@ -45,6 +45,11 @@ public static class ConfigureServices
             services.AddScoped<IEmailSender, EmailSender>();
         }
 
+        services.Configure<HostOptions>(options =>
+        {
+            options.ShutdownTimeout = TimeSpan.FromMinutes(1);
+        });
+
         services.AddMassTransit(opts =>
         {
             opts.AddConsumers(typeof(Application.ConfigureServices).Assembly);
