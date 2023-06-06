@@ -2,9 +2,7 @@
 
   <PropertyGroup>
   </PropertyGroup>
-
-  <Import Project="../common.targets" />
-
+	
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authorization.Policy" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />

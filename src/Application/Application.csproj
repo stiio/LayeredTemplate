@@ -3,9 +3,7 @@
   <PropertyGroup>
   </PropertyGroup>
 
-  <Import Project="../common.targets" />
-
-  <ItemGroup>
+	<ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="Dapper" Version="2.0.123" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.5.2" />

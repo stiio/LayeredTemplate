@@ -3,8 +3,6 @@
 	<PropertyGroup>
 	</PropertyGroup>
 
-	<Import Project="../common.targets" />
-
 	<ItemGroup>
 	  <PackageReference Include="Humanizer.Core" Version="2.14.1" />
 	  <PackageReference Include="MassTransit" Version="8.0.15" />

@@ -4,10 +4,7 @@
 [-ASPNETCORE_ENVIRONMENT=Staging | Production-]  
 
 ## Project settings
-For all new projects add to *.csproj and remove duplicate props.
-```xml
- <Import Project="../common.targets" />
-```
+For all new projects remove duplicate props from *.csproj (Default props: Directory.Build.props).
 
 ## Naming convensions
 - For requests/responses: [Resource][ResourceSuffix?][Role?][Action][Request? | Response?] (e.g. TodoItemCreateRequest, UserAddressAdminUpdateRequest, CurrentUserResponse)

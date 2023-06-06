@@ -3,9 +3,7 @@
   <PropertyGroup>
   </PropertyGroup>
 
-  <Import Project="../common.targets" />
-
-  <ItemGroup>
+	<ItemGroup>
     <ProjectReference Include="..\Infrastructure.Data\Infrastructure.Data.csproj" />
   </ItemGroup>
 

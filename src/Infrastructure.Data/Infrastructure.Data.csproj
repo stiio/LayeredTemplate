@@ -3,8 +3,6 @@
   <PropertyGroup>
   </PropertyGroup>
 
-  <Import Project="../common.targets" />
-
   <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" Version="7.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="6.0.16" />

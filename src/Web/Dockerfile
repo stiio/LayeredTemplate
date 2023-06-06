@@ -14,6 +14,7 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine AS build
 WORKDIR /src
 
 COPY ["*.targets", "."]
+COPY ["*.props", "."]
 COPY ["Web/*.csproj", "Web/"]
 COPY ["Web.Api/*.csproj", "Web.Api/"]
 COPY ["Application/*.csproj", "Application/"]

@@ -4,9 +4,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>1.0.1</Version>
   </PropertyGroup>
-
-  <Import Project="../common.targets" />
-
+	
   <ItemGroup>
 	<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="6.4.0" />
 	<PackageReference Include="AutoBogus" Version="2.13.1" />
