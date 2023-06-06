@@ -26,7 +26,7 @@ internal class MockAuthHandler : AuthenticationHandler<AuthenticationSchemeOptio
     {
         if (!this.Request.Headers.ContainsKey("Authorization"))
         {
-            return Task.FromResult(AuthenticateResult.Fail("Unauthorized"));
+            return Task.FromResult(AuthenticateResult.NoResult());
         }
 
         var authorizationHeader = this.Request.Headers["Authorization"].FirstOrDefault();

@@ -97,5 +97,8 @@ public static class ConfigureServices
                 });
             }
         });
+
+        services.AddHealthChecks()
+            .AddNpgSql(configuration[ConnectionStrings.DefaultConnection]!);
     }
 }

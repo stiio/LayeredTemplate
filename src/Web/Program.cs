@@ -1,9 +1,11 @@
 using Asp.Versioning.ApiExplorer;
+using HealthChecks.UI.Client;
 using LayeredTemplate.Application;
 using LayeredTemplate.Infrastructure;
 using LayeredTemplate.Infrastructure.Data.Extensions;
 using LayeredTemplate.Shared;
 using LayeredTemplate.Web.Extensions;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
 using Serilog.Exceptions;
 using Serilog.Exceptions.Core;
@@ -98,7 +100,10 @@ void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env, IApiV
 void ConfigureEndpoints(IEndpointRouteBuilder app)
 {
     app.MapControllers();
-    app.MapHealthChecks("/health");
+    app.MapHealthChecks("/health", new HealthCheckOptions()
+    {
+        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
+    });
 }
 
 void ConfigureSerilog(IHostBuilder host)

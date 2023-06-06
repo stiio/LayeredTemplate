@@ -17,6 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
+	<PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="6.0.2" />
+	<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="6.0.5" />
 	<PackageReference Include="Audit.WebApi.Core" Version="21.0.0" />
 	<PackageReference Include="Audit.NET.PostgreSql" Version="21.0.0" />
 	<PackageReference Include="MailKit" Version="4.0.0" />
