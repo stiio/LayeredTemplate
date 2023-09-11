@@ -2,6 +2,8 @@
 using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Infrastructure.Data.Context;
 using LayeredTemplate.Infrastructure.Data.Interceptors;
+using LayeredTemplate.Infrastructure.Data.Services;
+using LayeredTemplate.Shared;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,5 +32,7 @@ public static class ConfigureServices
 
         services.AddDataProtection()
             .PersistKeysToDbContext<ApplicationDbContext>();
+
+        services.AddStartupTask<RunMigrationsTask>();
     }
 }

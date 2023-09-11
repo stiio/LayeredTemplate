@@ -2,7 +2,6 @@ using Asp.Versioning.ApiExplorer;
 using HealthChecks.UI.Client;
 using LayeredTemplate.Application;
 using LayeredTemplate.Infrastructure;
-using LayeredTemplate.Infrastructure.Data.Extensions;
 using LayeredTemplate.Shared;
 using LayeredTemplate.Web.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -62,6 +61,7 @@ void ConfigureConfiguration(ConfigurationManager configuration, IWebHostEnvironm
 void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
 {
     services.RegisterSharedOptions(configuration);
+    services.AddStartupRunner();
 
     services.AddInfrastructureServices(configuration, env);
     services.AddApplicationServices(configuration);
@@ -78,7 +78,6 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
 void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env, IApiVersionDescriptionProvider apiVersionDescriptionProvider)
 {
-    app.EnsureDbExists();
     if (env.IsDevelopment() || env.IsStaging())
     {
         app.UseDeveloperExceptionPage();
