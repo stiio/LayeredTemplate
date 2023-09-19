@@ -1,4 +1,5 @@
-﻿using LayeredTemplate.Application.Common.Interfaces;
+﻿using Humanizer;
+using LayeredTemplate.Application.Common.Interfaces;
 using LayeredTemplate.Infrastructure.BusFilters;
 using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Extensions;
@@ -70,8 +71,8 @@ public static class ConfigureServices
 
                     cfg.UseConsumeFilter(typeof(LoggerScopeFilter<>), ctx);
 
-                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.ToLower(), false));
-                    cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.ToLower(), false));
+                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.Kebaberize(), false));
+                    cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.Kebaberize(), false));
                 });
             }
             else
@@ -87,13 +88,13 @@ public static class ConfigureServices
                     {
                         _.AccessKey(configuration["AWS_ACCESS_KEY_ID"]);
                         _.SecretKey(configuration["AWS_SECRET_ACCESS_KEY"]);
-                        _.Scope($"{env.EnvironmentName.ToLower()}", true);
+                        _.Scope($"{env.EnvironmentName.Kebaberize()}", true);
                     });
 
                     cfg.UseConsumeFilter(typeof(LoggerScopeFilter<>), ctx);
 
-                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.ToLower(), false));
-                    cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.ToLower(), false));
+                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.Kebaberize(), false));
+                    cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.Kebaberize(), false));
                 });
             }
         });
