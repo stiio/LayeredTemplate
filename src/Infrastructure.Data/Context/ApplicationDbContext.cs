@@ -62,24 +62,24 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
         return this.DbConnection.QueryFirstOrDefaultAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
     }
 
-    public async Task<T> QueryFirstAsync<T>(string sql, object? param = null)
+    public Task<T> QueryFirstAsync<T>(string sql, object? param = null)
     {
-        return await this.DbConnection.QueryFirstAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+        return this.DbConnection.QueryFirstAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
     }
 
-    public async Task<T> QuerySingleAsync<T>(string sql, object? param = null)
+    public Task<T> QuerySingleAsync<T>(string sql, object? param = null)
     {
-        return await this.DbConnection.QuerySingleAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+        return this.DbConnection.QuerySingleAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
     }
 
-    public async Task<int> ExecuteAsync(string sql, object? param = null)
+    public Task<int> ExecuteAsync(string sql, object? param = null)
     {
-        return await this.DbConnection.ExecuteAsync(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+        return this.DbConnection.ExecuteAsync(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
     }
 
-    public async Task<T> ExecuteScalarAsync<T>(string sql, object? param = null)
+    public Task<T> ExecuteScalarAsync<T>(string sql, object? param = null)
     {
-        return await this.DbConnection.ExecuteScalarAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+        return this.DbConnection.ExecuteScalarAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

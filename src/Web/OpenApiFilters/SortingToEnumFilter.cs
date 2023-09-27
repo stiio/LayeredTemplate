@@ -38,6 +38,11 @@ public class SortingToEnumFilter : ISchemaFilter
             return;
         }
 
+        if (propertyInfo.PropertyType.IsArray)
+        {
+            return;
+        }
+
         if (propertyInfo.PropertyType.IsClass && propertyInfo.PropertyType != typeof(string))
         {
             foreach (var nestedProperty in propertyInfo.PropertyType.GetProperties())

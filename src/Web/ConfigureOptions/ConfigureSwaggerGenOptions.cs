@@ -4,7 +4,6 @@ using Asp.Versioning.ApiExplorer;
 using LayeredTemplate.Shared.Constants;
 using LayeredTemplate.Web.Api.Controllers;
 using LayeredTemplate.Web.OpenApiFilters;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
