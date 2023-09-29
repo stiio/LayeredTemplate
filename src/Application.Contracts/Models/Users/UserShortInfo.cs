@@ -1,8 +1,5 @@
 ﻿namespace LayeredTemplate.Application.Contracts.Models.Users;
 
-/// <summary>
-/// User Short Info
-/// </summary>
 public class UserShortInfo
 {
     /// <summary>

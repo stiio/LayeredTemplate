@@ -1,5 +1,4 @@
 ﻿using System.Linq.Expressions;
-using LayeredTemplate.Application.Contracts.Enums;
 using LayeredTemplate.Application.Contracts.Models.Common;
 using LayeredTemplate.Domain.Common;
 using Microsoft.EntityFrameworkCore;

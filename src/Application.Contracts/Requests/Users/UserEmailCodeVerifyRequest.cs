@@ -3,9 +3,6 @@ using MediatR;
 
 namespace LayeredTemplate.Application.Contracts.Requests.Users;
 
-/// <summary>
-/// User Email Code Verify Request
-/// </summary>
 public class UserEmailCodeVerifyRequest : IRequest
 {
     /// <summary>

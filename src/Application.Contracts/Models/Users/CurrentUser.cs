@@ -2,9 +2,6 @@
 
 namespace LayeredTemplate.Application.Contracts.Models.Users;
 
-/// <summary>
-/// Current User
-/// </summary>
 public class CurrentUser
 {
     /// <summary>

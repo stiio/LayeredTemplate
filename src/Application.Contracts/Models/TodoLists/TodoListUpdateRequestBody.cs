@@ -3,9 +3,6 @@ using LayeredTemplate.Domain.Enums;
 
 namespace LayeredTemplate.Application.Contracts.Models.TodoLists;
 
-/// <summary>
-/// TodoList Update Request Body
-/// </summary>
 public class TodoListUpdateRequestBody
 {
     /// <summary>

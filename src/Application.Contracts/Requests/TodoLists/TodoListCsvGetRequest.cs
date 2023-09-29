@@ -1,8 +1,5 @@
 ﻿namespace LayeredTemplate.Application.Contracts.Requests.TodoLists;
 
-/// <summary>
-/// TodoList Csv Get Request
-/// </summary>
 public class TodoListCsvGetRequest
 {
     /// <summary>

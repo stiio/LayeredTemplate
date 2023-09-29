@@ -7,7 +7,7 @@ paths:
     get:
       tags:
         - Example
-      summary: Get Auth Type
+      summary: Get auth type
       operationId: GetAuthTypeV1
       responses:
         '200':
@@ -35,10 +35,9 @@ paths:
     post:
       tags:
         - TodoList
-      summary: Search TodoList
+      summary: Search todo list
       operationId: SearchTodoListV1
       requestBody:
-        description: Body
         content:
           application/json:
             schema:
@@ -85,10 +84,9 @@ paths:
     post:
       tags:
         - TodoList
-      summary: Create TodoList
+      summary: Create todo list
       operationId: CreateTodoListV1
       requestBody:
-        description: Body
         content:
           application/json:
             schema:
@@ -135,7 +133,7 @@ paths:
     put:
       tags:
         - TodoList
-      summary: Update TodoList
+      summary: Update todo list
       operationId: UpdateTodoListV1
       parameters:
         - name: id
@@ -146,7 +144,6 @@ paths:
             type: string
             format: uuid
       requestBody:
-        description: Body
         content:
           application/json:
             schema:
@@ -192,7 +189,7 @@ paths:
     get:
       tags:
         - TodoList
-      summary: Get TodoList by id
+      summary: Get todo list
       operationId: GetTodoListV1
       parameters:
         - name: id
@@ -236,7 +233,7 @@ paths:
     delete:
       tags:
         - TodoList
-      summary: Delete TodoList
+      summary: Delete todo list
       operationId: DeleteTodoListV1
       parameters:
         - name: id
@@ -281,7 +278,7 @@ paths:
     get:
       tags:
         - TodoList
-      summary: Get TodoList Csv
+      summary: Get todo list csv
       operationId: GetTodoListCsvV1
       parameters:
         - name: id
@@ -298,6 +295,7 @@ paths:
             application/octet-stream:
               schema:
                 type: string
+                description: File result
                 format: binary
         '400':
           description: Bad request
@@ -321,7 +319,7 @@ paths:
     get:
       tags:
         - User
-      summary: Get Current User
+      summary: Get current user
       operationId: GetCurrentUserV1
       responses:
         '200':
@@ -358,7 +356,7 @@ paths:
     post:
       tags:
         - User
-      summary: Send User Update Email Code
+      summary: Send user email code
       operationId: SendUserEmailCodeV1
       requestBody:
         content:
@@ -412,7 +410,7 @@ paths:
     put:
       tags:
         - User
-      summary: Verify User Update Email Code
+      summary: Verify user email code
       operationId: VerifyUserEmailCodeV1
       requestBody:
         content:
@@ -507,13 +505,13 @@ components:
         role:
           $ref: '#/components/schemas/Role'
       additionalProperties: false
-      description: Current User
+      description: Current user
     DirectionType:
       enum:
         - Asc
         - Desc
       type: string
-      description: Direction Type
+      description: Direction type
     ErrorResult:
       type: object
       properties:
@@ -523,10 +521,10 @@ components:
           nullable: true
         traceId:
           type: string
-          description: Trace identifier
+          description: Trace id
           nullable: true
       additionalProperties: false
-      description: Error Result
+      description: Error result
     PaginationRequest:
       required:
         - limit
@@ -548,7 +546,7 @@ components:
           format: int32
           example: 10
       additionalProperties: false
-      description: Pagination Request
+      description: Pagination request
     PaginationResponse:
       required:
         - limit
@@ -560,14 +558,14 @@ components:
           maximum: 2147483647
           minimum: 1
           type: integer
-          description: 'Page number (default: 1)'
+          description: Page number
           format: int32
           example: 1
         limit:
           maximum: 100
           minimum: 1
           type: integer
-          description: 'Limit items on page (default: 10)'
+          description: Limit items on page
           format: int32
           example: 10
         total:
@@ -576,13 +574,14 @@ components:
           format: int32
           example: 100
       additionalProperties: false
-      description: Pagination Response
+      description: Pagination response
     Role:
       enum:
         - Guest
         - Admin
         - Client
       type: string
+      description: Role
     SortingTodoListRecordDto:
       required:
         - column
@@ -603,7 +602,7 @@ components:
         direction:
           $ref: '#/components/schemas/DirectionType'
       additionalProperties: false
-      description: Sorting
+      description: Sorting 1
     SuccessfulResult:
       type: object
       properties:
@@ -612,7 +611,7 @@ components:
           description: Message
           nullable: true
       additionalProperties: false
-      description: Successful Result
+      description: Successful result
     TodoListCreateRequestBody:
       required:
         - name
@@ -628,7 +627,7 @@ components:
         type:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
-      description: TodoList Create Request Body
+      description: Todo list create request body
     TodoListDto:
       type: object
       properties:
@@ -644,7 +643,7 @@ components:
         type:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
-      description: TodoListDto
+      description: Todo list dto
     TodoListRecordDto:
       type: object
       properties:
@@ -670,13 +669,13 @@ components:
           format: date-with-time
           example: '2022-11-15T12:00:00.0000000Z'
       additionalProperties: false
-      description: TodoList Record
+      description: Todo list record dto
     TodoListRecordDtoFilter:
       type: object
       properties:
         search:
           type: string
-          description: Search
+          description: Search filter
           nullable: true
         types:
           type: array
@@ -685,7 +684,7 @@ components:
           description: Types filter
           nullable: true
       additionalProperties: false
-      description: TodoListRecordDtoFilter
+      description: Todo list record dto filter
     TodoListSearchRequestBody:
       type: object
       properties:
@@ -696,7 +695,7 @@ components:
         filter:
           $ref: '#/components/schemas/TodoListRecordDtoFilter'
       additionalProperties: false
-      description: TodoList Search Request Body
+      description: Todo list search request body
     TodoListSearchResponse:
       required:
         - data
@@ -716,12 +715,13 @@ components:
             $ref: '#/components/schemas/TodoListRecordDto'
           description: Data
       additionalProperties: false
-      description: TodoListSearchResponse
+      description: Todo list search response
     TodoListType:
       enum:
         - Default
         - Specific
       type: string
+      description: Todo list type
     TodoListUpdateRequestBody:
       required:
         - name
@@ -736,7 +736,7 @@ components:
         type:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
-      description: TodoList Update Request Body
+      description: Todo list update request body
     UserShortInfo:
       type: object
       properties:
@@ -749,7 +749,7 @@ components:
           description: Email of user
           nullable: true
       additionalProperties: false
-      description: User Short Info
+      description: User short info
   securitySchemes:
     Bearer:
       type: http

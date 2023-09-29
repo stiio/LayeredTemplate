@@ -2,13 +2,10 @@
 
 namespace LayeredTemplate.Application.Contracts.Models.TodoLists;
 
-/// <summary>
-/// TodoListRecordDtoFilter
-/// </summary>
 public class TodoListRecordDtoFilter
 {
     /// <summary>
-    /// Search
+    /// Search filter
     /// </summary>
     public string? Search { get; set; }
 

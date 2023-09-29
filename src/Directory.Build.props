@@ -5,7 +5,7 @@
         <Nullable>enable</Nullable>
 	    <InvariantGlobalization>true</InvariantGlobalization>
         <RootNamespace>$(SolutionName.Replace(" ", "_").Replace(".App", "")).$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
-        <NoWarn>1701;1702;SA0001</NoWarn>
+        <NoWarn>1701;1702;SA0001;CS1591</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

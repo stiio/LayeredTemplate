@@ -2,9 +2,6 @@
 
 namespace LayeredTemplate.Application.Contracts.Models.Common;
 
-/// <summary>
-/// Pagination Request
-/// </summary>
 public class PaginationRequest
 {
     /// <summary>

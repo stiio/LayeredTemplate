@@ -2,9 +2,6 @@
 
 namespace LayeredTemplate.Application.Contracts.Models.TodoLists;
 
-/// <summary>
-/// TodoListDto
-/// </summary>
 public class TodoListDto
 {
     /// <summary>

@@ -64,11 +64,15 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
 
         options.DescribeAllParametersInCamelCase();
 
-        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Web.Api.xml"));
         options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Application.Contracts.xml"));
+        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Web.Api.xml"));
 
         options.OperationFilter<DefaultApplicationResponsesFilter>();
+        options.OperationFilter<AuthOperationFilter>();
+        options.OperationFilter<DefaultOperationSummaryFilter>();
+
         options.SchemaFilter<SortingToEnumFilter>();
+        options.SchemaFilter<DefaultSchemaDescriptionFilter>();
 
         options.CustomOperationIds(apiDesc =>
             apiDesc.TryGetMethodInfo(out var methodInfo)
@@ -92,8 +96,6 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
             In = ParameterLocation.Header,
             Type = SecuritySchemeType.ApiKey,
         });
-
-        options.OperationFilter<AuthOperationFilter>();
 
         options.MapType<DateOnly>(() => new OpenApiSchema
         {

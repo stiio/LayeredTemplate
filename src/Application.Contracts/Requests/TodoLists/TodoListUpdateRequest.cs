@@ -5,9 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.Application.Contracts.Requests.TodoLists;
 
-/// <summary>
-/// UpdateTodoListRequest
-/// </summary>
 public class TodoListUpdateRequest : IRequest<TodoListDto>
 {
     /// <summary>
@@ -15,9 +12,6 @@ public class TodoListUpdateRequest : IRequest<TodoListDto>
     /// </summary>
     public Guid Id { get; set; }
 
-    /// <summary>
-    /// Body
-    /// </summary>
     [Required]
     [FromBody]
     public TodoListUpdateRequestBody Body { get; set; } = null!;

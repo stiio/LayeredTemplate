@@ -7,11 +7,10 @@
 	<ItemGroup>
     <PackageReference Include="libphonenumber-csharp" Version="8.13.11" />
     <PackageReference Include="MediatR.Contracts" Version="2.0.1" />
-    <PackageReference Include="Stio.JsonMultipartFormDataSupport" Version="1.0.5" />
+    <PackageReference Include="Stio.JsonMultipartFormDataSupport" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Enums\" />
     <Folder Include="Attributes\" />
   </ItemGroup>
 
