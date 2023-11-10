@@ -7,7 +7,7 @@
 
   <Target Name="OpenAPI" AfterTargets="Build" Condition="$(Configuration)=='Debug'">
 	  <Exec Command="dotnet tool restore" />
-	  <Exec Command="dotnet swagger tofile --output ./specs/api_merged.yaml --yaml $(OutputPath)$(AssemblyName).dll merged_api" WorkingDirectory="$(ProjectDir)" />
+	  <Exec Command="dotnet swagger tofile --output ./specs/merged_api.yaml --yaml $(OutputPath)$(AssemblyName).dll merged_api" WorkingDirectory="$(ProjectDir)" />
   </Target>
 
   <ItemGroup>

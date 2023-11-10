@@ -1,13 +1,13 @@
 stages:
-  - package-build-openapi
+  - package-build
   - package-codegen
   - package-deploy
   
   - deploy-aws-staging
   - deploy-aws-ecs-staging
 
-package-build-openapi:
-    stage: package-build-openapi
+package-build:
+    stage: package-build
     image: mcr.microsoft.com/dotnet/sdk:6.0-alpine
     only:
       - package-release
@@ -16,8 +16,11 @@ package-build-openapi:
         - specs/
     script:
         cd ./Web
-        dotnet build -c Release
-        copy ./specs/api_merged.yaml /specs/api_merged.yaml
+        dotnet restore
+        dotnet tool restore
+        dotnet build -c Release -o build
+        cd build
+        dotnet swagger tofile --output /specs/merged_api.yaml --yaml Web.dll merged_api
 
 package-codegen:
   stage: package-codegen
@@ -25,12 +28,12 @@ package-codegen:
   only:
     - package-release
   dependencies:
-    - package-build-openapi
+    - package-build
   artifacts:
     paths:
       - front/
   script:
-    - /usr/local/bin/docker-entrypoint.sh generate -g typescript-fetch -i ./Web/specs/api_merged.yaml -o front -c ts-gen-config.json --global-property skipFormModel=false
+    - /usr/local/bin/docker-entrypoint.sh generate -g typescript-fetch -i /specs/merged_api.yaml -o front -c ts-gen-config.json --global-property skipFormModel=false
 
 package-deploy:
   stage: package-deploy

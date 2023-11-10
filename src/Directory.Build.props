@@ -8,12 +8,14 @@
         <NoWarn>1701;1702;SA0001;CS1591</NoWarn>
     </PropertyGroup>
 
-	<PropertyGroup>
-		<VersionMajor>1</VersionMajor>
-		<VersionMinor>$([System.DateTime]::UtcNow.ToString("yyyy"))</VersionMinor>
-		<VersionPatch>$([System.DateTime]::UtcNow.ToString("MMdd"))</VersionPatch>
-		<VersionRevision>$([System.DateTime]::UtcNow.ToString("HHmm"))</VersionRevision>
-		<Version>$(VersionMajor).$(VersionMinor).$(VersionPatch).$(VersionRevision)</Version>
+	<PropertyGroup Condition="'$(Configuration)' != 'Debug'">
+		<VersionMajor Condition="'$(VersionMajor)' == ''">1</VersionMajor>
+		<VersionMinor Condition="'$(VersionMinor)' == ''">$([System.DateTime]::UtcNow.ToString("yyyy"))</VersionMinor>
+		<VersionPatch Condition="'$(VersionPatch)' == ''">$([System.DateTime]::UtcNow.ToString("MMdd"))</VersionPatch>
+		<VersionRevision Condition="'$(VersionRevision)' == ''">$([System.DateTime]::UtcNow.ToString("HHmm"))</VersionRevision>
+        <VersionPrefix Condition="'$(VersionPrefix)' == ''">$(VersionMajor).$(VersionMinor).$(VersionPatch).$(VersionRevision)</VersionPrefix>
+		<VersionSuffix Condition="'$(VersionSuffix)' == ''"></VersionSuffix>
+		<Version Condition="'$(Version)' == ''">$(VersionPrefix)$(VersionSuffix)</Version>
 	</PropertyGroup>
 
     <ItemGroup>
