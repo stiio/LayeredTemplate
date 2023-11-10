@@ -1,24 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>1.0.1</Version>
-  </PropertyGroup>
+	<PropertyGroup>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
 	
-  <ItemGroup>
-	<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="6.4.0" />
-	<PackageReference Include="AutoBogus" Version="2.13.1" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-  </ItemGroup>
+    <ItemGroup>
+		<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="6.4.0" />
+		<PackageReference Include="AutoBogus" Version="2.13.1" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Application\Application.csproj" />
-    <ProjectReference Include="..\Shared\Shared.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Application\Application.csproj" />
+		<ProjectReference Include="..\Shared\Shared.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\V1\" />
-    <Folder Include="Bogus\" />
-  </ItemGroup>
+	<ItemGroup>
+		<Folder Include="Bogus\" />
+	</ItemGroup>
 
 </Project>

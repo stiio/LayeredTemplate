@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: Merged Api
-  version: 1.0.1
+  version: 1.2023.1110.1238
 paths:
   /api/v1/example/auth_type:
     get:
@@ -31,6 +31,40 @@ paths:
       security:
         - Bearer: [ ]
         - ApiKey: [ ]
+  /api/v1/info/version:
+    get:
+      tags:
+        - Info
+      summary: Get version
+      operationId: GetVersionV1
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: String
+            application/json:
+              schema:
+                type: string
+                description: String
+            text/json:
+              schema:
+                type: string
+                description: String
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
   /api/v1/todo_lists/search:
     post:
       tags:

@@ -1,15 +1,31 @@
 stages:
+  - package-build-openapi
   - package-codegen
   - package-deploy
   
   - deploy-aws-staging
   - deploy-aws-ecs-staging
 
+package-build-openapi:
+    stage: package-build-openapi
+    image: mcr.microsoft.com/dotnet/sdk:6.0-alpine
+    only:
+      - package-release
+    artifacts:
+      paths:
+        - specs/
+    script:
+        cd ./Web
+        dotnet build -c Release
+        copy ./specs/api_merged.yaml /specs/api_merged.yaml
+
 package-codegen:
   stage: package-codegen
   image: openapitools/openapi-generator-cli:v6.6.0
   only:
     - package-release
+  dependencies:
+    - package-build-openapi
   artifacts:
     paths:
       - front/
