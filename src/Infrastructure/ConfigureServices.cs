@@ -25,6 +25,8 @@ public static class ConfigureServices
         services.ConfigureAuthorization();
         services.ConfigureAwsServices(configuration);
 
+        services.AddSingleton<ILockProvider, PostgresLockProvider>();
+
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IUserManager, UserManager>();
 
@@ -67,11 +69,11 @@ public static class ConfigureServices
                 opts.UsingInMemory((ctx, cfg) =>
                 {
                     cfg.UseMessageScope(ctx);
-                    cfg.UseInMemoryOutbox();
+                    cfg.UseInMemoryOutbox(ctx);
 
                     cfg.UseConsumeFilter(typeof(LoggerScopeFilter<>), ctx);
 
-                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.Kebaberize(), false));
+                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(new CustomAmazonSqsMessageNameFormatter(), env.EnvironmentName.Kebaberize()));
                     cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.Kebaberize(), false));
                 });
             }
@@ -82,7 +84,7 @@ public static class ConfigureServices
                     cfg.WaitTimeSeconds = 20;
 
                     cfg.UseMessageScope(ctx);
-                    cfg.UseInMemoryOutbox();
+                    cfg.UseInMemoryOutbox(ctx);
 
                     cfg.Host(configuration["AWS_REGION"], _ =>
                     {
@@ -93,11 +95,19 @@ public static class ConfigureServices
 
                     cfg.UseConsumeFilter(typeof(LoggerScopeFilter<>), ctx);
 
-                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(env.EnvironmentName.Kebaberize(), false));
+                    cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(new CustomAmazonSqsMessageNameFormatter(), env.EnvironmentName.Kebaberize()));
                     cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.Kebaberize(), false));
                 });
             }
         });
+
+        services.AddOptions<MassTransitHostOptions>()
+            .Configure(options =>
+            {
+                options.WaitUntilStarted = true;
+                options.StartTimeout = TimeSpan.FromMinutes(1);
+                options.StopTimeout = TimeSpan.FromMinutes(1);
+            });
 
         services.AddHealthChecks()
             .AddNpgSql(configuration[ConnectionStrings.DefaultConnection]!);

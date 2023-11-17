@@ -1,30 +1,30 @@
 ﻿using Humanizer;
 using MassTransit;
+using MassTransit.Transports;
 
 namespace LayeredTemplate.Messaging.Formatters;
 
 public class KebabCaseEntityNameFormatter : IEntityNameFormatter
 {
-    private readonly bool includeNamespace;
     private readonly string? prefix;
 
-    public KebabCaseEntityNameFormatter(bool includeNamespace)
+    private readonly IMessageNameFormatter messageNameFormatter;
+
+    public KebabCaseEntityNameFormatter(IMessageNameFormatter messageNameFormatter)
     {
-        this.includeNamespace = includeNamespace;
+        this.messageNameFormatter = messageNameFormatter;
     }
 
-    public KebabCaseEntityNameFormatter(string prefix, bool includeNamespace)
+    public KebabCaseEntityNameFormatter(IMessageNameFormatter messageNameFormatter, string prefix)
     {
-        this.includeNamespace = includeNamespace;
+        this.messageNameFormatter = messageNameFormatter;
         this.prefix = prefix;
     }
 
     public string FormatEntityName<T>()
     {
-        var name = (this.includeNamespace
-            ? typeof(T).FullName
-            : typeof(T).Name).Kebaberize();
+        var name = this.messageNameFormatter.GetMessageName(typeof(T));
 
-        return string.IsNullOrEmpty(this.prefix) ? name : $"{this.prefix}-{name}";
+        return string.IsNullOrEmpty(this.prefix) ? name.Kebaberize() : $"{this.prefix}-{name}".Kebaberize();
     }
 }

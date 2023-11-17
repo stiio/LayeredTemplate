@@ -2,6 +2,7 @@
 using System.Text;
 using Asp.Versioning.ApiExplorer;
 using LayeredTemplate.Shared.Constants;
+using LayeredTemplate.Shared.Extensions;
 using LayeredTemplate.Web.Api.Controllers;
 using LayeredTemplate.Web.OpenApiFilters;
 using Microsoft.Extensions.Options;
@@ -21,7 +22,7 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
 
     public void Configure(SwaggerGenOptions options)
     {
-        var packageVersion = typeof(AppControllerBase).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        var packageVersion = typeof(AppControllerBase).Assembly.GetVersion();
 
         foreach (var description in this.apiVersionDescriptionProvider.ApiVersionDescriptions)
         {

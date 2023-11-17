@@ -33,6 +33,6 @@ public static class ConfigureServices
         services.AddDataProtection()
             .PersistKeysToDbContext<ApplicationDbContext>();
 
-        services.AddStartupTask<RunMigrationsTask>();
+        services.AddStartupTask<RunMigrationsTask<ApplicationDbContext>>();
     }
 }
