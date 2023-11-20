@@ -31,28 +31,30 @@ paths:
       security:
         - Bearer: [ ]
         - ApiKey: [ ]
-  /api/v1/info/version:
+  /api/v1/info:
     get:
       tags:
         - Info
-      summary: Get version
-      operationId: GetVersionV1
+      summary: Get info
+      operationId: GetInfoV1
+      parameters:
+        - name: request
+          in: query
+          schema:
+            $ref: '#/components/schemas/InfoGetRequest'
       responses:
         '200':
           description: Success
           content:
             text/plain:
               schema:
-                type: string
-                description: String
+                $ref: '#/components/schemas/InfoResponse'
             application/json:
               schema:
-                type: string
-                description: String
+                $ref: '#/components/schemas/InfoResponse'
             text/json:
               schema:
-                type: string
-                description: String
+                $ref: '#/components/schemas/InfoResponse'
         '400':
           description: Bad request
           content:
@@ -559,6 +561,21 @@ components:
           nullable: true
       additionalProperties: false
       description: Error result
+    InfoGetRequest:
+      type: object
+      additionalProperties: false
+      description: Info get request
+    InfoResponse:
+      type: object
+      properties:
+        buildDate:
+          type: string
+          description: Build date
+          format: date-with-time
+          nullable: true
+          example: '2022-11-15T12:00:00.0000000Z'
+      additionalProperties: false
+      description: Info response
     PaginationRequest:
       required:
         - limit

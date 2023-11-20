@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <Folder Include="Attributes\" />
+    <Folder Include="Models\Info\" />
+    <Folder Include="Requests\Info\" />
   </ItemGroup>
 
   <ItemGroup>

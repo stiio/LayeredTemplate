@@ -1,8 +1,9 @@
 ﻿using System.Reflection;
+using LayeredTemplate.Shared.AssemblyAttributes;
 
 namespace LayeredTemplate.Shared.Extensions;
 
-public static class VersionExtensions
+public static class AssemblyExtensions
 {
     public static string? GetVersion(this Assembly assembly)
     {
@@ -14,5 +15,10 @@ public static class VersionExtensions
         }
 
         return version[..version.IndexOf('+')];
+    }
+
+    public static DateTime? GetBuildDate(this Assembly assembly)
+    {
+        return assembly.GetCustomAttribute<AssemblyBuildDateAttribute>()?.BuildDate;
     }
 }

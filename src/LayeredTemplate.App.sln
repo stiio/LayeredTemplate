@@ -9,8 +9,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		.gitlab-ci.yml = .gitlab-ci.yml
-		env.example.json = env.example.json
 		Directory.Build.props = Directory.Build.props
+		Web\.config\dotnet-tools.json = Web\.config\dotnet-tools.json
+		env.example.json = env.example.json
 		README.md = README.md
 		ts-gen-config.json = ts-gen-config.json
 	EndProjectSection

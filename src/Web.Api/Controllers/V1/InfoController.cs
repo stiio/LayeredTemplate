@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using LayeredTemplate.Application.Contracts.Models.Info;
+using LayeredTemplate.Application.Contracts.Requests.Info;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.Web.Api.Controllers.V1;
@@ -7,9 +9,16 @@ namespace LayeredTemplate.Web.Api.Controllers.V1;
 [Route("info")]
 public class InfoController : AppControllerBase
 {
-    [HttpGet("version")]
-    public ActionResult<string?> GetVersion()
+    private readonly ISender sender;
+
+    public InfoController(ISender sender)
     {
-        return Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        this.sender = sender;
+    }
+
+    [HttpGet]
+    public Task<InfoResponse> GetInfo()
+    {
+        return this.sender.Send(new InfoGetRequest());
     }
 }

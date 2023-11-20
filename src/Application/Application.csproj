@@ -4,6 +4,12 @@
   </PropertyGroup>
 
 	<ItemGroup>
+		<AssemblyAttribute Include="LayeredTemplate.Shared.AssemblyAttributes.AssemblyBuildDateAttribute">
+			<_Parameter1>$([System.DateTime]::UtcNow.ToString("O"))</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+
+	<ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="Dapper" Version="2.0.123" />
     <PackageReference Include="DistributedLock.Postgres" Version="1.0.4" />
@@ -23,6 +29,7 @@
 
   <ItemGroup>
     <Folder Include="Common\Behaviors\" />
+    <Folder Include="Handlers\Info\" />
     <Folder Include="Mapper\" />
     <Folder Include="Common\Extensions\" />
   </ItemGroup>
