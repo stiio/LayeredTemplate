@@ -24,7 +24,7 @@ package-build:
 
 package-codegen:
   stage: package-codegen
-  image: openapitools/openapi-generator-cli:v6.6.0
+  image: openapitools/openapi-generator-cli:v7.1.0
   only:
     - package-release
   dependencies:

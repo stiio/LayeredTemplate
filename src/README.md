@@ -11,8 +11,8 @@ For all new projects remove duplicate props from *.csproj (Default props: Direct
 - For api actions: [Role?][Action][Resource][ResourceSuffix] (e.g. UpdateUser, AdminUpdateUser)
 
 ## Manual TypeScript client generation
-Use openapi-generator-cli:v6.6.0
-image `image openapitools/openapi-generator-cli:v6.5.0`
+Use openapi-generator-cli:v7.1.0
+image `image openapitools/openapi-generator-cli:v7.1.0`
 ```
 openapi-generator-cli generate -g typescript-fetch -i Web/specs/api_merged.yaml -o front -c ts-gen-config.json --global-property skipFormModel=false
 ```

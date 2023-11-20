@@ -56,8 +56,8 @@ internal class ApiKeyAuthenticationHandler : AuthenticationHandler<Authenticatio
         // TODO: Add validate api key
         var claims = new List<Claim>
         {
-            new Claim(AppClaims.UserId, "D87F1AD8-7F86-4FDD-B721-F69B05226DB4"),
-            new Claim(AppClaims.Role, Role.Client.ToString()),
+            new(AppClaims.UserId, "D87F1AD8-7F86-4FDD-B721-F69B05226DB4"),
+            new(AppClaims.Role, Role.Client.ToString()),
         };
 
         var identity = new ClaimsIdentity(claims, AppAuthenticationSchemes.ApiKey);
