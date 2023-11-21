@@ -101,14 +101,14 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
         options.MapType<DateOnly>(() => new OpenApiSchema
         {
             Type = "string",
-            Format = "date-only",
+            Format = null,
             Example = OpenApiAnyFactory.CreateFromJson($"\"{DateOnly.FromDateTime(new DateTime(2022, 11, 15, 12, 0, 0, DateTimeKind.Utc)):O}\""),
         });
 
         options.MapType<DateTime>(() => new OpenApiSchema
         {
             Type = "string",
-            Format = "date-with-time",
+            Format = null,
             Example = OpenApiAnyFactory.CreateFromJson($"\"{new DateTime(2022, 11, 15, 12, 0, 0, DateTimeKind.Utc):O}\""),
         });
     }

@@ -37,11 +37,6 @@ paths:
         - Info
       summary: Get info
       operationId: GetInfoV1
-      parameters:
-        - name: request
-          in: query
-          schema:
-            $ref: '#/components/schemas/InfoGetRequest'
       responses:
         '200':
           description: Success
@@ -561,17 +556,12 @@ components:
           nullable: true
       additionalProperties: false
       description: Error result
-    InfoGetRequest:
-      type: object
-      additionalProperties: false
-      description: Info get request
     InfoResponse:
       type: object
       properties:
         buildDate:
           type: string
           description: Build date
-          format: date-with-time
           nullable: true
           example: '2022-11-15T12:00:00.0000000Z'
       additionalProperties: false
@@ -717,7 +707,6 @@ components:
         createdAt:
           type: string
           description: Created At
-          format: date-with-time
           example: '2022-11-15T12:00:00.0000000Z'
       additionalProperties: false
       description: Todo list record dto
