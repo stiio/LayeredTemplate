@@ -36,12 +36,12 @@
       "datatype": "choice",
       "choices": [
         {
-          "choice": "net6.0",
-          "description": "Target net6.0"
+          "choice": "net8.0",
+          "description": "Target net8.0"
         }
       ],
-      "replaces": "net6.0",
-      "defaultValue": "net6.0"
+      "replaces": "net8.0",
+      "defaultValue": "net8.0"
     },
     "appDbName": {
       "type": "parameter",

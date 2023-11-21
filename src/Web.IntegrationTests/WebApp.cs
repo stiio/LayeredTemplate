@@ -1,8 +1,5 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Mime;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Configurations;
-using DotNet.Testcontainers.Containers;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Data.Context;
@@ -15,20 +12,19 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace LayeredTemplate.Web.IntegrationTests;
 
 public class WebApp : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlTestcontainer postgreSqlTestContainer = new TestcontainersBuilder<PostgreSqlTestcontainer>()
-        .WithDatabase(new PostgreSqlTestcontainerConfiguration()
-        {
-            Database = "appDbName-test",
-            Username = "postgres",
-            Password = "postgres",
-            Port = 5555,
-        })
+    private readonly PostgreSqlContainer postgreSqlTestContainer = new PostgreSqlBuilder()
+        .WithDatabase("appDbName-test")
+        .WithUsername("postgres")
+        .WithPassword("postgres")
+        .WithExposedPort(5555)
+        .WithPortBinding(5555, 5555)
         .WithAutoRemove(true)
         .WithImage("postgres:13.2")
         .Build();
@@ -70,7 +66,7 @@ public class WebApp : WebApplicationFactory<Program>, IAsyncLifetime
             // test db
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
 
-            services.RegisterDbContext(this.postgreSqlTestContainer.ConnectionString);
+            services.RegisterDbContext(this.postgreSqlTestContainer.GetConnectionString());
 
             // --
             services.AddAuthentication()

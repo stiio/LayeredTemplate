@@ -5,9 +5,9 @@
   </PropertyGroup>
 
 	<ItemGroup>
-    <PackageReference Include="libphonenumber-csharp" Version="8.13.11" />
+    <PackageReference Include="libphonenumber-csharp" Version="8.13.25" />
     <PackageReference Include="MediatR.Contracts" Version="2.0.1" />
-    <PackageReference Include="Stio.JsonMultipartFormDataSupport" Version="1.1.0" />
+    <PackageReference Include="Stio.JsonMultipartFormDataSupport" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>

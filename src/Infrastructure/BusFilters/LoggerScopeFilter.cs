@@ -17,7 +17,15 @@ internal class LoggerScopeFilter<T> : IFilter<ConsumeContext<T>>
     {
         using (this.logger.BeginScope("Consumer process scope: {corId}", Guid.NewGuid()))
         {
-            await next.Send(context);
+            try
+            {
+                await next.Send(context);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError(e, "Consumer exception");
+                throw;
+            }
         }
     }
 

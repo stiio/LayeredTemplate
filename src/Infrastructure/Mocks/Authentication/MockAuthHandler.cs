@@ -15,9 +15,8 @@ internal class MockAuthHandler : AuthenticationHandler<AuthenticationSchemeOptio
         IOptions<MockUserSettings> mockUserOptions,
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
-        UrlEncoder encoder,
-        ISystemClock clock)
-        : base(options, logger, encoder, clock)
+        UrlEncoder encoder)
+        : base(options, logger, encoder)
     {
         this.mockUser = mockUserOptions.Value;
     }
@@ -29,7 +28,7 @@ internal class MockAuthHandler : AuthenticationHandler<AuthenticationSchemeOptio
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
-        var authorizationHeader = this.Request.Headers["Authorization"].FirstOrDefault();
+        var authorizationHeader = this.Request.Headers.Authorization.ToString();
         if (string.IsNullOrEmpty(authorizationHeader))
         {
             return Task.FromResult(AuthenticateResult.Fail("Unauthorized"));

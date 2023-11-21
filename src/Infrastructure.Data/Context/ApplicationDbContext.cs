@@ -57,7 +57,7 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
         return this.DbConnection.QueryAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
     }
 
-    public Task<T> QueryFirstOrDefaultAsync<T>(string sql, object? param = null)
+    public Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null)
     {
         return this.DbConnection.QueryFirstOrDefaultAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
     }
@@ -77,7 +77,7 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
         return this.DbConnection.ExecuteAsync(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
     }
 
-    public Task<T> ExecuteScalarAsync<T>(string sql, object? param = null)
+    public Task<T?> ExecuteScalarAsync<T>(string sql, object? param = null)
     {
         return this.DbConnection.ExecuteScalarAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
     }

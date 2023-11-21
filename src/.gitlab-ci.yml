@@ -8,7 +8,7 @@ stages:
 
 package-build:
     stage: package-build
-    image: mcr.microsoft.com/dotnet/sdk:6.0-alpine
+    image: mcr.microsoft.com/dotnet/sdk:8.0-alpine
     only:
       - package-release
     artifacts:
