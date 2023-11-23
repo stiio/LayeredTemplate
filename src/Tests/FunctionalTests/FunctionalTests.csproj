@@ -21,7 +21,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Web\Web.csproj" />
+		<ProjectReference Include="..\..\Core\Web\Web.csproj" />
 	</ItemGroup>
 
 </Project>

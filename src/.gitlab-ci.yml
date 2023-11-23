@@ -15,7 +15,7 @@ package-build:
       paths:
         - specs/
     script:
-        cd ./Web
+        cd ./Core/Web
         dotnet restore
         dotnet tool restore
         dotnet build -c Release -o build
@@ -64,7 +64,7 @@ deploy-aws-staging:
   environment:
     name: staging
   script:
-    - docker build -t $AWS_REGISTRY$AWS_ECR_TAG -f Web/Dockerfile .
+    - docker build -t $AWS_REGISTRY$AWS_ECR_TAG -f Core/Web/Dockerfile .
     - docker login -u AWS -p $(aws ecr get-login-password --region $AWS_DEFAULT_REGION) $AWS_REGISTRY
     - docker push $AWS_REGISTRY$AWS_ECR_TAG
 

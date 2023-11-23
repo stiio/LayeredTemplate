@@ -1,6 +1,6 @@
 # See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-# Base
+# =============== Base ===============
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
 
 ENV ASPNETCORE_URLS=http://*:3080
@@ -8,22 +8,21 @@ ENV ASPNETCORE_URLS=http://*:3080
 WORKDIR /app
 EXPOSE 3080
 
-# Build
+# =============== Build ===============
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
 
 WORKDIR /src
 
-COPY ["*.targets", "."]
 COPY ["*.props", "."]
-COPY ["Web/*.csproj", "Web/"]
-COPY ["Web.Api/*.csproj", "Web.Api/"]
-COPY ["Application/*.csproj", "Application/"]
-COPY ["Application.Contracts/*.csproj", "Application.Contracts/"]
-COPY ["Domain/*.csproj", "Domain/"]
-COPY ["Shared/*.csproj", "Shared/"]
-COPY ["Infrastructure/*.csproj", "Infrastructure/"]
-COPY ["Infrastructure.Data/*.csproj", "Infrastructure.Data/"]
-COPY ["Messaging/*.csproj", "Messaging/"]
+COPY ["Core/Web/*.csproj", "Web/"]
+COPY ["Core/Web.Api/*.csproj", "Web.Api/"]
+COPY ["Core/Application/*.csproj", "Application/"]
+COPY ["Core/Application.Contracts/*.csproj", "Application.Contracts/"]
+COPY ["Core/Domain/*.csproj", "Domain/"]
+COPY ["Core/Infrastructure/*.csproj", "Infrastructure/"]
+COPY ["Core/Infrastructure.Data/*.csproj", "Infrastructure.Data/"]
+COPY ["Common/Shared/*.csproj", "Shared/"]
+COPY ["Common/Messaging/*.csproj", "Messaging/"]
 
 RUN dotnet restore "Web/Web.csproj"
 
@@ -33,12 +32,12 @@ WORKDIR "/src/Web"
 
 RUN dotnet build "Web.csproj" -c Release -o /app/build
 
-# Publish
+# =============== Publish ===============
 FROM build AS publish
 
 RUN dotnet publish "Web.csproj" -c Release -o /app/publish
 
-# Final
+# =============== Final ===============
 FROM base AS final
 
 WORKDIR /app

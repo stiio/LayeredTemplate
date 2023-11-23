@@ -23,8 +23,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Application.Contracts\Application.Contracts.csproj" />
-    <ProjectReference Include="..\Messaging\Messaging.csproj" />
-    <ProjectReference Include="..\Shared\Shared.csproj" />
+    <ProjectReference Include="..\..\Common\Messaging\Messaging.csproj" />
+    <ProjectReference Include="..\..\Common\Shared\Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
