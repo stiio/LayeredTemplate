@@ -1,0 +1,56 @@
+spec:
+  inputs:
+    branch:
+    job-suffix:
+
+---
+
+stages:
+  - npm-package-build$[[ inputs.job-suffix ]]
+  - npm-package-codegen$[[ inputs.job-suffix ]]
+  - npm-package-deploy$[[ inputs.job-suffix ]]
+
+npm-package-build$[[ inputs.job-suffix ]]:
+    stage: npm-package-build$[[ inputs.job-suffix ]]
+    image: mcr.microsoft.com/dotnet/sdk:8.0-alpine
+    only:
+      - $[[ inputs.branch ]]
+    artifacts:
+      paths:
+        - specs/
+    script:
+        cd ./Core/Web
+        dotnet restore
+        dotnet tool restore
+        dotnet build -c Release -o build
+        cd build
+        dotnet swagger tofile --output /specs/merged_api.yaml --yaml Web.dll merged_api
+
+npm-package-codegen$[[ inputs.job-suffix ]]:
+  stage: npm-package-codegen$[[ inputs.job-suffix ]]
+  image: openapitools/openapi-generator-cli:v7.1.0
+  only:
+    - $[[ inputs.branch ]]
+  dependencies:
+    - package-build
+  artifacts:
+    paths:
+      - front/
+  script:
+    - /usr/local/bin/docker-entrypoint.sh generate -g typescript-fetch -i /specs/merged_api.yaml -o front -c ts-gen-config.json --global-property skipFormModel=false
+
+npm-package-deploy$[[ inputs.job-suffix ]]:
+  stage: npm-package-deploy$[[ inputs.job-suffix ]]
+  image: node:latest
+  only:
+    - $[[ inputs.branch ]]
+  dependencies:
+    - package-codegen
+  script:
+    - cd front
+    - npm install
+    - npm config set '//<BASE_GIT_HOST>/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken' "${CI_JOB_TOKEN}"
+    - npm config set '//<BASE_GIT_HOST>/api/v4/packages/npm/:_authToken' "${CI_JOB_TOKEN}"
+    - npm config set @npmClientName:registry https://<BASE_GIT_HOST>/api/v4/projects/${CI_PROJECT_ID}/packages/npm/
+    - npm run build
+    - npm publish

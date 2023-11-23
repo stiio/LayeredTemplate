@@ -1,0 +1,36 @@
+spec:
+  inputs:
+    environment:
+    branch:
+    job-suffix:
+
+---
+
+stages:
+  - deploy-aws$[[ inputs.job-suffix ]]
+  - deploy-aws-ecs$[[ inputs.job-suffix ]]
+
+
+deploy-aws$[[ inputs.job-suffix ]]:
+  stage: deploy-aws$[[ inputs.job-suffix ]]
+  image:
+    name: cappers/awscli-docker-nodejs
+    entrypoint: [""]
+  only:
+    - $[[ inputs.branch ]]
+  environment:
+    name: $[[ inputs.environment ]]
+  script:
+    - docker build -t $AWS_REGISTRY$AWS_ECR_TAG -f Core/Web/Dockerfile .
+    - docker login -u AWS -p $(aws ecr get-login-password --region $AWS_DEFAULT_REGION) $AWS_REGISTRY
+    - docker push $AWS_REGISTRY$AWS_ECR_TAG
+
+deploy-aws-ecs$[[ inputs.job-suffix ]]:
+  stage: deploy-aws-ecs$[[ inputs.job-suffix ]]
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+  only:
+    - $[[ inputs.branch ]]
+  environment:
+    name: $[[ inputs.environment ]]
+  script:
+    - aws ecs update-service --cluster $AWS_ECS_CLUSTER --service $AWS_ECS_SERVICE --force-new-deployment
