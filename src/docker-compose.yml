@@ -1,4 +1,4 @@
-version: '3.4'
+version: '3.8'
 
 services:  
   postgres:
@@ -12,13 +12,13 @@ services:
     networks:
       - app-network
 
-  web:
-    image: ${DOCKER_REGISTRY-}web
+  backend:
+    image: ${DOCKER_REGISTRY-}layeredtemplate-backend
+    container_name: layeredtemplate-backend
     env_file:
       - .env
     ports:
       - 3080:3080
-      - 3081:3081
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
       - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
@@ -26,7 +26,7 @@ services:
       - postgres
     build:
       context: .
-      dockerfile: Web/Dockerfile
+      dockerfile: Core/Web/Dockerfile
     networks:
       - app-network
 

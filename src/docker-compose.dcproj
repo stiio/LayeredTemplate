@@ -6,7 +6,8 @@
     <ProjectGuid>3c48c1e8-1250-4ceb-b469-d03d23724243</ProjectGuid>
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
     <DockerServiceUrl>{Scheme}://localhost:{ServicePort}/api-docs</DockerServiceUrl>
-    <DockerServiceName>web</DockerServiceName>
+    <DockerServiceName>backend</DockerServiceName>
+	<DockerComposeProjectName>layeredtemplate</DockerComposeProjectName>
   </PropertyGroup>
   <ItemGroup>
     <None Include=".env" />

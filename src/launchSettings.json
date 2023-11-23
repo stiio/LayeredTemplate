@@ -3,9 +3,12 @@
     "Docker Compose": {
       "commandName": "DockerCompose",
       "commandVersion": "1.0",
+      "composeLaunchAction": "LaunchBrowser",
+      "composeLaunchServiceName": "backend",
+      "composeLaunchUrl": "{Scheme}://localhost:{ServicePort}/api-docs",
       "serviceActions": {
         "postgres": "StartWithoutDebugging",
-        "web": "StartDebugging"
+        "backend": "StartDebugging"
       }
     }
   }

@@ -1,6 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-	<PropertyGroup>
+	<PropertyGroup Condition="'$(MSBuildProjectExtension)' != '.dcproj'">
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -9,14 +9,14 @@
         <NoWarn>1701;1702;SA0001;CS1591</NoWarn>
     </PropertyGroup>
 
-	<ItemGroup>
+	<ItemGroup Condition="'$(MSBuildProjectExtension)' != '.dcproj'">
         <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.507">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
     </ItemGroup>
 
-	<ItemGroup>
+	<ItemGroup Condition="'$(MSBuildProjectExtension)' != '.dcproj'">
 		<InternalsVisibleTo Include="Web.IntegrationTests" />
 		<InternalsVisibleTo Include="FunctionalTests" />
 	</ItemGroup>
