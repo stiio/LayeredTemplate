@@ -14,7 +14,7 @@ stages:
 deploy-aws$[[ inputs.job-suffix ]]:
   stage: deploy-aws$[[ inputs.job-suffix ]]
   image:
-    name: cappers/awscli-docker-nodejs
+    name: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
     entrypoint: [""]
   only:
     - $[[ inputs.branch ]]

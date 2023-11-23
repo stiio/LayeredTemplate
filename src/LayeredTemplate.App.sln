@@ -44,6 +44,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{B060B3FD-D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{49D21A72-5BEB-4470-9399-A0D6B2221F44}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pipelines", "Pipelines", "{E2A3B00F-1107-4683-BE37-8A3FF4576243}"
+	ProjectSection(SolutionItems) = preProject
+		Pipelines\backend-deploy.yml = Pipelines\backend-deploy.yml
+		Pipelines\npm-package-deploy.yml = Pipelines\npm-package-deploy.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
