@@ -3,16 +3,17 @@ spec:
     environment:
     branch:
     job-suffix:
+      default: ''
+    deploy-aws-stage:
+      - deploy-aws-backend
+    deploy-aws-esc-stage:
+      - deploy-aws-ecs-backend
 
 ---
 
-stages:
-  - deploy-aws$[[ inputs.job-suffix ]]
-  - deploy-aws-ecs$[[ inputs.job-suffix ]]
-
 
 deploy-aws$[[ inputs.job-suffix ]]:
-  stage: deploy-aws$[[ inputs.job-suffix ]]
+  stage: $[[ inputs.deploy-aws-stage ]]
   image:
     name: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
     entrypoint: [""]
@@ -26,7 +27,7 @@ deploy-aws$[[ inputs.job-suffix ]]:
     - docker push $AWS_REGISTRY$AWS_ECR_TAG
 
 deploy-aws-ecs$[[ inputs.job-suffix ]]:
-  stage: deploy-aws-ecs$[[ inputs.job-suffix ]]
+  stage: $[[ inputs.deploy-aws-esc-stage ]]
   image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
   only:
     - $[[ inputs.branch ]]

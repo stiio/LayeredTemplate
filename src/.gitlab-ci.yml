@@ -1,37 +1,35 @@
+stages:
+  - deploy-aws-backend
+  - deploy-aws-ecs-backend
+
+  - npm-package-build
+  - npm-package-codegen
+  - npm-package-deploy
+
 include:
   - local: 'Pipelines/backend-deploy.yml'
     inputs:
       environment: backend-staging
       branch: staging
       job-suffix: -staging
-    rules:
-      - if: $CI_COMMIT_BRANCH == "staging"
 
   - local: 'Pipelines/backend-deploy.yml'
     inputs:
       environment: backend-pre-production
       branch: pre-production
       job-suffix: -pre-production
-    rules:
-      - if: $CI_COMMIT_BRANCH == "pre-production"
 
   - local: 'Pipelines/backend-deploy.yml'
     inputs:
       environment: backend-production
       branch: production
       job-suffix: -production
-    rules:
-      - if: $CI_COMMIT_BRANCH == "production"
 
   - local: 'Pipelines/npm-package-deploy.yml'
     inputs:
       branch: npm-package
-    rules:
-      - if: $CI_COMMIT_BRANCH == "npm-package"
 
   - local: 'Pipelines/npm-package-deploy.yml'
     inputs:
       branch: npm-package-production
       job-suffix: -production
-    rules:
-      - if: $CI_COMMIT_BRANCH == "npm-package-production"
