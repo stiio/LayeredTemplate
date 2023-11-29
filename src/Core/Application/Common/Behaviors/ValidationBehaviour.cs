@@ -1,6 +1,8 @@
 ﻿using FluentValidation;
+using FluentValidation.Results;
 using LayeredTemplate.Application.Common.Exceptions;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace LayeredTemplate.Application.Common.Behaviors;
 
@@ -8,10 +10,14 @@ internal class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TReq
     where TRequest : notnull
 {
     private readonly IEnumerable<IValidator<TRequest>> validators;
+    private readonly ILogger<ValidationBehaviour<TRequest, TResponse>> logger;
 
-    public ValidationBehaviour(IEnumerable<IValidator<TRequest>> validators)
+    public ValidationBehaviour(
+        IEnumerable<IValidator<TRequest>> validators,
+        ILogger<ValidationBehaviour<TRequest, TResponse>> logger)
     {
         this.validators = validators;
+        this.logger = logger;
     }
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
@@ -21,9 +27,13 @@ internal class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TReq
             return await next();
         }
 
-        var validationResults = await Task.WhenAll(
-            this.validators.Select(v =>
-                v.ValidateAsync(request, cancellationToken)));
+        var validationResults = new List<ValidationResult>();
+        foreach (var validator in this.validators)
+        {
+            this.logger.LogInformation($"Validator process: {validator.GetType().Name}");
+            var result = await validator.ValidateAsync(request, cancellationToken);
+            validationResults.Add(result);
+        }
 
         var errors = validationResults
             .Where(r => r.Errors.Any())

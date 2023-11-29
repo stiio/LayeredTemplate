@@ -33,20 +33,6 @@ internal static class QueryableExtensions
         return query.FirstAsync(lambda, cancellationToken);
     }
 
-    public static Task<T?> SelectForUpdate<T, TKey>(this DbSet<T> dbSet, TKey id)
-        where T : class, IBaseEntity<TKey>
-    {
-        var tableName = dbSet.EntityType.GetTableName();
-#pragma warning disable EF1002 // Risk of vulnerability to SQL injection.
-        return dbSet.FromSqlRaw(@$"
-                SELECT * FROM {tableName}
-                WHERE id = '{id}'
-                FOR UPDATE")
-            .Where(entity => entity.Id!.Equals(id))
-            .FirstOrDefaultAsync();
-#pragma warning restore EF1002 // Risk of vulnerability to SQL injection.
-    }
-
     public static IQueryable<T> Page<T>(this IQueryable<T> query, PaginationRequest pagination)
     {
         return query
