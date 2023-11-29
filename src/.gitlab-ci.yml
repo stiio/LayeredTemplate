@@ -33,3 +33,5 @@ include:
     inputs:
       branch: npm-package-production
       job-suffix: -production
+    rules:
+      - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME != 'npm-package'
