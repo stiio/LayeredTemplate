@@ -1,6 +1,6 @@
 stages:
-  - deploy-aws-backend
-  - deploy-aws-ecs-backend
+  - backend-deploy-aws
+  - backend-deploy-aws-ecs
 
   - npm-package-build
   - npm-package-codegen

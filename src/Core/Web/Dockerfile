@@ -4,9 +4,12 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
 
 ENV ASPNETCORE_URLS=http://*:3080
-
-WORKDIR /app
 EXPOSE 3080
+WORKDIR /app
+
+RUN apk add --no-cache \
+    tzdata \
+    icu-libs
 
 # =============== Build ===============
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
