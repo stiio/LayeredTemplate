@@ -17,10 +17,54 @@ namespace Infrastructure.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.5")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("LayeredTemplate.Domain.Entities.ApiKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Secret")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("secret");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_api_keys");
+
+                    b.HasIndex("Secret")
+                        .IsUnique()
+                        .HasDatabaseName("ix_api_keys_secret");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_api_keys_user_id");
+
+                    b.ToTable("api_keys", (string)null);
+                });
 
             modelBuilder.Entity("LayeredTemplate.Domain.Entities.AuditEvent", b =>
                 {
@@ -177,6 +221,18 @@ namespace Infrastructure.Data.Migrations
                         .HasName("pk_data_protection_keys");
 
                     b.ToTable("data_protection_keys", (string)null);
+                });
+
+            modelBuilder.Entity("LayeredTemplate.Domain.Entities.ApiKey", b =>
+                {
+                    b.HasOne("LayeredTemplate.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_api_keys_users_user_id");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LayeredTemplate.Domain.Entities.TodoList", b =>

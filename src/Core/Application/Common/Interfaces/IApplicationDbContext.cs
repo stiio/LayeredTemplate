@@ -10,6 +10,8 @@ public interface IApplicationDbContext : IApplicationDbConnection, IDisposable, 
 
     DbSet<TodoList> TodoLists { get; }
 
+    DbSet<ApiKey> ApiKeys { get; }
+
     DbSet<AuditEvent> AuditEvents { get; }
 
     DbSet<T> Set<T>()

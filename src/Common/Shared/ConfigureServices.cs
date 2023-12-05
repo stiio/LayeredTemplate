@@ -15,6 +15,7 @@ public static class ConfigureServices
     {
         services.Configure<CognitoSettings>(configuration.GetSection(nameof(CognitoSettings)));
         services.Configure<SmtpSettings>(configuration.GetSection(nameof(SmtpSettings)));
+        services.Configure<AppSettings>(configuration.GetSection(nameof(AppSettings)));
     }
 
     public static IServiceCollection AddStartupRunner(this IServiceCollection services)

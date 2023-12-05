@@ -3,6 +3,290 @@ info:
   title: Merged Api
   version: 1.0.0
 paths:
+  /api/v1/api_keys:
+    get:
+      tags:
+        - ApiKey
+      summary: List api key
+      operationId: ListApiKeyV1
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiKeyDto'
+                description: Api key dto
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiKeyDto'
+                description: Api key dto
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiKeyDto'
+                description: Api key dto
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
+    post:
+      tags:
+        - ApiKey
+      summary: Create api key
+      operationId: CreateApiKeyV1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyCreateRequestBody'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyCreateRequestBody'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyCreateRequestBody'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ApiKeySecretDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeySecretDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeySecretDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
+  '/api/v1/api_keys/{id}':
+    get:
+      tags:
+        - ApiKey
+      summary: Get api key
+      operationId: GetApiKeyV1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Id
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ApiKeyDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
+    put:
+      tags:
+        - ApiKey
+      summary: Update api key
+      operationId: UpdateApiKeyV1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Id
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyUpdateRequestBody'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyUpdateRequestBody'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyUpdateRequestBody'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ApiKeyDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
+    delete:
+      tags:
+        - ApiKey
+      summary: Delete api key
+      operationId: DeleteApiKeyV1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Id
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
+  '/api/v1/api_keys/{id}/secret':
+    get:
+      tags:
+        - ApiKey
+      summary: Get api key secret
+      operationId: GetApiKeySecretV1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Id
+            format: uuid
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ApiKeySecretDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeySecretDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeySecretDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
   /api/v1/example/auth_type:
     get:
       tags:
@@ -501,6 +785,76 @@ paths:
         - Bearer: [ ]
 components:
   schemas:
+    ApiKeyCreateRequestBody:
+      type: object
+      properties:
+        name:
+          maxLength: 255
+          type: string
+          description: Name
+          nullable: true
+      additionalProperties: false
+      description: Api key create request body
+    ApiKeyDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id
+          format: uuid
+        userId:
+          type: string
+          description: User id
+          format: uuid
+        user:
+          $ref: '#/components/schemas/UserShortInfo'
+        name:
+          type: string
+          description: Name
+          nullable: true
+        createdAt:
+          type: string
+          description: Created at
+          example: '2022-11-15T12:00:00.0000000Z'
+      additionalProperties: false
+      description: Api key dto
+    ApiKeySecretDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id
+          format: uuid
+        userId:
+          type: string
+          description: User id
+          format: uuid
+        user:
+          $ref: '#/components/schemas/UserShortInfo'
+        name:
+          type: string
+          description: Name
+          nullable: true
+        createdAt:
+          type: string
+          description: Created at
+          example: '2022-11-15T12:00:00.0000000Z'
+        secret:
+          type: string
+          description: Secret
+          nullable: true
+      additionalProperties: false
+      description: Api key secret dto
+    ApiKeyUpdateRequestBody:
+      type: object
+      properties:
+        name:
+          maxLength: 255
+          type: string
+          description: Name
+          nullable: true
+      additionalProperties: false
+      description: Api key update request body
     CurrentUser:
       type: object
       properties:
