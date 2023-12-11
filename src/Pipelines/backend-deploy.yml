@@ -5,9 +5,9 @@ spec:
     job-suffix:
       default: ''
     deploy-aws-stage:
-      - backend-deploy-aws
+      default: 'backend-deploy-aws'
     deploy-aws-esc-stage:
-      - backend-deploy-aws-ecs
+      default: 'backend-deploy-aws-ecs'
 
 ---
 

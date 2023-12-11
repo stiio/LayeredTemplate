@@ -18,22 +18,23 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
 
 WORKDIR /src
 
+COPY [".editorconfig", "."]
 COPY ["*.props", "."]
-COPY ["Core/Web/*.csproj", "Web/"]
-COPY ["Core/Web.Api/*.csproj", "Web.Api/"]
-COPY ["Core/Application/*.csproj", "Application/"]
-COPY ["Core/Application.Contracts/*.csproj", "Application.Contracts/"]
-COPY ["Core/Domain/*.csproj", "Domain/"]
-COPY ["Core/Infrastructure/*.csproj", "Infrastructure/"]
-COPY ["Core/Infrastructure.Data/*.csproj", "Infrastructure.Data/"]
-COPY ["Common/Shared/*.csproj", "Shared/"]
-COPY ["Common/Messaging/*.csproj", "Messaging/"]
+COPY ["Core/Web/*.csproj", "Core/Web/"]
+COPY ["Core/Web.Api/*.csproj", "Core/Web.Api/"]
+COPY ["Core/Application/*.csproj", "Core/Application/"]
+COPY ["Core/Application.Contracts/*.csproj", "Core/Application.Contracts/"]
+COPY ["Core/Domain/*.csproj", "Core/Domain/"]
+COPY ["Core/Infrastructure/*.csproj", "Core/Infrastructure/"]
+COPY ["Core/Infrastructure.Data/*.csproj", "Core/Infrastructure.Data/"]
+COPY ["Common/Shared/*.csproj", "Common/Shared/"]
+COPY ["Common/Messaging/*.csproj", "Common/Messaging/"]
 
-RUN dotnet restore "Web/Web.csproj"
+RUN dotnet restore "Core/Web/Web.csproj"
 
 COPY . .
 
-WORKDIR "/src/Web"
+WORKDIR "/src/Core/Web"
 
 RUN dotnet build "Web.csproj" -c Release -o /app/build
 

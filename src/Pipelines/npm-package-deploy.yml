@@ -34,7 +34,7 @@ npm-package-codegen$[[ inputs.job-suffix ]]:
   only:
     - $[[ inputs.branch ]]
   dependencies:
-    - package-build
+    - npm-package-build$[[ inputs.job-suffix ]]
   artifacts:
     paths:
       - front/
@@ -47,7 +47,7 @@ npm-package-deploy$[[ inputs.job-suffix ]]:
   only:
     - $[[ inputs.branch ]]
   dependencies:
-    - package-codegen
+    - npm-package-codegen$[[ inputs.job-suffix ]]
   script:
     - cd front
     - npm install
