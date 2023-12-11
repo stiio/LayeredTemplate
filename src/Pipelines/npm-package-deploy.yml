@@ -21,12 +21,13 @@ npm-package-build$[[ inputs.job-suffix ]]:
       paths:
         - specs/
     script:
-        cd ./Core/Web
-        dotnet restore
-        dotnet tool restore
-        dotnet build -c Release -o build
-        cd build
-        dotnet swagger tofile --output /specs/merged_api.yaml --yaml Web.dll merged_api
+      - cd ./Core/Web
+      - dotnet restore
+      - dotnet tool restore
+      - dotnet build -c Release -o build
+      - cd build
+      - mkdir $CI_PROJECT_DIR/specs
+      - dotnet swagger tofile --output $CI_PROJECT_DIR/specs/merged_api.yaml --yaml Web.dll merged_api
 
 npm-package-codegen$[[ inputs.job-suffix ]]:
   stage: $[[ inputs.codegen-stage ]]
@@ -39,7 +40,7 @@ npm-package-codegen$[[ inputs.job-suffix ]]:
     paths:
       - front/
   script:
-    - /usr/local/bin/docker-entrypoint.sh generate -g typescript-fetch -i /specs/merged_api.yaml -o front -c ts-gen-config.json --global-property skipFormModel=false
+    - /usr/local/bin/docker-entrypoint.sh generate -g typescript-fetch -i specs/merged_api.yaml -o front -c ts-gen-config.json --global-property skipFormModel=false
 
 npm-package-deploy$[[ inputs.job-suffix ]]:
   stage: $[[ inputs.deploy-stage ]]
