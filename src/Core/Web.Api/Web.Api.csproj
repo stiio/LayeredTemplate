@@ -4,6 +4,12 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
+	<Import Project="Version.targets" Condition="'$(Configuration)' == 'Release'" />
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+		<Version>1.0.0</Version>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="7.1.0" />
 		<PackageReference Include="AutoBogus" Version="2.13.1" />

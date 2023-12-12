@@ -8,4 +8,8 @@
     <Folder Include="Enums\" />
   </ItemGroup>
 
+	<ItemGroup>
+	  <PackageReference Include="NewId" Version="4.0.1" />
+	</ItemGroup>
+
 </Project>

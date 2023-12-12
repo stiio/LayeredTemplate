@@ -4,7 +4,7 @@
 		<VersionMajor>1</VersionMajor>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+	<PropertyGroup>
 		<VersionMinor>$([System.DateTime]::UtcNow.ToString(yyyy))</VersionMinor>
 		<VersionPatch>$([System.DateTime]::UtcNow.ToString(Md))</VersionPatch>
 		<VersionRevision>$([System.DateTime]::UtcNow.ToString(Hm))</VersionRevision>
@@ -13,7 +13,4 @@
 		<Version Condition="'$(VersionSuffix)' == ''">$(VersionMajor).$(VersionMinor).$(VersionPatch).$(VersionRevision)</Version>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-		<Version>$(VersionMajor).0.0</Version>
-	</PropertyGroup>
 </Project>

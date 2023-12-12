@@ -26,7 +26,7 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
 
         foreach (var description in this.apiVersionDescriptionProvider.ApiVersionDescriptions)
         {
-            options.SwaggerDoc(description.GroupName, CreateInfoForApiVersion(description));
+            options.SwaggerDoc(description.GroupName, CreateInfoForApiVersion(description, packageVersion));
         }
 
         options.SwaggerDoc("merged_api", new OpenApiInfo() { Title = "Merged Api", Version = packageVersion });
@@ -113,13 +113,13 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
         });
     }
 
-    private static OpenApiInfo CreateInfoForApiVersion(ApiVersionDescription description)
+    private static OpenApiInfo CreateInfoForApiVersion(ApiVersionDescription description, string? packageVersion)
     {
         var text = new StringBuilder();
         var info = new OpenApiInfo()
         {
             Title = $"Api - v{description.ApiVersion}",
-            Version = description.ApiVersion.ToString(),
+            Version = packageVersion,
         };
 
         if (description.IsDeprecated)
