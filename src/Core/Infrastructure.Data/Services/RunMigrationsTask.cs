@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.Application.Common.Interfaces;
+﻿using LayeredTemplate.Application.Common.Services;
 using LayeredTemplate.Shared.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;

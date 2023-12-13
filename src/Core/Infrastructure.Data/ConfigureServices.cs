@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Common.Services;
 using LayeredTemplate.Infrastructure.Data.Context;
 using LayeredTemplate.Infrastructure.Data.Interceptors;
 using LayeredTemplate.Infrastructure.Data.Services;

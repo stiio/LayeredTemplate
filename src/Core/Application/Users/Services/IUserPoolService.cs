@@ -1,6 +1,6 @@
-﻿using LayeredTemplate.Application.Common.Models;
+﻿using LayeredTemplate.Application.Users.Models;
 
-namespace LayeredTemplate.Application.Common.Interfaces;
+namespace LayeredTemplate.Application.Users.Services;
 
 public interface IUserPoolService
 {

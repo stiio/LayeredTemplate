@@ -8,8 +8,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Mocks\Services\" />
-    <Folder Include="Services\" />
     <Folder Include="AuthorizationHandlers\" />
     <Folder Include="Utilities\" />
     <Folder Include="AuthenticationHandlers\" />

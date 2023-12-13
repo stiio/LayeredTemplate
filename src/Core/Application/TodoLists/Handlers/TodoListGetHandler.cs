@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using LayeredTemplate.Application.Common.Extensions;
-using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Common.Services;
 using LayeredTemplate.Application.TodoLists.Models;
 using LayeredTemplate.Application.TodoLists.Requests;
 using MediatR;

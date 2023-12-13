@@ -1,10 +1,10 @@
 ﻿using System.Security.Claims;
-using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Users.Services;
 using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Shared.Constants;
 using Microsoft.AspNetCore.Http;
 
-namespace LayeredTemplate.Infrastructure.Services;
+namespace LayeredTemplate.Infrastructure.Services.Users;
 
 internal class CurrentUserService : ICurrentUserService
 {

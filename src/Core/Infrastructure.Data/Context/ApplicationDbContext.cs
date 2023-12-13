@@ -1,7 +1,7 @@
 ﻿using System.Data;
 using System.Reflection;
 using Dapper;
-using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Common.Services;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Domain.Exceptions;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;

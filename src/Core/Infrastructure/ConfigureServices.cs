@@ -1,10 +1,13 @@
 ﻿using Humanizer;
-using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Common.Services;
+using LayeredTemplate.Application.Users.Services;
 using LayeredTemplate.Infrastructure.BusFilters;
 using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Extensions;
 using LayeredTemplate.Infrastructure.Mocks.Services;
-using LayeredTemplate.Infrastructure.Services;
+using LayeredTemplate.Infrastructure.Mocks.Services.Users;
+using LayeredTemplate.Infrastructure.Services.Common;
+using LayeredTemplate.Infrastructure.Services.Users;
 using LayeredTemplate.Messaging.Formatters;
 using LayeredTemplate.Shared.Constants;
 using MassTransit;

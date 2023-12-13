@@ -1,6 +1,6 @@
 ﻿using LayeredTemplate.Domain.Enums;
 
-namespace LayeredTemplate.Application.Common.Models;
+namespace LayeredTemplate.Application.Users.Models;
 
 public class UserPoolUpdateUserRequest
 {

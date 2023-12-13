@@ -1,4 +1,4 @@
-﻿namespace LayeredTemplate.Application.Common.Interfaces;
+﻿namespace LayeredTemplate.Application.Common.Services;
 
 public interface IApplicationDbConnection
 {

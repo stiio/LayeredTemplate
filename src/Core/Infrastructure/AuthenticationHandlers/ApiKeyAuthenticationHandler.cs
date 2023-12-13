@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 using System.Text.Encodings.Web;
-using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Common.Services;
 using LayeredTemplate.Infrastructure.Extensions;
 using LayeredTemplate.Shared.Constants;
 using LayeredTemplate.Shared.Extensions;

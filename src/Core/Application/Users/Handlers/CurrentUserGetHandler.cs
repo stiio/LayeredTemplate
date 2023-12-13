@@ -2,9 +2,10 @@
 using AutoMapper;
 using LayeredTemplate.Application.Common.Exceptions;
 using LayeredTemplate.Application.Common.Extensions;
-using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Common.Services;
 using LayeredTemplate.Application.Users.Models;
 using LayeredTemplate.Application.Users.Requests;
+using LayeredTemplate.Application.Users.Services;
 using LayeredTemplate.Domain.Entities;
 using MediatR;
 

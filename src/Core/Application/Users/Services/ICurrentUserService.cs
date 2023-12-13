@@ -1,6 +1,6 @@
 ﻿using LayeredTemplate.Domain.Enums;
 
-namespace LayeredTemplate.Application.Common.Interfaces;
+namespace LayeredTemplate.Application.Users.Services;
 
 public interface ICurrentUserService
 {

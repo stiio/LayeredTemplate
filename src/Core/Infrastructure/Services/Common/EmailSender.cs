@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.Application.Common.Interfaces;
+﻿using LayeredTemplate.Application.Common.Services;
 using LayeredTemplate.Shared.Options;
 using MailKit.Net.Smtp;
 using MailKit.Security;
@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
-namespace LayeredTemplate.Infrastructure.Services;
+namespace LayeredTemplate.Infrastructure.Services.Common;
 
 internal class EmailSender : IEmailSender
 {

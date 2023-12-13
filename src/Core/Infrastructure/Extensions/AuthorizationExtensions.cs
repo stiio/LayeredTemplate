@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
-using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Infrastructure.Services;
+using LayeredTemplate.Application.Common.Services;
+using LayeredTemplate.Infrastructure.Services.Common;
 using LayeredTemplate.Shared.Constants;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;

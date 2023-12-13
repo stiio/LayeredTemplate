@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Common.Services;
 
 namespace LayeredTemplate.Infrastructure.Mocks.Services;
 

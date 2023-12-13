@@ -3,7 +3,7 @@ using AutoMapper.QueryableExtensions;
 using LayeredTemplate.Application.ApiKeys.Models;
 using LayeredTemplate.Application.ApiKeys.Requests;
 using LayeredTemplate.Application.Common.Extensions;
-using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Common.Services;
 using MediatR;
 
 namespace LayeredTemplate.Application.ApiKeys.Handlers;

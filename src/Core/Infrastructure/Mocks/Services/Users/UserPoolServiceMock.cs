@@ -1,7 +1,7 @@
-﻿using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Application.Common.Models;
+﻿using LayeredTemplate.Application.Users.Models;
+using LayeredTemplate.Application.Users.Services;
 
-namespace LayeredTemplate.Infrastructure.Mocks.Services;
+namespace LayeredTemplate.Infrastructure.Mocks.Services.Users;
 
 internal class UserPoolServiceMock : IUserPoolService
 {

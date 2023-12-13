@@ -1,9 +1,9 @@
-﻿using LayeredTemplate.Application.Common.Interfaces;
+﻿using LayeredTemplate.Application.Common.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-namespace LayeredTemplate.Infrastructure.Services;
+namespace LayeredTemplate.Infrastructure.Services.Common;
 
 internal class ResourceAuthorizationService : IResourceAuthorizationService
 {

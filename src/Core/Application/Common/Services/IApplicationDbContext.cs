@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace LayeredTemplate.Application.Common.Interfaces;
+namespace LayeredTemplate.Application.Common.Services;
 
 public interface IApplicationDbContext : IApplicationDbConnection, IDisposable, IAsyncDisposable
 {

@@ -1,14 +1,14 @@
 ﻿using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
-using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Application.Common.Models;
+using LayeredTemplate.Application.Users.Models;
+using LayeredTemplate.Application.Users.Services;
 using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Shared.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PasswordGenerator;
 
-namespace LayeredTemplate.Infrastructure.Services;
+namespace LayeredTemplate.Infrastructure.Services.Users;
 
 internal class UserPoolService : IUserPoolService
 {

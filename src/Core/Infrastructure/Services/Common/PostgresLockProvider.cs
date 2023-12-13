@@ -1,9 +1,9 @@
-﻿using LayeredTemplate.Application.Common.Interfaces;
+﻿using LayeredTemplate.Application.Common.Services;
 using Medallion.Threading;
 using Medallion.Threading.Postgres;
 using Microsoft.Extensions.Configuration;
 
-namespace LayeredTemplate.Infrastructure.Services;
+namespace LayeredTemplate.Infrastructure.Services.Common;
 
 internal class PostgresLockProvider : ILockProvider
 {

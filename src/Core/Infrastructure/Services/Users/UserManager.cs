@@ -1,9 +1,10 @@
 ﻿using System.Text;
-using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.Common.Services;
+using LayeredTemplate.Application.Users.Services;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Infrastructure.Utilities;
 
-namespace LayeredTemplate.Infrastructure.Services;
+namespace LayeredTemplate.Infrastructure.Services.Users;
 
 internal class UserManager : IUserManager
 {
