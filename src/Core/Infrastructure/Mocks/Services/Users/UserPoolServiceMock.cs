@@ -1,5 +1,5 @@
-﻿using LayeredTemplate.Application.Users.Models;
-using LayeredTemplate.Application.Users.Services;
+﻿using LayeredTemplate.Application.Features.Users.Models;
+using LayeredTemplate.Application.Features.Users.Services;
 
 namespace LayeredTemplate.Infrastructure.Mocks.Services.Users;
 

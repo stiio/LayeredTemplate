@@ -1,6 +1,6 @@
 ﻿using System.Net.Mime;
-using LayeredTemplate.Application.TodoLists.Models;
-using LayeredTemplate.Application.TodoLists.Requests;
+using LayeredTemplate.Application.Features.TodoLists.Models;
+using LayeredTemplate.Application.Features.TodoLists.Requests;
 using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Shared.Constants;
 using LayeredTemplate.Web.Attributes;

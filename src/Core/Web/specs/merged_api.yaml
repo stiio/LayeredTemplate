@@ -18,19 +18,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ApiKeyDto'
-                description: Api key dto
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/ApiKeyDto'
-                description: Api key dto
             text/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/ApiKeyDto'
-                description: Api key dto
         '400':
           description: Bad request
           content:
@@ -610,7 +607,6 @@ paths:
             application/octet-stream:
               schema:
                 type: string
-                description: File result
                 format: binary
         '400':
           description: Bad request
@@ -675,21 +671,15 @@ paths:
       operationId: SendUserEmailCodeV1
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              required:
-                - email
-              type: object
-              properties:
-                email:
-                  maxLength: 255
-                  type: string
-                  description: Email
-                  format: email
-                  example: example@email.com
-            encoding:
-              email:
-                style: form
+              $ref: '#/components/schemas/UserEmailCodeSendRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeSendRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeSendRequest'
       responses:
         '200':
           description: Success
@@ -729,29 +719,15 @@ paths:
       operationId: VerifyUserEmailCodeV1
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              required:
-                - code
-                - email
-              type: object
-              properties:
-                email:
-                  maxLength: 255
-                  type: string
-                  description: Email
-                  format: email
-                  example: example@email.com
-                code:
-                  type: integer
-                  description: Code
-                  format: int32
-                  example: 124567
-            encoding:
-              email:
-                style: form
-              code:
-                style: form
+              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
       responses:
         '200':
           description: Success
@@ -794,7 +770,6 @@ components:
           description: Name
           nullable: true
       additionalProperties: false
-      description: Api key create request body
     ApiKeyDto:
       type: object
       properties:
@@ -817,7 +792,6 @@ components:
           description: Created at
           example: '2022-11-15T12:00:00.0000000Z'
       additionalProperties: false
-      description: Api key dto
     ApiKeySecretDto:
       type: object
       properties:
@@ -844,7 +818,6 @@ components:
           description: Secret
           nullable: true
       additionalProperties: false
-      description: Api key secret dto
     ApiKeyUpdateRequestBody:
       type: object
       properties:
@@ -854,7 +827,6 @@ components:
           description: Name
           nullable: true
       additionalProperties: false
-      description: Api key update request body
     CurrentUser:
       type: object
       properties:
@@ -890,13 +862,11 @@ components:
         role:
           $ref: '#/components/schemas/Role'
       additionalProperties: false
-      description: Current user
     DirectionType:
       enum:
         - Asc
         - Desc
       type: string
-      description: Direction type
     ErrorResult:
       type: object
       properties:
@@ -909,7 +879,6 @@ components:
           description: Trace id
           nullable: true
       additionalProperties: false
-      description: Error result
     InfoResponse:
       type: object
       properties:
@@ -919,7 +888,6 @@ components:
           nullable: true
           example: '2022-11-15T12:00:00.0000000Z'
       additionalProperties: false
-      description: Info response
     PaginationRequest:
       required:
         - limit
@@ -941,7 +909,6 @@ components:
           format: int32
           example: 10
       additionalProperties: false
-      description: Pagination request
     PaginationResponse:
       required:
         - limit
@@ -969,14 +936,12 @@ components:
           format: int64
           example: 100
       additionalProperties: false
-      description: Pagination response
     Role:
       enum:
         - Guest
         - Admin
         - Client
       type: string
-      description: Role
     SortingTodoListRecordDto:
       required:
         - column
@@ -997,7 +962,6 @@ components:
         direction:
           $ref: '#/components/schemas/DirectionType'
       additionalProperties: false
-      description: Sorting 1
     SuccessfulResult:
       type: object
       properties:
@@ -1006,7 +970,6 @@ components:
           description: Message
           nullable: true
       additionalProperties: false
-      description: Successful result
     TodoListCreateRequestBody:
       required:
         - name
@@ -1022,7 +985,6 @@ components:
         type:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
-      description: Todo list create request body
     TodoListDto:
       type: object
       properties:
@@ -1038,7 +1000,6 @@ components:
         type:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
-      description: Todo list dto
     TodoListRecordDto:
       type: object
       properties:
@@ -1063,7 +1024,6 @@ components:
           description: Created At
           example: '2022-11-15T12:00:00.0000000Z'
       additionalProperties: false
-      description: Todo list record dto
     TodoListRecordDtoFilter:
       type: object
       properties:
@@ -1078,7 +1038,6 @@ components:
           description: Types filter
           nullable: true
       additionalProperties: false
-      description: Todo list record dto filter
     TodoListSearchRequestBody:
       type: object
       properties:
@@ -1089,7 +1048,6 @@ components:
         filter:
           $ref: '#/components/schemas/TodoListRecordDtoFilter'
       additionalProperties: false
-      description: Todo list search request body
     TodoListSearchResponse:
       required:
         - data
@@ -1109,13 +1067,11 @@ components:
             $ref: '#/components/schemas/TodoListRecordDto'
           description: Data
       additionalProperties: false
-      description: Todo list search response
     TodoListType:
       enum:
         - Default
         - Specific
       type: string
-      description: Todo list type
     TodoListUpdateRequestBody:
       required:
         - name
@@ -1130,7 +1086,38 @@ components:
         type:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
-      description: Todo list update request body
+    UserEmailCodeSendRequest:
+      required:
+        - email
+      type: object
+      properties:
+        email:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Email
+          format: email
+          example: example@email.com
+      additionalProperties: false
+    UserEmailCodeVerifyRequest:
+      required:
+        - code
+        - email
+      type: object
+      properties:
+        email:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Email
+          format: email
+          example: example@email.com
+        code:
+          type: integer
+          description: Code
+          format: int32
+          example: 124567
+      additionalProperties: false
     UserShortInfo:
       type: object
       properties:
@@ -1143,7 +1130,6 @@ components:
           description: Email of user
           nullable: true
       additionalProperties: false
-      description: User short info
   securitySchemes:
     Bearer:
       type: http

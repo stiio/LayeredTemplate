@@ -1,5 +1,5 @@
-﻿using LayeredTemplate.Application.Users.Models;
-using LayeredTemplate.Application.Users.Requests;
+﻿using LayeredTemplate.Application.Features.Users.Models;
+using LayeredTemplate.Application.Features.Users.Requests;
 using LayeredTemplate.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,14 +18,14 @@ public class UserController : AppControllerBase
     }
 
     [HttpPost("email/send_code")]
-    public async Task<ActionResult<SuccessfulResult>> SendUserEmailCode([FromForm] UserEmailCodeSendRequest request)
+    public async Task<ActionResult<SuccessfulResult>> SendUserEmailCode([FromBody] UserEmailCodeSendRequest request)
     {
         await this.Sender.Send(request);
         return this.SuccessfulResult();
     }
 
     [HttpPut("email/verify_code")]
-    public async Task<ActionResult<SuccessfulResult>> VerifyUserEmailCode([FromForm] UserEmailCodeVerifyRequest request)
+    public async Task<ActionResult<SuccessfulResult>> VerifyUserEmailCode([FromBody] UserEmailCodeVerifyRequest request)
     {
         await this.Sender.Send(request);
         return this.SuccessfulResult();

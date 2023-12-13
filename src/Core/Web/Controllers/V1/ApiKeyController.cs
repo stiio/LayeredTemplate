@@ -1,5 +1,5 @@
-﻿using LayeredTemplate.Application.ApiKeys.Models;
-using LayeredTemplate.Application.ApiKeys.Requests;
+﻿using LayeredTemplate.Application.Features.ApiKeys.Models;
+using LayeredTemplate.Application.Features.ApiKeys.Requests;
 using LayeredTemplate.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

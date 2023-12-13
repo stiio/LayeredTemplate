@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.Application.Users.Services;
+﻿using LayeredTemplate.Application.Features.Users.Services;
 using LayeredTemplate.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;

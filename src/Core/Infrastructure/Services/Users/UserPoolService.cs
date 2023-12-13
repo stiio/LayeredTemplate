@@ -1,7 +1,7 @@
 ﻿using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
-using LayeredTemplate.Application.Users.Models;
-using LayeredTemplate.Application.Users.Services;
+using LayeredTemplate.Application.Features.Users.Models;
+using LayeredTemplate.Application.Features.Users.Services;
 using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Shared.Options;
 using Microsoft.Extensions.Logging;

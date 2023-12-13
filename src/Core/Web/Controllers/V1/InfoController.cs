@@ -1,5 +1,5 @@
-﻿using LayeredTemplate.Application.Info.Models;
-using LayeredTemplate.Application.Info.Requests;
+﻿using LayeredTemplate.Application.Features.Info.Models;
+using LayeredTemplate.Application.Features.Info.Requests;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.Web.Controllers.V1;

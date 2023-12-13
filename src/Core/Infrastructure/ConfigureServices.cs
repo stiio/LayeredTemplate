@@ -1,6 +1,6 @@
 ﻿using Humanizer;
 using LayeredTemplate.Application.Common.Services;
-using LayeredTemplate.Application.Users.Services;
+using LayeredTemplate.Application.Features.Users.Services;
 using LayeredTemplate.Infrastructure.BusFilters;
 using LayeredTemplate.Infrastructure.Data;
 using LayeredTemplate.Infrastructure.Extensions;

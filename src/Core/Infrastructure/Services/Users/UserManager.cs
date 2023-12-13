@@ -1,6 +1,6 @@
 ﻿using System.Text;
 using LayeredTemplate.Application.Common.Services;
-using LayeredTemplate.Application.Users.Services;
+using LayeredTemplate.Application.Features.Users.Services;
 using LayeredTemplate.Domain.Entities;
 using LayeredTemplate.Infrastructure.Utilities;
 

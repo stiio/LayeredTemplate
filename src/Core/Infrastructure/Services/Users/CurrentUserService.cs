@@ -1,5 +1,5 @@
 ﻿using System.Security.Claims;
-using LayeredTemplate.Application.Users.Services;
+using LayeredTemplate.Application.Features.Users.Services;
 using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Shared.Constants;
 using Microsoft.AspNetCore.Http;
