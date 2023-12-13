@@ -1,7 +1,6 @@
 ﻿using System.Linq.Expressions;
 using FluentValidation;
 using LayeredTemplate.Application.Common.Interfaces;
-using LayeredTemplate.Application.QueryableExtensions;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 

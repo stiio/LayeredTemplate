@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.Web.Api.Models;
+﻿using LayeredTemplate.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.Web.Extensions;

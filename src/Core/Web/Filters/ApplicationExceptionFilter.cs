@@ -1,7 +1,7 @@
 ﻿using Amazon.CognitoIdentityProvider;
 using LayeredTemplate.Application.Common.Exceptions;
 using LayeredTemplate.Domain.Exceptions;
-using LayeredTemplate.Web.Api.Models;
+using LayeredTemplate.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 

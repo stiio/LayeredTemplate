@@ -3,7 +3,7 @@ using System.Text;
 using Asp.Versioning.ApiExplorer;
 using LayeredTemplate.Shared.Constants;
 using LayeredTemplate.Shared.Extensions;
-using LayeredTemplate.Web.Api.Controllers;
+using LayeredTemplate.Web.Controllers;
 using LayeredTemplate.Web.OpenApiFilters;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
@@ -26,7 +26,7 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
 
         foreach (var description in this.apiVersionDescriptionProvider.ApiVersionDescriptions)
         {
-            options.SwaggerDoc(description.GroupName, CreateInfoForApiVersion(description, packageVersion));
+            options.SwaggerDoc(description.GroupName, CreateInfoForApiVersion(description));
         }
 
         options.SwaggerDoc("merged_api", new OpenApiInfo() { Title = "Merged Api", Version = packageVersion });
@@ -65,8 +65,8 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
 
         options.DescribeAllParametersInCamelCase();
 
-        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Application.Contracts.xml"));
-        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Web.Api.xml"));
+        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Application.xml"));
+        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Web.xml"));
 
         options.OperationFilter<DefaultApplicationResponsesFilter>();
         options.OperationFilter<AuthOperationFilter>();
@@ -113,13 +113,13 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
         });
     }
 
-    private static OpenApiInfo CreateInfoForApiVersion(ApiVersionDescription description, string? packageVersion)
+    private static OpenApiInfo CreateInfoForApiVersion(ApiVersionDescription description)
     {
         var text = new StringBuilder();
         var info = new OpenApiInfo()
         {
             Title = $"Api - v{description.ApiVersion}",
-            Version = packageVersion,
+            Version = description.ApiVersion.ToString(),
         };
 
         if (description.IsDeprecated)

@@ -1,0 +1,22 @@
+﻿using FluentValidation;
+using LayeredTemplate.Application.Common.Extensions;
+using LayeredTemplate.Application.Common.Interfaces;
+using LayeredTemplate.Application.TodoLists.Requests;
+using LayeredTemplate.Domain.Entities;
+using LayeredTemplate.Shared.Constants;
+
+namespace LayeredTemplate.Application.TodoLists.Validators;
+
+internal class TodoListGetRequestValidator : AbstractValidator<TodoListGetRequest>
+{
+    public TodoListGetRequestValidator(
+        IApplicationDbContext context,
+        IResourceAuthorizationService resourceAuthorizationService)
+    {
+        this.RuleFor(x => x.Id)
+            .ExistsEntity<TodoListGetRequest, Guid, TodoList>(context);
+
+        this.RuleFor(x => x.Id)
+            .RequireAccess<TodoListGetRequest, Guid, TodoList>(Operations.Read, context, resourceAuthorizationService);
+    }
+}

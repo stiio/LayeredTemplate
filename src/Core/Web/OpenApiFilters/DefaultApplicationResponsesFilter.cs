@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.Web.Api.Models;
+﻿using LayeredTemplate.Web.Models;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 

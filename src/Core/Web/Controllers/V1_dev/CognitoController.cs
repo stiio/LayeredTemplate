@@ -2,7 +2,6 @@
 using Amazon.CognitoIdentityProvider.Model;
 using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Shared.Options;
-using LayeredTemplate.Web.Api.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
