@@ -18,16 +18,19 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ApiKeyDto'
+                description: Api key dto
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/ApiKeyDto'
+                description: Api key dto
             text/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/ApiKeyDto'
+                description: Api key dto
         '400':
           description: Bad request
           content:
@@ -607,6 +610,7 @@ paths:
             application/octet-stream:
               schema:
                 type: string
+                description: File result
                 format: binary
         '400':
           description: Bad request
@@ -770,6 +774,7 @@ components:
           description: Name
           nullable: true
       additionalProperties: false
+      description: Api key create request body
     ApiKeyDto:
       type: object
       properties:
@@ -792,6 +797,7 @@ components:
           description: Created at
           example: '2022-11-15T12:00:00.0000000Z'
       additionalProperties: false
+      description: Api key dto
     ApiKeySecretDto:
       type: object
       properties:
@@ -818,6 +824,7 @@ components:
           description: Secret
           nullable: true
       additionalProperties: false
+      description: Api key secret dto
     ApiKeyUpdateRequestBody:
       type: object
       properties:
@@ -827,6 +834,7 @@ components:
           description: Name
           nullable: true
       additionalProperties: false
+      description: Api key update request body
     CurrentUser:
       type: object
       properties:
@@ -862,11 +870,13 @@ components:
         role:
           $ref: '#/components/schemas/Role'
       additionalProperties: false
+      description: Current user
     DirectionType:
       enum:
         - Asc
         - Desc
       type: string
+      description: Direction type
     ErrorResult:
       type: object
       properties:
@@ -879,6 +889,7 @@ components:
           description: Trace id
           nullable: true
       additionalProperties: false
+      description: Error result
     InfoResponse:
       type: object
       properties:
@@ -888,6 +899,7 @@ components:
           nullable: true
           example: '2022-11-15T12:00:00.0000000Z'
       additionalProperties: false
+      description: Info response
     PaginationRequest:
       required:
         - limit
@@ -909,6 +921,7 @@ components:
           format: int32
           example: 10
       additionalProperties: false
+      description: Pagination request
     PaginationResponse:
       required:
         - limit
@@ -936,12 +949,14 @@ components:
           format: int64
           example: 100
       additionalProperties: false
+      description: Pagination response
     Role:
       enum:
         - Guest
         - Admin
         - Client
       type: string
+      description: Role
     SortingTodoListRecordDto:
       required:
         - column
@@ -970,6 +985,7 @@ components:
           description: Message
           nullable: true
       additionalProperties: false
+      description: Successful result
     TodoListCreateRequestBody:
       required:
         - name
@@ -985,6 +1001,7 @@ components:
         type:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
+      description: Todo list create request body
     TodoListDto:
       type: object
       properties:
@@ -1000,6 +1017,7 @@ components:
         type:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
+      description: Todo list dto
     TodoListRecordDto:
       type: object
       properties:
@@ -1024,6 +1042,7 @@ components:
           description: Created At
           example: '2022-11-15T12:00:00.0000000Z'
       additionalProperties: false
+      description: Todo list record dto
     TodoListRecordDtoFilter:
       type: object
       properties:
@@ -1038,6 +1057,7 @@ components:
           description: Types filter
           nullable: true
       additionalProperties: false
+      description: Todo list record dto filter
     TodoListSearchRequestBody:
       type: object
       properties:
@@ -1048,6 +1068,7 @@ components:
         filter:
           $ref: '#/components/schemas/TodoListRecordDtoFilter'
       additionalProperties: false
+      description: Todo list search request body
     TodoListSearchResponse:
       required:
         - data
@@ -1067,11 +1088,13 @@ components:
             $ref: '#/components/schemas/TodoListRecordDto'
           description: Data
       additionalProperties: false
+      description: Todo list search response
     TodoListType:
       enum:
         - Default
         - Specific
       type: string
+      description: Todo list type
     TodoListUpdateRequestBody:
       required:
         - name
@@ -1086,6 +1109,7 @@ components:
         type:
           $ref: '#/components/schemas/TodoListType'
       additionalProperties: false
+      description: Todo list update request body
     UserEmailCodeSendRequest:
       required:
         - email
@@ -1099,6 +1123,7 @@ components:
           format: email
           example: example@email.com
       additionalProperties: false
+      description: User email code send request
     UserEmailCodeVerifyRequest:
       required:
         - code
@@ -1118,6 +1143,7 @@ components:
           format: int32
           example: 124567
       additionalProperties: false
+      description: User email code verify request
     UserShortInfo:
       type: object
       properties:
@@ -1130,6 +1156,7 @@ components:
           description: Email of user
           nullable: true
       additionalProperties: false
+      description: User short info
   securitySchemes:
     Bearer:
       type: http
