@@ -9,11 +9,7 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
-	<Import Project="Version.targets" Condition="'$(Configuration)' == 'Release'" />
-
-	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-		<Version>1.0.0.0</Version>
-	</PropertyGroup>
+	<Import Project="Version.targets" />
 
 	<Target Name="OpenAPI" AfterTargets="Build" Condition="$(Configuration)=='Debug'">
 		<Exec Command="dotnet tool restore" />
