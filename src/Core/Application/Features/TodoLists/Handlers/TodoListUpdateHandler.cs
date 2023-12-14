@@ -32,11 +32,6 @@ internal class TodoListUpdateHandler : IRequestHandler<TodoListUpdateRequest, To
         await using var transaction = await this.context.BeginTransactionAsync(cancellationToken);
 
         var todoList = await this.context.TodoLists.FirstById(request.Id, cancellationToken);
-        if (todoList is null)
-        {
-            throw new AppNotFoundException(nameof(TodoList), request.Id);
-        }
-
         this.mapper.Map(request.Body, todoList);
 
         await this.context.SaveChangesAsync(cancellationToken);

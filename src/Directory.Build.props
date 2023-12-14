@@ -4,7 +4,7 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-	    <InvariantGlobalization>true</InvariantGlobalization>
+	    <InvariantGlobalization>false</InvariantGlobalization>
         <RootNamespace>$(SolutionName.Replace(" ", "_").Replace(".App", "")).$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
         <NoWarn>1701;1702;SA0001;CS1591</NoWarn>
     </PropertyGroup>

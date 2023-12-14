@@ -85,8 +85,6 @@ void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env, IApiV
         app.UseMiniProfiler();
     }
 
-    app.UseHttpsRedirection();
-
     app.UseStaticFiles("/api/static");
 
     app.UseRequestLogging();

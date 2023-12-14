@@ -31,7 +31,7 @@ public static class HttpContextExtensions
         return ip;
     }
 
-    public static T? GetHeaderValueAs<T>(this HttpRequest request, string headerName)
+    private static T? GetHeaderValueAs<T>(this HttpRequest request, string headerName)
     {
         if (request?.Headers?.TryGetValue(headerName, out var values) ?? false)
         {
@@ -46,7 +46,7 @@ public static class HttpContextExtensions
         return default;
     }
 
-    public static List<string>? SplitCsv(this string csvList, bool nullOrWhitespaceInputReturnsNull = false)
+    private static List<string>? SplitCsv(this string csvList, bool nullOrWhitespaceInputReturnsNull = false)
     {
         if (string.IsNullOrWhiteSpace(csvList))
         {
