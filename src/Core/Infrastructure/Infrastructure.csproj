@@ -15,12 +15,12 @@
   </ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="7.1.0" />
-	<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="7.1.0" />
-	<PackageReference Include="Audit.WebApi.Core" Version="22.0.1" />
-	<PackageReference Include="Audit.NET.PostgreSql" Version="22.0.1" />
+	<PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.0" />
+	<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.0" />
+	<PackageReference Include="Audit.WebApi.Core" Version="23.0.0" />
+	<PackageReference Include="Audit.NET.PostgreSql" Version="23.0.0" />
 	<PackageReference Include="MailKit" Version="4.3.0" />
-	<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+	<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.1" />
 	<PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="3.0.1" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.300" />
     <PackageReference Include="PasswordGenerator" Version="2.1.0" />
