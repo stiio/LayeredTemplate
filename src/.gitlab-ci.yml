@@ -1,7 +1,7 @@
 stages:
-  - npm-package-build
-  - npm-package-codegen
-  - npm-package-deploy
+  - npm-api-package-build
+  - npm-api-package-codegen
+  - npm-api-package-deploy
 
   - backend-deploy-aws
   - backend-deploy-aws-ecs
@@ -25,14 +25,14 @@ include:
       branch: production
       job-suffix: -production
 
-  - local: 'Pipelines/npm-package-deploy.yml'
+  - local: 'Pipelines/npm-api-package-deploy.yml'
     inputs:
       branch: staging
     rules:
       - changes: 
         - Core/Web/Version.targets
 
-  - local: 'Pipelines/npm-package-deploy.yml'
+  - local: 'Pipelines/npm-api-package-deploy.yml'
     inputs:
       branch: pre-production
       job-suffix: -pre-production

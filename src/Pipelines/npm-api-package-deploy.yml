@@ -4,15 +4,15 @@ spec:
     job-suffix:
       default: ''
     build-stage:
-      default: 'npm-package-build'
+      default: 'npm-api-package-build'
     codegen-stage:
-      default: 'npm-package-codegen'
+      default: 'npm-api-package-codegen'
     deploy-stage:
-      default: 'npm-package-deploy'
+      default: 'npm-api-package-deploy'
 
 ---
 
-npm-package-build$[[ inputs.job-suffix ]]:
+npm-api-package-build$[[ inputs.job-suffix ]]:
     stage: $[[ inputs.build-stage ]]
     image: mcr.microsoft.com/dotnet/sdk:8.0-alpine
     only:
@@ -29,7 +29,7 @@ npm-package-build$[[ inputs.job-suffix ]]:
       - mkdir $CI_PROJECT_DIR/specs
       - dotnet swagger tofile --output $CI_PROJECT_DIR/specs/merged_api.yaml --yaml Web.dll merged_api
 
-npm-package-codegen$[[ inputs.job-suffix ]]:
+npm-api-package-codegen$[[ inputs.job-suffix ]]:
   stage: $[[ inputs.codegen-stage ]]
   image: openapitools/openapi-generator-cli:v7.1.0
   only:
@@ -42,7 +42,7 @@ npm-package-codegen$[[ inputs.job-suffix ]]:
   script:
     - /usr/local/bin/docker-entrypoint.sh generate -g typescript-fetch -i specs/merged_api.yaml -o front -c ts-gen-config.json --global-property skipFormModel=false
 
-npm-package-deploy$[[ inputs.job-suffix ]]:
+npm-api-package-deploy$[[ inputs.job-suffix ]]:
   stage: $[[ inputs.deploy-stage ]]
   image: node:latest
   only:

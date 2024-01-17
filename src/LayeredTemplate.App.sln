@@ -43,7 +43,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pipelines", "Pipelines", "{E2A3B00F-1107-4683-BE37-8A3FF4576243}"
 	ProjectSection(SolutionItems) = preProject
 		Pipelines\backend-deploy.yml = Pipelines\backend-deploy.yml
-		Pipelines\npm-package-deploy.yml = Pipelines\npm-package-deploy.yml
+		Pipelines\npm-api-package-deploy.yml = Pipelines\npm-api-package-deploy.yml
 	EndProjectSection
 EndProject
 Global
