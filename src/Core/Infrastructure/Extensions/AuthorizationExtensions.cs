@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using LayeredTemplate.Application.Common.Services;
 using LayeredTemplate.Infrastructure.Services.Common;
-using LayeredTemplate.Shared.Constants;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +26,5 @@ internal static class AuthorizationExtensions
 
     private static void ConfigurePolicies(AuthorizationOptions options)
     {
-        options.AddPolicy(Policies.Example, Policies.ExamplePolicy);
     }
 }

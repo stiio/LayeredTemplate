@@ -88,11 +88,11 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.Properties<string>()
-            .HaveMaxLength(255);
+            .HaveMaxLength(256);
 
         configurationBuilder.Properties<Enum>()
             .HaveConversion<string>()
-            .HaveMaxLength(255);
+            .HaveMaxLength(256);
 
         base.ConfigureConventions(configurationBuilder);
     }
