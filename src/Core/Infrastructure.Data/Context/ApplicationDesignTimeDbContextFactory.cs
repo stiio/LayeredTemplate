@@ -12,6 +12,8 @@ internal class ApplicationDesignTimeDbContextFactory : IDesignTimeDbContextFacto
         optionsBuilder
             .UseNpgsql("Host=localhost;Port=5432;Database=appDbName;Username=postgres;Password=postgres;", x =>
             {
+                x.MigrationsHistoryTable("__ef_backend_migrations");
+
                 x.MigrationsAssembly(Assembly.GetExecutingAssembly().FullName);
                 x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
             })

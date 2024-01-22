@@ -12,8 +12,12 @@ namespace Infrastructure.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.EnsureSchema(
+                name: "backend");
+
             migrationBuilder.CreateTable(
                 name: "data_protection_keys",
+                schema: "backend",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
@@ -28,6 +32,7 @@ namespace Infrastructure.Data.Migrations
 
             migrationBuilder.CreateTable(
                 name: "users",
+                schema: "backend",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -49,6 +54,7 @@ namespace Infrastructure.Data.Migrations
 
             migrationBuilder.CreateTable(
                 name: "api_keys",
+                schema: "backend",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -64,6 +70,7 @@ namespace Infrastructure.Data.Migrations
                     table.ForeignKey(
                         name: "fk_api_keys_users_user_id",
                         column: x => x.user_id,
+                        principalSchema: "backend",
                         principalTable: "users",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
@@ -71,12 +78,14 @@ namespace Infrastructure.Data.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "ix_api_keys_secret",
+                schema: "backend",
                 table: "api_keys",
                 column: "secret",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_api_keys_user_id",
+                schema: "backend",
                 table: "api_keys",
                 column: "user_id");
         }
@@ -85,13 +94,16 @@ namespace Infrastructure.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "api_keys");
+                name: "api_keys",
+                schema: "backend");
 
             migrationBuilder.DropTable(
-                name: "data_protection_keys");
+                name: "data_protection_keys",
+                schema: "backend");
 
             migrationBuilder.DropTable(
-                name: "users");
+                name: "users",
+                schema: "backend");
         }
     }
 }

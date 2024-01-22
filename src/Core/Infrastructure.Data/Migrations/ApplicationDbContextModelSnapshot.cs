@@ -17,6 +17,7 @@ namespace Infrastructure.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("backend")
                 .HasAnnotation("ProductVersion", "8.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -63,7 +64,7 @@ namespace Infrastructure.Data.Migrations
                     b.HasIndex("UserId")
                         .HasDatabaseName("ix_api_keys_user_id");
 
-                    b.ToTable("api_keys", (string)null);
+                    b.ToTable("api_keys", "backend");
                 });
 
             modelBuilder.Entity("LayeredTemplate.Domain.Entities.User", b =>
@@ -124,7 +125,7 @@ namespace Infrastructure.Data.Migrations
                     b.HasKey("Id")
                         .HasName("pk_users");
 
-                    b.ToTable("users", (string)null);
+                    b.ToTable("users", "backend");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
@@ -149,7 +150,7 @@ namespace Infrastructure.Data.Migrations
                     b.HasKey("Id")
                         .HasName("pk_data_protection_keys");
 
-                    b.ToTable("data_protection_keys", (string)null);
+                    b.ToTable("data_protection_keys", "backend");
                 });
 
             modelBuilder.Entity("LayeredTemplate.Domain.Entities.ApiKey", b =>

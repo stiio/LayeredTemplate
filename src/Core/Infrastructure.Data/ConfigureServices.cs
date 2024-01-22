@@ -19,6 +19,8 @@ public static class ConfigureServices
             options
                 .UseNpgsql(connectionString, x =>
                 {
+                    x.MigrationsHistoryTable("__ef_backend_migrations");
+
                     x.MigrationsAssembly(Assembly.GetExecutingAssembly().FullName);
                     x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                 })
