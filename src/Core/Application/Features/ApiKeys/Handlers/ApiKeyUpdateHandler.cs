@@ -23,7 +23,7 @@ internal class ApiKeyUpdateHandler : IRequestHandler<ApiKeyUpdateRequest, ApiKey
 
     public async Task<ApiKeyDto> Handle(ApiKeyUpdateRequest request, CancellationToken cancellationToken)
     {
-        var apiKey = await this.context.TodoLists.FirstById(request.Id, cancellationToken);
+        var apiKey = await this.context.ApiKeys.FirstById(request.Id, cancellationToken);
 
         this.mapper.Map(request.Body, apiKey);
 

@@ -20,11 +20,7 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
 
     public DbSet<User> Users { get; set; } = null!;
 
-    public DbSet<TodoList> TodoLists { get; set; } = null!;
-
     public DbSet<ApiKey> ApiKeys { get; set; } = null!;
-
-    public DbSet<AuditEvent> AuditEvents { get; set; } = null!;
 
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 

@@ -8,11 +8,7 @@ public interface IApplicationDbContext : IApplicationDbConnection, IDisposable, 
 {
     DbSet<User> Users { get; }
 
-    DbSet<TodoList> TodoLists { get; }
-
     DbSet<ApiKey> ApiKeys { get; }
-
-    DbSet<AuditEvent> AuditEvents { get; }
 
     DbSet<T> Set<T>()
         where T : class;
