@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
-using StackExchange.Profiling;
-using StackExchange.Profiling.Data;
 
 namespace LayeredTemplate.Infrastructure.Data.Context;
 
@@ -30,7 +28,7 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
 
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
-    internal IDbConnection DbConnection => new ProfiledDbConnection(this.Database.GetDbConnection(), MiniProfiler.Current);
+    internal IDbConnection DbConnection => this.Database.GetDbConnection();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {

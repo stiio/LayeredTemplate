@@ -68,7 +68,6 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     services.ConfigureControllers();
     services.ConfigureSwagger();
-    services.ConfigureMiniProfiler();
 
     services.AddEndpointsApiExplorer();
     services.AddHttpClient();
@@ -82,7 +81,6 @@ void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env, IApiV
     {
         app.UseDeveloperExceptionPage();
         app.UseConfiguredSwagger(env, apiVersionDescriptionProvider);
-        app.UseMiniProfiler();
     }
 
     app.UseStaticFiles("/api/static");
