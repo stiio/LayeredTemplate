@@ -23,6 +23,8 @@ public class User : IBaseAuditableEntity<Guid>
 
     public string? SecurityStamp { get; set; }
 
+    public ICollection<ApiKey>? ApiKeys { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

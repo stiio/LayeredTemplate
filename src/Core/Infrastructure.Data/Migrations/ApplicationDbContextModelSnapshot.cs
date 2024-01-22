@@ -17,7 +17,7 @@ namespace Infrastructure.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "8.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -35,14 +35,14 @@ namespace Infrastructure.Data.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
                         .HasColumnName("name");
 
                     b.Property<string>("Secret")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
                         .HasColumnName("secret");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -66,77 +66,6 @@ namespace Infrastructure.Data.Migrations
                     b.ToTable("api_keys", (string)null);
                 });
 
-            modelBuilder.Entity("LayeredTemplate.Domain.Entities.AuditEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Data")
-                        .HasMaxLength(255)
-                        .HasColumnType("jsonb")
-                        .HasColumnName("data");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("event_type");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_audit_events");
-
-                    b.ToTable("audit_events", (string)null);
-                });
-
-            modelBuilder.Entity("LayeredTemplate.Domain.Entities.TodoList", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)")
-                        .HasColumnName("type");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_todo_lists");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_todo_lists_user_id");
-
-                    b.ToTable("todo_lists", (string)null);
-                });
-
             modelBuilder.Entity("LayeredTemplate.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -150,8 +79,8 @@ namespace Infrastructure.Data.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
                         .HasColumnName("email");
 
                     b.Property<bool>("EmailVerified")
@@ -159,18 +88,18 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnName("email_verified");
 
                     b.Property<string>("FirstName")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
                         .HasColumnName("first_name");
 
                     b.Property<string>("LastName")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
                         .HasColumnName("last_name");
 
                     b.Property<string>("Phone")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
                         .HasColumnName("phone");
 
                     b.Property<bool>("PhoneVerified")
@@ -179,8 +108,8 @@ namespace Infrastructure.Data.Migrations
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
                         .HasColumnName("role");
 
                     b.Property<string>("SecurityStamp")
@@ -208,12 +137,12 @@ namespace Infrastructure.Data.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("FriendlyName")
-                        .HasMaxLength(255)
+                        .HasMaxLength(256)
                         .HasColumnType("text")
                         .HasColumnName("friendly_name");
 
                     b.Property<string>("Xml")
-                        .HasMaxLength(255)
+                        .HasMaxLength(256)
                         .HasColumnType("text")
                         .HasColumnName("xml");
 
@@ -226,7 +155,7 @@ namespace Infrastructure.Data.Migrations
             modelBuilder.Entity("LayeredTemplate.Domain.Entities.ApiKey", b =>
                 {
                     b.HasOne("LayeredTemplate.Domain.Entities.User", "User")
-                        .WithMany()
+                        .WithMany("ApiKeys")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -235,21 +164,9 @@ namespace Infrastructure.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("LayeredTemplate.Domain.Entities.TodoList", b =>
-                {
-                    b.HasOne("LayeredTemplate.Domain.Entities.User", "User")
-                        .WithMany("TodoLists")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_todo_lists_users_user_id");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("LayeredTemplate.Domain.Entities.User", b =>
                 {
-                    b.Navigation("TodoLists");
+                    b.Navigation("ApiKeys");
                 });
 #pragma warning restore 612, 618
         }

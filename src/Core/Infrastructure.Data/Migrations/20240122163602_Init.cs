@@ -13,28 +13,13 @@ namespace Infrastructure.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "audit_events",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    event_type = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    data = table.Column<string>(type: "jsonb", maxLength: 255, nullable: true),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_audit_events", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "data_protection_keys",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    friendly_name = table.Column<string>(type: "text", maxLength: 255, nullable: true),
-                    xml = table.Column<string>(type: "text", maxLength: 255, nullable: true),
+                    friendly_name = table.Column<string>(type: "text", maxLength: 256, nullable: true),
+                    xml = table.Column<string>(type: "text", maxLength: 256, nullable: true),
                 },
                 constraints: table =>
                 {
@@ -46,13 +31,13 @@ namespace Infrastructure.Data.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     email_verified = table.Column<bool>(type: "boolean", nullable: false),
-                    phone = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    phone = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
                     phone_verified = table.Column<bool>(type: "boolean", nullable: false),
-                    role = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    first_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    last_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    role = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    first_name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    last_name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     security_stamp = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -68,8 +53,8 @@ namespace Infrastructure.Data.Migrations
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     user_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    secret = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    secret = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                 },
@@ -78,28 +63,6 @@ namespace Infrastructure.Data.Migrations
                     table.PrimaryKey("pk_api_keys", x => x.id);
                     table.ForeignKey(
                         name: "fk_api_keys_users_user_id",
-                        column: x => x.user_id,
-                        principalTable: "users",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "todo_lists",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    type = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_todo_lists", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_todo_lists_users_user_id",
                         column: x => x.user_id,
                         principalTable: "users",
                         principalColumn: "id",
@@ -116,11 +79,6 @@ namespace Infrastructure.Data.Migrations
                 name: "ix_api_keys_user_id",
                 table: "api_keys",
                 column: "user_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_todo_lists_user_id",
-                table: "todo_lists",
-                column: "user_id");
         }
 
         /// <inheritdoc />
@@ -130,13 +88,7 @@ namespace Infrastructure.Data.Migrations
                 name: "api_keys");
 
             migrationBuilder.DropTable(
-                name: "audit_events");
-
-            migrationBuilder.DropTable(
                 name: "data_protection_keys");
-
-            migrationBuilder.DropTable(
-                name: "todo_lists");
 
             migrationBuilder.DropTable(
                 name: "users");
