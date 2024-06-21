@@ -39,7 +39,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\V1_dev\" />
     <Folder Include="specs\" />
     <Folder Include="ConfigureOptions\" />
     <Folder Include="Conventions\" />

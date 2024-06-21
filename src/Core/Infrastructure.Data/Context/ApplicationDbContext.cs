@@ -20,8 +20,6 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
 
     public DbSet<User> Users { get; set; } = null!;
 
-    public DbSet<ApiKey> ApiKeys { get; set; } = null!;
-
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     internal IDbConnection DbConnection => this.Database.GetDbConnection();
@@ -80,8 +78,6 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema("backend");
-
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());

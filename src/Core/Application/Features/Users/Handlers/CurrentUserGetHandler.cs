@@ -1,61 +1,22 @@
-﻿using System.Net;
-using AutoMapper;
-using LayeredTemplate.Application.Common.Exceptions;
-using LayeredTemplate.Application.Common.Extensions;
-using LayeredTemplate.Application.Common.Services;
-using LayeredTemplate.Application.Features.Users.Models;
+﻿using LayeredTemplate.Application.Features.Users.Models;
 using LayeredTemplate.Application.Features.Users.Requests;
-using LayeredTemplate.Application.Features.Users.Services;
-using LayeredTemplate.Domain.Entities;
 using MediatR;
 
 namespace LayeredTemplate.Application.Features.Users.Handlers;
 
 internal class CurrentUserGetHandler : IRequestHandler<CurrentUserGetRequest, CurrentUser>
 {
-    private readonly ICurrentUserService currentUserService;
-    private readonly IUserPoolService userPoolService;
-    private readonly IApplicationDbContext dbContext;
-    private readonly IMapper mapper;
-
-    public CurrentUserGetHandler(
-        ICurrentUserService currentUserService,
-        IUserPoolService userPoolService,
-        IApplicationDbContext dbContext,
-        IMapper mapper)
+    public Task<CurrentUser> Handle(CurrentUserGetRequest request, CancellationToken cancellationToken)
     {
-        this.currentUserService = currentUserService;
-        this.userPoolService = userPoolService;
-        this.dbContext = dbContext;
-        this.mapper = mapper;
-    }
-
-    public async Task<CurrentUser> Handle(CurrentUserGetRequest request, CancellationToken cancellationToken)
-    {
-        var user = await this.dbContext.Users.FirstByIdOrDefault(this.currentUserService.UserId, cancellationToken);
-        if (user is null)
+        return Task.FromResult(new CurrentUser()
         {
-            if (!await this.userPoolService.ExistsUser(this.currentUserService.UserId))
-            {
-                throw new HttpStatusException("User does not exists.", HttpStatusCode.Unauthorized);
-            }
-
-            user = new User()
-            {
-                Id = this.currentUserService.UserId,
-                Email = this.currentUserService.Email,
-                EmailVerified = this.currentUserService.EmailVerified,
-                Phone = this.currentUserService.Phone,
-                PhoneVerified = this.currentUserService.PhoneVerified,
-                Role = this.currentUserService.Role,
-                FirstName = this.currentUserService.FirstName,
-                LastName = this.currentUserService.LastName,
-            };
-
-            await this.dbContext.Users.AddAsync(user, cancellationToken);
-            await this.dbContext.SaveChangesAsync(cancellationToken);
-        }
-
-        return this.mapper.Map<CurrentUser>(user);
+            Id = new Guid("53803690-346B-4BBE-AA6A-28C0CF568831"),
+            Email = "example@email.com",
+            EmailVerified = true,
+            FirstName = "John",
+            LastName = "Doe",
+            Phone = "+12106542673",
+            PhoneVerified = true,
+        });
     }
 }

@@ -8,19 +8,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="AuthorizationHandlers\" />
-    <Folder Include="Utilities\" />
-    <Folder Include="AuthenticationHandlers\" />
     <Folder Include="BusFilters\" />
   </ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.0" />
-	<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.0" />
-	<PackageReference Include="MailKit" Version="4.3.0" />
-	<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.1" />
-	<PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="3.0.1" />
-    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.300" />
+	<PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.1" />
+	<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.1" />
+	<PackageReference Include="MailKit" Version="4.6.0" />
+	<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.6" />
     <PackageReference Include="PasswordGenerator" Version="2.1.0" />
   </ItemGroup>
 

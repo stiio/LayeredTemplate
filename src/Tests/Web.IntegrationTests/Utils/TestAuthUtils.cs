@@ -14,7 +14,7 @@ public static class TestAuthUtils
         {
             Id = user.Id.ToString(),
             Email = user.Email,
-            Role = user.Role.ToString(),
+            Role = "Administrator",
         };
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(AppAuthenticationSchemes.Bearer, JsonSerializer.Serialize(mockUser));

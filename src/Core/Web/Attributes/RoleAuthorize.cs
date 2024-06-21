@@ -1,5 +1,4 @@
-﻿using LayeredTemplate.Domain.Enums;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 
 namespace LayeredTemplate.Web.Attributes;
 
@@ -12,7 +11,7 @@ public class RoleAuthorize : AuthorizeAttribute
     /// Initializes a new instance of the <see cref="RoleAuthorize"/> class.
     /// </summary>
     /// <param name="roles"></param>
-    public RoleAuthorize(params Role[] roles)
+    public RoleAuthorize(params string[] roles)
     {
         if (roles.Any())
         {

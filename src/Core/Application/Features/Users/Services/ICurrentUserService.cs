@@ -1,6 +1,4 @@
-﻿using LayeredTemplate.Domain.Enums;
-
-namespace LayeredTemplate.Application.Features.Users.Services;
+﻿namespace LayeredTemplate.Application.Features.Users.Services;
 
 public interface ICurrentUserService
 {
@@ -19,6 +17,4 @@ public interface ICurrentUserService
     public string? LastName { get; }
 
     public string? Name { get; }
-
-    public Role Role { get; }
 }

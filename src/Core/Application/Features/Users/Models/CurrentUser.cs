@@ -1,6 +1,4 @@
-﻿using LayeredTemplate.Domain.Enums;
-
-namespace LayeredTemplate.Application.Features.Users.Models;
+﻿namespace LayeredTemplate.Application.Features.Users.Models;
 
 public class CurrentUser
 {
@@ -41,9 +39,4 @@ public class CurrentUser
     /// </summary>
     /// <example>Doe</example>
     public string? LastName { get; set; }
-
-    /// <summary>
-    /// Role of user
-    /// </summary>
-    public Role Role { get; set; }
 }

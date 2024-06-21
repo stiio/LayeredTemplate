@@ -11,8 +11,8 @@ internal static class AuthorizationExtensions
 {
     public static void ConfigureAuthorization(this IServiceCollection services)
     {
-        services.AddScoped<IClaimsTransformation, AppClaimTransformation>();
-
+        // TODO: uncomment
+        // services.AddScoped<IClaimsTransformation, AppClaimTransformation>();
         services.AddScoped<IResourceAuthorizationService, ResourceAuthorizationService>();
 
         services.AddAuthorization(ConfigurePolicies);

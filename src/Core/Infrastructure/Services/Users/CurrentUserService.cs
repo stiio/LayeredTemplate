@@ -1,6 +1,5 @@
 ﻿using System.Security.Claims;
 using LayeredTemplate.Application.Features.Users.Services;
-using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Shared.Constants;
 using Microsoft.AspNetCore.Http;
 
@@ -30,15 +29,4 @@ internal class CurrentUserService : ICurrentUserService
     public string? LastName => this.httpContextAccessor.HttpContext!.User!.FindFirstValue(AppClaims.LastName);
 
     public string? Name => this.httpContextAccessor.HttpContext!.User!.FindFirstValue(AppClaims.Name);
-
-    public Role Role => this.GetRole();
-
-    private Role GetRole()
-    {
-        var role = this.httpContextAccessor.HttpContext!.User!.FindFirst(AppClaims.Role)?.Value;
-
-        return string.IsNullOrEmpty(role)
-            ? Role.Guest
-            : Enum.Parse<Role>(role, true);
-    }
 }

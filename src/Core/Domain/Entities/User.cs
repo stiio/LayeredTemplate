@@ -1,5 +1,4 @@
 ﻿using LayeredTemplate.Domain.Common;
-using LayeredTemplate.Domain.Enums;
 
 namespace LayeredTemplate.Domain.Entities;
 
@@ -15,15 +14,11 @@ public class User : IBaseAuditableEntity<Guid>
 
     public bool PhoneVerified { get; set; }
 
-    public Role Role { get; set; }
-
     public string? FirstName { get; set; }
 
     public string? LastName { get; set; }
 
     public string? SecurityStamp { get; set; }
-
-    public ICollection<ApiKey>? ApiKeys { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

@@ -8,8 +8,6 @@ public interface IApplicationDbContext : IApplicationDbConnection, IDisposable, 
 {
     DbSet<User> Users { get; }
 
-    DbSet<ApiKey> ApiKeys { get; }
-
     DbSet<T> Set<T>()
         where T : class;
 

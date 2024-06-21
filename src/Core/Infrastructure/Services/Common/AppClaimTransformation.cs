@@ -49,7 +49,6 @@ internal class AppClaimTransformation : IClaimsTransformation
                     claims.AddIfNotNull(userId.ToString().CreateClaimIfNotNull(AppClaims.UserId));
                     claims.AddIfNotNull(user.Email.CreateClaimIfNotNull(AppClaims.Email));
                     claims.AddIfNotNull(user.Phone.CreateClaimIfNotNull(AppClaims.Phone));
-                    claims.AddIfNotNull(user.Role.ToString().CreateClaimIfNotNull(AppClaims.Role));
                     claims.AddIfNotNull(user.EmailVerified.ToString().ToLower().CreateClaimIfNotNull(AppClaims.EmailVerified));
                     claims.AddIfNotNull(user.PhoneVerified.ToString().ToLower().CreateClaimIfNotNull(AppClaims.PhoneVerified));
                     claims.AddIfNotNull($"{user.FirstName} {user.LastName}".Trim().CreateClaimIfNotNull(AppClaims.Name));

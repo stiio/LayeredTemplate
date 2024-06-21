@@ -1,5 +1,4 @@
-﻿using Amazon.CognitoIdentityProvider;
-using LayeredTemplate.Application.Common.Exceptions;
+﻿using LayeredTemplate.Application.Common.Exceptions;
 using LayeredTemplate.Domain.Exceptions;
 using LayeredTemplate.Web.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -38,21 +37,6 @@ internal class ApplicationExceptionFilter : IExceptionFilter
                 var applicationError = new ErrorResult()
                 {
                     Message = domainException.Message,
-                    TraceId = context.HttpContext.TraceIdentifier,
-                };
-
-                context.Result = new BadRequestObjectResult(applicationError);
-                break;
-            }
-
-            case AmazonCognitoIdentityProviderException e:
-            {
-                logger.LogError(e, "An unhandled exception has occurred while executing the request.");
-                context.ExceptionHandled = true;
-
-                var applicationError = new ErrorResult()
-                {
-                    Message = e.Message,
                     TraceId = context.HttpContext.TraceIdentifier,
                 };
 
