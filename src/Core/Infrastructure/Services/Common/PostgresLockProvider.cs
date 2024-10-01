@@ -16,6 +16,8 @@ internal class PostgresLockProvider : ILockProvider
 
     public async Task<IDistributedSynchronizationHandle> AcquireLockAsync(string name, TimeSpan? timeout = default, CancellationToken cancellationToken = default)
     {
+        timeout ??= TimeSpan.FromSeconds(20);
+
         var @lock = new PostgresDistributedLock(new PostgresAdvisoryLockKey(name, true), this.connectionString);
 
         var handler = await @lock.AcquireAsync(timeout, cancellationToken);

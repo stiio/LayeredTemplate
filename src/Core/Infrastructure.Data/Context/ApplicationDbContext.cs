@@ -46,34 +46,64 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
         }
     }
 
-    public Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null)
+    public Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default)
     {
-        return this.DbConnection.QueryAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+        return this.DbConnection.QueryAsync<T>(new CommandDefinition(
+            sql,
+            parameters: param,
+            transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
+            flags: CommandFlags.NoCache,
+            cancellationToken: cancellationToken));
     }
 
-    public Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null)
+    public Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default)
     {
-        return this.DbConnection.QueryFirstOrDefaultAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+        return this.DbConnection.QueryFirstOrDefaultAsync<T>(new CommandDefinition(
+            sql,
+            parameters: param,
+            transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
+            flags: CommandFlags.NoCache,
+            cancellationToken: cancellationToken));
     }
 
-    public Task<T> QueryFirstAsync<T>(string sql, object? param = null)
+    public Task<T> QueryFirstAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default)
     {
-        return this.DbConnection.QueryFirstAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+        return this.DbConnection.QueryFirstAsync<T>(new CommandDefinition(
+            sql,
+            parameters: param,
+            transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
+            flags: CommandFlags.NoCache,
+            cancellationToken: cancellationToken));
     }
 
-    public Task<T> QuerySingleAsync<T>(string sql, object? param = null)
+    public Task<T> QuerySingleAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default)
     {
-        return this.DbConnection.QuerySingleAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+        return this.DbConnection.QuerySingleAsync<T>(new CommandDefinition(
+            sql,
+            parameters: param,
+            transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
+            flags: CommandFlags.NoCache,
+            cancellationToken: cancellationToken));
     }
 
-    public Task<int> ExecuteAsync(string sql, object? param = null)
+    public Task<int> ExecuteAsync(string sql, object? param = null, CancellationToken cancellationToken = default)
     {
-        return this.DbConnection.ExecuteAsync(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+        return this.DbConnection.ExecuteAsync(new CommandDefinition(
+            sql,
+            parameters: param,
+            transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
+            flags: CommandFlags.NoCache,
+            cancellationToken: cancellationToken));
     }
 
-    public Task<T?> ExecuteScalarAsync<T>(string sql, object? param = null)
+    public Task<T?> ExecuteScalarAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default)
     {
-        return this.DbConnection.ExecuteScalarAsync<T>(sql, param, this.Database.CurrentTransaction?.GetDbTransaction());
+        return this.DbConnection.ExecuteScalarAsync<T>(new CommandDefinition(
+            sql,
+            parameters: param,
+            transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
+            flags: CommandFlags.NoCache,
+            cancellationToken: cancellationToken));
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

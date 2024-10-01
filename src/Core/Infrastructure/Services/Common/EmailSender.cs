@@ -21,12 +21,12 @@ internal class EmailSender : IEmailSender
         this.logger = logger;
     }
 
-    public Task SendEmail(string to, string subject, string htmlBody)
+    public Task SendEmail(string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
     {
-        return this.SendEmail(new[] { to }, subject, htmlBody);
+        return this.SendEmail(new[] { to }, subject, htmlBody, cancellationToken);
     }
 
-    public async Task SendEmail(string[] tos, string subject, string htmlBody)
+    public async Task SendEmail(string[] tos, string subject, string htmlBody, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -45,10 +45,10 @@ internal class EmailSender : IEmailSender
 
             // send email
             using var smtp = new SmtpClient();
-            await smtp.ConnectAsync(this.smtpSettings.Host, this.smtpSettings.Port, SecureSocketOptions.StartTls);
-            await smtp.AuthenticateAsync(this.smtpSettings.User, this.smtpSettings.Password);
-            var response = await smtp.SendAsync(email);
-            await smtp.DisconnectAsync(true);
+            await smtp.ConnectAsync(this.smtpSettings.Host, this.smtpSettings.Port, SecureSocketOptions.StartTls, cancellationToken);
+            await smtp.AuthenticateAsync(this.smtpSettings.User, this.smtpSettings.Password, cancellationToken);
+            var response = await smtp.SendAsync(email, cancellationToken);
+            await smtp.DisconnectAsync(true, cancellationToken);
 
             this.logger.LogInformation("Email {subject} send to {@tos} | response: {response}", subject, tos, response);
         }
