@@ -44,6 +44,22 @@ internal class ApplicationExceptionFilter : IExceptionFilter
                 break;
             }
 
+            case NotSupportedException e:
+            {
+                logger.LogError(e, "An unhandled exception has occurred while executing the request.");
+
+                context.ExceptionHandled = true;
+
+                var applicationError = new ErrorResult()
+                {
+                    Message = "Not supported.",
+                    TraceId = context.HttpContext.TraceIdentifier,
+                };
+
+                context.Result = new BadRequestObjectResult(applicationError);
+                break;
+            }
+
             case NotImplementedException e:
             {
                 logger.LogError(e, "An unhandled exception has occurred while executing the request.");

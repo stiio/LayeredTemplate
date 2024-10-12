@@ -1,0 +1,52 @@
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using LayeredTemplate.Shared.Extensions;
+using LayeredTemplate.Shared.Options;
+using Microsoft.Extensions.Options;
+
+namespace LayeredTemplate.Web.Json.TypeResolvers;
+
+public class PolymorphicTypeResolver : DefaultJsonTypeInfoResolver
+{
+    private readonly JsonPolymorphismSettings jsonPolymorphismSettings;
+
+    public PolymorphicTypeResolver(IOptions<JsonPolymorphismSettings> jsonPolymorphismSettings)
+    {
+        this.jsonPolymorphismSettings = jsonPolymorphismSettings.Value;
+    }
+
+    public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)
+    {
+        JsonTypeInfo jsonTypeInfo = base.GetTypeInfo(type, options);
+
+        var assemblies = this.jsonPolymorphismSettings.Assemblies;
+        var childTypes = assemblies.SelectMany(x => x.GetTypes())
+            .Where(x => x.IsAssignableTo(type) && !x.IsAbstract)
+            .ToArray();
+
+        if (childTypes.Length < 1 || (childTypes.Length == 1 && childTypes[0] == type))
+        {
+            return jsonTypeInfo;
+        }
+
+        jsonTypeInfo.PolymorphismOptions = new JsonPolymorphismOptions
+        {
+            IgnoreUnrecognizedTypeDiscriminators = false,
+            UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FailSerialization,
+            DerivedTypes =
+            {
+            },
+        };
+
+        var polymorphismSettingsKey = $"{type.GetRootBaseType().FullName}, {type.Assembly.GetName().Name}";
+        var mapping = this.jsonPolymorphismSettings.Mapping.GetValueOrDefault(polymorphismSettingsKey);
+        foreach (var childType in childTypes)
+        {
+            var overrideDerived = mapping?.GetValueOrDefault($"{childType.FullName}, {childType.Assembly.GetName().Name}");
+            jsonTypeInfo.PolymorphismOptions.DerivedTypes.Add(new JsonDerivedType(childType, overrideDerived ?? childType.Name));
+        }
+
+        return jsonTypeInfo;
+    }
+}

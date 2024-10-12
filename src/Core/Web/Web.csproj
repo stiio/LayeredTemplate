@@ -39,8 +39,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Json\TypeResolvers\" />
     <Folder Include="specs\" />
-    <Folder Include="ConfigureOptions\" />
     <Folder Include="Conventions\" />
   </ItemGroup>
 

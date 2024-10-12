@@ -2,8 +2,8 @@
 using Asp.Versioning;
 using Asp.Versioning.Conventions;
 using LayeredTemplate.Web.Conventions;
-using LayeredTemplate.Web.Converters;
 using LayeredTemplate.Web.Filters;
+using LayeredTemplate.Web.Json.Converters;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.JsonMultipartFormDataSupport.Extensions;
 using Swashbuckle.AspNetCore.JsonMultipartFormDataSupport.Integrations;

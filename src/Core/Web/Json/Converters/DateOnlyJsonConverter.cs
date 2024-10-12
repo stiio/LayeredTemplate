@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace LayeredTemplate.Web.Converters;
+namespace LayeredTemplate.Web.Json.Converters;
 
 /// <inheritdoc />
 public class DateOnlyJsonConverter : JsonConverter<DateOnly>
