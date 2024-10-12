@@ -89,6 +89,8 @@
   "sources": [
     {
       "exclude": [
+        "**/**/**/[Bb]in/**",
+        "**/**/**/[Oo]bj/**",
         "**/**/[Bb]in/**",
         "**/**/[Oo]bj/**",
         "**/[Bb]in/**",
@@ -98,10 +100,13 @@
         ".template.config/**/*",
         "**/*.filelist",
         "**/**/*.filelist",
+        "**/**/**/*.filelist",
         "**/*.user",
         "**/**/*.user",
+        "**/**/**/*.user",
         "**/*.lock.json",
         "**/**/*.lock.json",
+        "**/**/**/*.lock.json",
         ".vs/**/*"
       ],
       "modifiers": [

@@ -2,13 +2,14 @@ spec:
   inputs:
     environment:
     branch:
-    job-suffix:
+    job_suffix:
       default: ''
+    docker_path:
 
 ---
 
 
-backend-deploy-aws$[[ inputs.job-suffix ]]:
+backend-deploy-aws$[[ inputs.job_suffix ]]:
   stage: backend-deploy-aws
   image:
     name: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
@@ -18,11 +19,11 @@ backend-deploy-aws$[[ inputs.job-suffix ]]:
   environment:
     name: $[[ inputs.environment ]]
   script:
-    - docker build -t $AWS_REGISTRY$AWS_ECR_TAG -f Core/Web/Dockerfile .
+    - docker build -t $AWS_REGISTRY$AWS_ECR_TAG -f $[[ inputs.docker_path ]] .
     - docker login -u AWS -p $(aws ecr get-login-password --region $AWS_DEFAULT_REGION) $AWS_REGISTRY
     - docker push $AWS_REGISTRY$AWS_ECR_TAG
 
-backend-deploy-aws-ecs$[[ inputs.job-suffix ]]:
+backend-deploy-aws-ecs$[[ inputs.job_suffix ]]:
   stage: backend-deploy-aws-ecs
   image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
   only:
