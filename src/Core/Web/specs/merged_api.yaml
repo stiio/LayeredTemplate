@@ -11,7 +11,7 @@ paths:
       operationId: GetInfoV1
       responses:
         '200':
-          description: Success
+          description: OK
           content:
             text/plain:
               schema:
@@ -42,7 +42,7 @@ paths:
       operationId: GetCurrentUserV1
       responses:
         '200':
-          description: Success
+          description: OK
           content:
             text/plain:
               schema:
@@ -90,7 +90,7 @@ paths:
               $ref: '#/components/schemas/UserEmailCodeSendRequest'
       responses:
         '200':
-          description: Success
+          description: OK
           content:
             text/plain:
               schema:
@@ -138,7 +138,7 @@ paths:
               $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
       responses:
         '200':
-          description: Success
+          description: OK
           content:
             text/plain:
               schema:
