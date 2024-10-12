@@ -1,4 +1,5 @@
-﻿using LayeredTemplate.Application.Common.Services;
+﻿using LayeredTemplate.Application.Common.Models;
+using LayeredTemplate.Application.Common.Services;
 using Medallion.Threading;
 using Medallion.Threading.Postgres;
 using Microsoft.Extensions.Configuration;
@@ -14,11 +15,11 @@ internal class PostgresLockProvider : ILockProvider
         this.connectionString = configuration.GetConnectionString("DefaultConnection")!;
     }
 
-    public async Task<IDistributedSynchronizationHandle> AcquireLockAsync(string name, TimeSpan? timeout = default, CancellationToken cancellationToken = default)
+    public async Task<IDistributedSynchronizationHandle> AcquireLockAsync(LockKey lockKey, TimeSpan? timeout = default, CancellationToken cancellationToken = default)
     {
         timeout ??= TimeSpan.FromSeconds(20);
 
-        var @lock = new PostgresDistributedLock(new PostgresAdvisoryLockKey(name, true), this.connectionString);
+        var @lock = new PostgresDistributedLock(new PostgresAdvisoryLockKey(lockKey.Name, true), this.connectionString);
 
         var handler = await @lock.AcquireAsync(timeout, cancellationToken);
 

@@ -1,4 +1,5 @@
-﻿using LayeredTemplate.Application.Common.Services;
+﻿using LayeredTemplate.Application.Common.Models;
+using LayeredTemplate.Application.Common.Services;
 using LayeredTemplate.Shared.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -35,7 +36,9 @@ internal class RunMigrationsTask<TDbContext> : IStartupTask
 
         if (await dbCreator.ExistsAsync(cancellationToken))
         {
-            await using var @lock = await this.lockProvider.AcquireLockAsync($"migrations:{dbContextName}", cancellationToken: cancellationToken);
+            await using var @lock = await this.lockProvider.AcquireLockAsync(
+                LockKey.Migrations(dbContextName),
+                cancellationToken: cancellationToken);
 
             if ((await this.context.Database.GetPendingMigrationsAsync(cancellationToken)).Any())
             {
