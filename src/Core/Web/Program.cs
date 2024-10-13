@@ -66,7 +66,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddInfrastructureServices(configuration, env);
     services.AddApplicationServices(configuration);
 
-    services.ConfigureControllers();
+    services.ConfigureControllers(configuration);
     services.ConfigureSwagger();
 
     services.AddEndpointsApiExplorer();

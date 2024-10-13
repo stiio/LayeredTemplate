@@ -19,47 +19,70 @@ public class TypeDiscriminatorSchemaFilter : ISchemaFilter
     public void Apply(OpenApiSchema schema, SchemaFilterContext context)
     {
         const string discriminator = "$type";
-        var assemblies = this.jsonPolymorphismSettings.Assemblies;
 
-        var baseType = context.Type.GetRootBaseType();
-        if (schema.Discriminator?.PropertyName is not null && schema.AllOf.Count == 0)
+        var targetSchema = schema.AllOf.Count == 2
+            ? schema.AllOf[1]
+            : schema;
+
+        if (targetSchema.Discriminator?.PropertyName is not null && schema.AllOf.Count > 1)
         {
-            var types = assemblies
-                .SelectMany(x => x.GetTypes())
-                .Where(x => x.IsAssignableTo(context.Type) && !x.IsAbstract)
-                .ToArray();
-
-            schema.Properties[discriminator].Enum = types
-                .Select(x => new OpenApiString(x.Name))
-                .ToList<IOpenApiAny>();
+            targetSchema.Required.Remove("$type");
+            targetSchema.Properties.Remove(discriminator);
+            targetSchema.Discriminator = null;
         }
 
-        if (schema.Discriminator?.PropertyName is not null && schema.AllOf.Count > 0)
+        if (targetSchema.Discriminator?.PropertyName is not null)
         {
-            schema.Properties.Remove(discriminator);
+            var enumSchema = this.GetOrCreateEnum(context);
+
+            var discriminatorSchema = targetSchema.Properties[discriminator];
+            discriminatorSchema.Reference = new OpenApiReference()
+            {
+                Id = enumSchema.SchemaId,
+                Type = ReferenceType.Schema,
+            };
         }
 
-        if (schema.Discriminator?.PropertyName is not null)
+        if (targetSchema.Discriminator?.PropertyName is not null)
         {
+            var assemblies = this.jsonPolymorphismSettings.Assemblies;
             var types = assemblies.SelectMany(x => x.GetTypes())
                 .Where(x => x.IsAssignableTo(context.Type) && !x.IsAbstract && x != context.Type)
                 .ToArray();
 
-            schema.Discriminator.Mapping = types.ToDictionary(
+            targetSchema.Discriminator.Mapping = types.ToDictionary(
                 x => x.Name,
                 x => $"#/components/schemas/{x.Name}");
         }
+    }
 
-        if (!context.Type.IsAbstract && (schema.Discriminator?.PropertyName is not null || schema.AllOf?.Count > 0))
+    private (string SchemaId, OpenApiSchema Schema) GetOrCreateEnum(SchemaFilterContext context)
+    {
+        var assemblies = this.jsonPolymorphismSettings.Assemblies;
+
+        var baseType = context.Type.GetRootBaseType();
+        var schemaId = $"{baseType.Name}Discriminator";
+
+        var schema = context.SchemaRepository.Schemas.GetValueOrDefault(schemaId);
+
+        if (schema is not null)
         {
-            var defaultValue = this.jsonPolymorphismSettings.Mapping
-                .GetValueOrDefault($"{baseType.FullName}, {context.Type.Assembly.GetName().Name}")
-                ?.GetValueOrDefault($"{baseType.FullName}, {context.Type.Assembly.GetName().Name}");
-
-            schema.Default = new OpenApiObject()
-            {
-                [discriminator] = new OpenApiString(defaultValue ?? context.Type.Name),
-            };
+            return (schemaId, schema);
         }
+
+        var types = assemblies
+            .SelectMany(x => x.GetTypes())
+            .Where(x => x.IsAssignableTo(baseType) && !x.IsAbstract)
+            .ToArray();
+
+        schema = context.SchemaRepository.AddDefinition($"{baseType.Name}Discriminator", new OpenApiSchema()
+        {
+            Type = "string",
+            Enum = types
+                .Select(x => new OpenApiString(x.Name))
+                .ToList<IOpenApiAny>(),
+        });
+
+        return (schemaId, schema);
     }
 }

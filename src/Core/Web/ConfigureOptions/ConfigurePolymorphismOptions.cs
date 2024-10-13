@@ -25,7 +25,7 @@ public class ConfigurePolymorphismOptions :
 
     public void Configure(SwaggerGenOptions options)
     {
-        options.UseOneOfForPolymorphism();
+        options.UseAllOfForInheritance();
         options.SelectDiscriminatorNameUsing(_ => "$type");
         options.SchemaFilter<TypeDiscriminatorSchemaFilter>();
     }

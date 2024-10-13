@@ -21,6 +21,7 @@ public class PolymorphicTypeResolver : DefaultJsonTypeInfoResolver
         JsonTypeInfo jsonTypeInfo = base.GetTypeInfo(type, options);
 
         var assemblies = this.jsonPolymorphismSettings.Assemblies;
+        
         var childTypes = assemblies.SelectMany(x => x.GetTypes())
             .Where(x => x.IsAssignableTo(type) && !x.IsAbstract)
             .ToArray();
@@ -39,12 +40,9 @@ public class PolymorphicTypeResolver : DefaultJsonTypeInfoResolver
             },
         };
 
-        var polymorphismSettingsKey = $"{type.GetRootBaseType().FullName}, {type.Assembly.GetName().Name}";
-        var mapping = this.jsonPolymorphismSettings.Mapping.GetValueOrDefault(polymorphismSettingsKey);
         foreach (var childType in childTypes)
         {
-            var overrideDerived = mapping?.GetValueOrDefault($"{childType.FullName}, {childType.Assembly.GetName().Name}");
-            jsonTypeInfo.PolymorphismOptions.DerivedTypes.Add(new JsonDerivedType(childType, overrideDerived ?? childType.Name));
+            jsonTypeInfo.PolymorphismOptions.DerivedTypes.Add(new JsonDerivedType(childType, childType.Name));
         }
 
         return jsonTypeInfo;

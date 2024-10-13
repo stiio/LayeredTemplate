@@ -12,7 +12,7 @@ namespace LayeredTemplate.Web.Extensions;
 
 public static class ConfigureControllerExtensions
 {
-    public static void ConfigureControllers(this IServiceCollection services)
+    public static void ConfigureControllers(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<ApiBehaviorOptions>(opts =>
         {

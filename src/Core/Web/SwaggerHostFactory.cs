@@ -13,13 +13,16 @@ public class SwaggerHostFactory
 
     private class SwaggerStartup
     {
+        private readonly IConfiguration configuration;
+
         public SwaggerStartup(IConfiguration configuration)
         {
+            this.configuration = configuration;
         }
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.ConfigureControllers();
+            services.ConfigureControllers(this.configuration);
             services.ConfigureSwagger();
             services.AddEndpointsApiExplorer();
         }

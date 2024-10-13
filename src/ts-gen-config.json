@@ -1,5 +1,7 @@
 ﻿{
   "npmName": "@npmClientName/api-docs",
   "useSingleRequestParameter": false,
-  "prefixParameterInterfaces": true
+  "prefixParameterInterfaces": true,
+  "legacyDiscriminatorBehavior": true,
+  "validationAttributes": true
 }
