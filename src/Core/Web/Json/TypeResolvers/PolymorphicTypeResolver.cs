@@ -21,7 +21,7 @@ public class PolymorphicTypeResolver : DefaultJsonTypeInfoResolver
         JsonTypeInfo jsonTypeInfo = base.GetTypeInfo(type, options);
 
         var assemblies = this.jsonPolymorphismSettings.Assemblies;
-        
+
         var childTypes = assemblies.SelectMany(x => x.GetTypes())
             .Where(x => x.IsAssignableTo(type) && !x.IsAbstract)
             .ToArray();

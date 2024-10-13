@@ -28,5 +28,9 @@ public class ConfigurePolymorphismOptions :
         options.UseAllOfForInheritance();
         options.SelectDiscriminatorNameUsing(_ => "$type");
         options.SchemaFilter<TypeDiscriminatorSchemaFilter>();
+
+        // options.UseOneOfForPolymorphism();
+        // options.SchemaFilter<OneOfSchemaFilter>();
+        // options.OperationFilter<OneOfSchemaFilter>();
     }
 }
