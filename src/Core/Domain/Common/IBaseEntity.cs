@@ -1,6 +1,6 @@
 ﻿namespace LayeredTemplate.Domain.Common;
 
-public interface IBaseEntity<TKey>
+public interface IBaseEntity
 {
-    public TKey Id { get; set; }
+    public Guid Id { get; set; }
 }

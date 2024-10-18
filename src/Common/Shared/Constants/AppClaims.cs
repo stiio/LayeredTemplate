@@ -21,4 +21,6 @@ public static class AppClaims
     public const string FirstName = ClaimTypes.GivenName;
 
     public const string LastName = ClaimTypes.Surname;
+
+    public const string AllowedActions = "app:allowed_actions";
 }

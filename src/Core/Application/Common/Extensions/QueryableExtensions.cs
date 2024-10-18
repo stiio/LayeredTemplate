@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LayeredTemplate.Application.Common.Extensions;
 
-internal static class QueryableExtensions
+public static class QueryableExtensions
 {
     public static Task<T?> FirstByIdOrDefault<T, TKey>(this IQueryable<T> query, TKey id, CancellationToken cancellationToken = default)
         where T : class

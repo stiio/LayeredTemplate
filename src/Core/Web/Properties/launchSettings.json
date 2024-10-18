@@ -17,7 +17,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "USE_MOCK_AUTH": "true",
-        "MockUserSettings:Id": "361f7c7a-0c25-4e6d-a3d9-d2584a9d80e6",
+        "MockUserSettings:Id": "361f7c7a-0c25-4e6d-a3d9-d2584a9d80e7",
         "MockUserSettings:Email": "sample_client_555@yopmail.com",
         "MockUserSettings:Phone": "+79685555555",
         "MockUserSettings:Role": "Client"

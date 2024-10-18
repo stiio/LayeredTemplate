@@ -8,6 +8,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Authorization\Handlers\" />
     <Folder Include="BusFilters\" />
   </ItemGroup>
 

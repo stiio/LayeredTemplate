@@ -2,7 +2,7 @@
 
 namespace LayeredTemplate.Domain.Entities;
 
-public class User : IBaseAuditableEntity<Guid>
+public class User : IBaseAuditableEntity
 {
     public Guid Id { get; set; }
 

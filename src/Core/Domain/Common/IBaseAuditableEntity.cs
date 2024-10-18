@@ -1,5 +1,5 @@
 ﻿namespace LayeredTemplate.Domain.Common;
 
-public interface IBaseAuditableEntity<TKey> : IBaseEntity<TKey>, ITimeStamp
+public interface IBaseAuditableEntity : IBaseEntity, ITimeStamp
 {
 }

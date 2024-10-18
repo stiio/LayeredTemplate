@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using LayeredTemplate.Application.Common.Services;
+using LayeredTemplate.Domain.Enums;
 using LayeredTemplate.Infrastructure.Extensions;
 using LayeredTemplate.Shared.Constants;
 using LayeredTemplate.Shared.Extensions;
@@ -54,6 +55,9 @@ internal class AppClaimTransformation : IClaimsTransformation
                     claims.AddIfNotNull($"{user.FirstName} {user.LastName}".Trim().CreateClaimIfNotNull(AppClaims.Name));
                     claims.AddIfNotNull(user.FirstName.CreateClaimIfNotNull(AppClaims.FirstName));
                     claims.AddIfNotNull(user.LastName.CreateClaimIfNotNull(AppClaims.LastName));
+
+                    claims.AddRange(Enum.GetValues<ActionType>()
+                        .Select(x => new Claim(AppClaims.AllowedActions, x.ToString())));
 
                     var identity = new ClaimsIdentity(claims, principal.Identity.AuthenticationType);
                     result = new ClaimsPrincipal(identity);
