@@ -26,7 +26,7 @@ services:
       - postgres
     build:
       context: .
-      dockerfile: Core/Web/Dockerfile
+      dockerfile: Services/App/App.Web/Dockerfile
     networks:
       - app-network
 

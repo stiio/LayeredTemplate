@@ -12,27 +12,27 @@ include:
       environment: backend-staging
       branch: staging
       job_suffix: -staging
-      docker_path: Core/Web/Dockerfile
+      docker_path: Services/App/App.Web/Dockerfile
 
   - local: 'Pipelines/backend-deploy.yml'
     inputs:
       environment: backend-pre-production
       branch: pre-production
       job_suffix: -pre-production
-      docker_path: Core/Web/Dockerfile
+      docker_path: Services/App/App.Web/Dockerfile
 
   - local: 'Pipelines/backend-deploy.yml'
     inputs:
       environment: backend-production
       branch: production
       job_suffix: -production
-      docker_path: Core/Web/Dockerfile
+      docker_path: Services/App/App.Web/Dockerfile
 
   - local: 'Pipelines/npm-api-package-deploy.yml'
     inputs:
       branch: staging
-      project_path: ./Core/Web
-      project_file: Web.dll
+      project_path: ./Services/App/App.Web
+      project_file: App.Web.dll
     rules:
       - changes: 
         - Core/Web/Version.targets
@@ -41,9 +41,9 @@ include:
     inputs:
       branch: pre-production
       job_suffix: -pre-production
-      project_path: ./Core/Web
-      project_file: Web.dll
+      project_path: ./Services/App/App.Web
+      project_file: App.Web.dll
     rules:
       - if: ${CI_COMMIT_REF_SLUG} != 'staging'
       - changes: 
-        - Core/Web/Version.targets
+        - Services/App/App.Web/Version.targets

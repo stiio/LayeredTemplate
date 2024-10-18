@@ -1,0 +1,280 @@
+openapi: 3.0.1
+info:
+  title: Merged Api
+  version: 1.0.0
+paths:
+  /api/v1/info:
+    get:
+      tags:
+        - Info
+      summary: Get info
+      operationId: GetInfoV1
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+  /api/v1/users/current_user:
+    get:
+      tags:
+        - User
+      summary: Get current user
+      operationId: GetCurrentUserV1
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
+  /api/v1/users/email/send_code:
+    post:
+      tags:
+        - User
+      summary: Send user email code
+      operationId: SendUserEmailCodeV1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeSendRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeSendRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeSendRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
+  /api/v1/users/email/verify_code:
+    put:
+      tags:
+        - User
+      summary: Verify user email code
+      operationId: VerifyUserEmailCodeV1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UserEmailCodeVerifyRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SuccessfulResult'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      security:
+        - Bearer: [ ]
+components:
+  schemas:
+    CurrentUser:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id
+          format: uuid
+        email:
+          type: string
+          description: Email
+          nullable: true
+        emailVerified:
+          type: boolean
+          description: Email verified
+        phone:
+          type: string
+          description: Phone
+          nullable: true
+        phoneVerified:
+          type: boolean
+          description: Phone verified
+        firstName:
+          type: string
+          description: First name
+          nullable: true
+        lastName:
+          type: string
+          description: Last name
+          nullable: true
+      additionalProperties: false
+      description: Current user
+    ErrorResult:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message
+          nullable: true
+        traceId:
+          type: string
+          description: Trace id
+          nullable: true
+      additionalProperties: false
+      description: Error result
+    InfoResponse:
+      type: object
+      properties:
+        buildDate:
+          type: string
+          description: Build date
+          nullable: true
+          example: '2022-11-15T12:00:00.0000000Z'
+        npmPackageVersion:
+          type: string
+          description: Npm package version
+          nullable: true
+      additionalProperties: false
+      description: Info response
+    SuccessfulResult:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message
+          nullable: true
+      additionalProperties: false
+      description: Successful result
+    UserEmailCodeSendRequest:
+      required:
+        - email
+      type: object
+      properties:
+        email:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Email
+          format: email
+      additionalProperties: false
+      description: User email code send request
+    UserEmailCodeVerifyRequest:
+      required:
+        - code
+        - email
+      type: object
+      properties:
+        email:
+          maxLength: 255
+          minLength: 1
+          type: string
+          description: Email
+          format: email
+        code:
+          type: integer
+          description: Code
+          format: int32
+      additionalProperties: false
+      description: User email code verify request
+  securitySchemes:
+    Bearer:
+      type: http
+      description: Specify the authorization token.
+      scheme: Bearer
+      bearerFormat: JWT
+    ApiKey:
+      type: apiKey
+      description: Specify the api key.
+      name: X-Api-Key
+      in: header
