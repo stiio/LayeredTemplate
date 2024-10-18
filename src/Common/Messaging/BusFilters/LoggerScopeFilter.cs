@@ -20,7 +20,7 @@ internal class LoggerScopeFilter<T> : IFilter<ConsumeContext<T>>
             try
             {
                 this.logger.LogInformation(
-                    "Start message event: {destinationAddress} | {payload}",
+                    "Start message event: {destinationAddress} | {@payload}",
                     context.DestinationAddress?.ToString(),
                     context.Message);
 

@@ -11,7 +11,12 @@ namespace LayeredTemplate.Messaging;
 
 public static class ConfigureServices
 {
-    public static void AddMessaging(this IServiceCollection services, IConfiguration configuration, Assembly? assembly = null)
+    public static void AddMessaging(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Assembly? assembly = null,
+        Action<IBusRegistrationConfigurator>? busConfiguration = null,
+        Action<IBusFactoryConfigurator>? busFactoryConfiguration = null)
     {
         services.AddMassTransit(opts =>
         {
@@ -29,12 +34,15 @@ public static class ConfigureServices
                 }
             });*/
 
+            busConfiguration?.Invoke(opts);
+
             opts.UsingInMemory((ctx, cfg) =>
             {
                 cfg.UseMessageScope(ctx);
                 cfg.UseInMemoryOutbox(ctx);
 
                 cfg.UseConsumeFilter(typeof(LoggerScopeFilter<>), ctx);
+                busFactoryConfiguration?.Invoke(cfg);
 
                 cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(new CustomAmazonSqsMessageNameFormatter(), configuration["ASPNETCORE_ENVIRONMENT"].Kebaberize()));
                 cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(configuration["ASPNETCORE_ENVIRONMENT"].Kebaberize(), false));
@@ -56,6 +64,7 @@ public static class ConfigureServices
                 });
 
                 cfg.UseConsumeFilter(typeof(LoggerScopeFilter<>), ctx);
+                busFactoryConfiguration?.Invoke(cfg);
 
                 cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(new CustomAmazonSqsMessageNameFormatter(), env.EnvironmentName.Kebaberize()));
                 cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.Kebaberize(), false));
