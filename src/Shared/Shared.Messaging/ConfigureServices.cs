@@ -59,14 +59,14 @@ public static class ConfigureServices
                 {
                     _.AccessKey(configuration["AWS_ACCESS_KEY_ID"]);
                     _.SecretKey(configuration["AWS_SECRET_ACCESS_KEY"]);
-                    _.Scope($"{env.EnvironmentName.Kebaberize()}", true);
+                    _.Scope(configuration["ASPNETCORE_ENVIRONMENT"].Kebaberize(), true);
                 });
 
                 cfg.UseConsumeFilter(typeof(LoggerScopeFilter<>), ctx);
                 busFactoryConfiguration?.Invoke(cfg);
 
-                cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(new CustomAmazonSqsMessageNameFormatter(), env.EnvironmentName.Kebaberize()));
-                cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(env.EnvironmentName.Kebaberize(), false));
+                cfg.MessageTopology.SetEntityNameFormatter(new KebabCaseEntityNameFormatter(new CustomAmazonSqsMessageNameFormatter(), configuration["ASPNETCORE_ENVIRONMENT"].Kebaberize()));
+                cfg.ConfigureEndpoints(ctx, new KebabCaseEndpointNameFormatter(configuration["ASPNETCORE_ENVIRONMENT"].Kebaberize(), false));
             });*/
         });
 

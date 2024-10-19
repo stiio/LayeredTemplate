@@ -5,7 +5,8 @@
 
 	<ItemGroup>
 	  <PackageReference Include="Humanizer.Core" Version="2.14.1" />
-	  <PackageReference Include="MassTransit" Version="8.2.5" />
+	  <PackageReference Include="MassTransit" Version="8.3.0" />
+	  <PackageReference Include="MassTransit.AmazonSQS" Version="8.3.0" />
 	</ItemGroup>
 
 </Project>

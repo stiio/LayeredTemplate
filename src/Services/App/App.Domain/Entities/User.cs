@@ -4,7 +4,7 @@ namespace LayeredTemplate.App.Domain.Entities;
 
 public class User : IBaseAuditableEntity
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Ulid.NewUlid().ToGuid();
 
     public string Email { get; set; } = null!;
 
