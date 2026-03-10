@@ -2,15 +2,15 @@
 using LayeredTemplate.App.Application.Features.Info.Models;
 using LayeredTemplate.App.Application.Features.Info.Requests;
 using LayeredTemplate.Shared.Extensions;
-using MediatR;
+using Mediator;
 
 namespace LayeredTemplate.App.Application.Features.Info.Handlers;
 
 internal class InfoGetHandler : IRequestHandler<InfoGetRequest, InfoResponse>
 {
-    public Task<InfoResponse> Handle(InfoGetRequest request, CancellationToken cancellationToken)
+    public ValueTask<InfoResponse> Handle(InfoGetRequest request, CancellationToken cancellationToken)
     {
-        return Task.FromResult(new InfoResponse()
+        return ValueTask.FromResult(new InfoResponse()
         {
             BuildDate = Assembly.GetExecutingAssembly().GetBuildDate(),
         });

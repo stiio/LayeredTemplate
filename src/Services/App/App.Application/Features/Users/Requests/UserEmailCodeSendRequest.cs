@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using MediatR;
+using Mediator;
 
 namespace LayeredTemplate.App.Application.Features.Users.Requests;
 

@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using FluentValidation;
 using LayeredTemplate.App.Application.Common.Behaviors;
+using LayeredTemplate.App.Application.Features.Info.Requests;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,11 +15,10 @@ public static class ConfigureServices
 
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly(), includeInternalTypes: true);
-        services.AddMediatR(opts =>
+        services.AddMediator(opts =>
         {
-            opts.Lifetime = ServiceLifetime.Scoped;
-            opts.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
-            opts.AddOpenBehavior(typeof(ValidationBehaviour<,>));
+            opts.Assemblies = [typeof(InfoGetRequest)];
+            opts.PipelineBehaviors = [typeof(ValidationBehaviour<,>)];
         });
     }
 }

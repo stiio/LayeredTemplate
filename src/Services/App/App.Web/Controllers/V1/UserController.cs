@@ -12,7 +12,7 @@ namespace LayeredTemplate.App.Web.Controllers.V1;
 public class UserController : AppControllerBase
 {
     [HttpGet("current_user")]
-    public Task<CurrentUser> GetCurrentUser()
+    public ValueTask<CurrentUser> GetCurrentUser()
     {
         return this.Sender.Send(new CurrentUserGetRequest());
     }

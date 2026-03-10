@@ -1,12 +1,12 @@
 ﻿using LayeredTemplate.App.Application.Features.Users.Requests;
-using MediatR;
+using Mediator;
 
 namespace LayeredTemplate.App.Application.Features.Users.Handlers;
 
 internal class UserEmailCodeSendHandler : IRequestHandler<UserEmailCodeSendRequest>
 {
-    public Task Handle(UserEmailCodeSendRequest request, CancellationToken cancellationToken)
+    public ValueTask<Unit> Handle(UserEmailCodeSendRequest request, CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        return Unit.ValueTask;
     }
 }

@@ -1,5 +1,5 @@
 ﻿using LayeredTemplate.App.Web.Models;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.App.Web.Controllers;

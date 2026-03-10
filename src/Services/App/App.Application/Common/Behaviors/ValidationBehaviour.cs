@@ -1,13 +1,13 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using LayeredTemplate.App.Application.Common.Exceptions;
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace LayeredTemplate.App.Application.Common.Behaviors;
 
 internal class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : notnull
+    where TRequest : IMessage
 {
     private readonly IEnumerable<IValidator<TRequest>> validators;
     private readonly ILogger<ValidationBehaviour<TRequest, TResponse>> logger;
@@ -20,18 +20,18 @@ internal class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TReq
         this.logger = logger;
     }
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async ValueTask<TResponse> Handle(TRequest message, MessageHandlerDelegate<TRequest, TResponse> next, CancellationToken cancellationToken)
     {
         if (!this.validators.Any())
         {
-            return await next();
+            return await next(message, cancellationToken);
         }
 
         var validationResults = new List<ValidationResult>();
         foreach (var validator in this.validators)
         {
             this.logger.LogInformation($"Validator process: {validator.GetType().Name}");
-            var result = await validator.ValidateAsync(request, cancellationToken);
+            var result = await validator.ValidateAsync(message, cancellationToken);
             validationResults.Add(result);
         }
 
@@ -43,7 +43,7 @@ internal class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TReq
 
         if (!errors.Any())
         {
-            return await next();
+            return await next(message, cancellationToken);
         }
 
         var exceptionMessage = string.Join("\n", errors);

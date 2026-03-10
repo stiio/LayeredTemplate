@@ -1,5 +1,5 @@
 ﻿using LayeredTemplate.App.Application.Features.Info.Models;
-using MediatR;
+using Mediator;
 
 namespace LayeredTemplate.App.Application.Features.Info.Requests;
 
