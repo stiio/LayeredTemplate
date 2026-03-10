@@ -174,30 +174,33 @@ components:
       properties:
         id:
           type: string
-          description: Id
+          description: Id of user
           format: uuid
         email:
           type: string
-          description: Email
+          description: Email of user
           nullable: true
+          example: example@email.com
         emailVerified:
           type: boolean
-          description: Email verified
+          description: Email Verified
         phone:
           type: string
-          description: Phone
+          description: Phone of user
           nullable: true
         phoneVerified:
           type: boolean
-          description: Phone verified
+          description: Phone Verified
         firstName:
           type: string
-          description: First name
+          description: First Name of user
           nullable: true
+          example: John
         lastName:
           type: string
-          description: Last name
+          description: Last Name of user
           nullable: true
+          example: Doe
       additionalProperties: false
       description: Current user
     ErrorResult:
@@ -247,6 +250,7 @@ components:
           type: string
           description: Email
           format: email
+          example: example@email.com
       additionalProperties: false
       description: User email code send request
     UserEmailCodeVerifyRequest:
@@ -261,10 +265,12 @@ components:
           type: string
           description: Email
           format: email
+          example: example@email.com
         code:
           type: integer
           description: Code
           format: int32
+          example: 124567
       additionalProperties: false
       description: User email code verify request
   securitySchemes:

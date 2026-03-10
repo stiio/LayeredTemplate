@@ -65,8 +65,8 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
 
         options.DescribeAllParametersInCamelCase();
 
-        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Application.xml"));
-        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "Web.xml"));
+        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "App.Application.xml"));
+        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "App.Web.xml"));
 
         options.OperationFilter<DefaultApplicationResponsesFilter>();
         options.OperationFilter<AuthOperationFilter>();
