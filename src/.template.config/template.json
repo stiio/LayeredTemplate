@@ -83,7 +83,7 @@
   },
   "primaryOutputs": [
     {
-      "path": "LayeredTemplate.sln"
+      "path": "LayeredTemplate.slnx"
     }
   ],
   "sources": [
@@ -112,7 +112,7 @@
       "modifiers": [
         {
           "rename": {
-            "LayeredTemplate.App.sln": "LayeredTemplate.sln"
+            "LayeredTemplate.App.slnx": "LayeredTemplate.slnx"
           }
         }
       ]

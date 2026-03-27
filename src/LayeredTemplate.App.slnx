@@ -1,0 +1,34 @@
+<Solution>
+  <Folder Name="/Pipelines/">
+    <File Path="Pipelines/backend-deploy.yml" />
+    <File Path="Pipelines/npm-api-package-deploy.yml" />
+  </Folder>
+  <Folder Name="/Services/" />
+  <Folder Name="/Services/App/">
+    <Project Path="Services/App/App.Application/App.Application.csproj" />
+    <Project Path="Services/App/App.Domain/App.Domain.csproj" />
+    <Project Path="Services/App/App.Infrastructure.Data/App.Infrastructure.Data.csproj" />
+    <Project Path="Services/App/App.Infrastructure/App.Infrastructure.csproj" />
+    <Project Path="Services/App/App.Web/App.Web.csproj" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="Shared/Shared.Messaging/Shared.Messaging.csproj" />
+    <Project Path="Shared/Shared/Shared.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitlab-ci.yml" />
+    <File Path="Directory.Build.props" />
+    <File Path="env.example.json" />
+    <File Path="openapitools.json" />
+    <File Path="README.md" />
+    <File Path="ts-gen-config.json" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Tests.App.Functional/Tests.App.Functional.csproj" />
+    <Project Path="Tests/Tests.App.Integration/Tests.App.Integration.csproj" />
+  </Folder>
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
+</Solution>

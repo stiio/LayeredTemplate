@@ -5,8 +5,6 @@ using LayeredTemplate.App.Web.Conventions;
 using LayeredTemplate.App.Web.Filters;
 using LayeredTemplate.App.Web.Json.Converters;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.JsonMultipartFormDataSupport.Extensions;
-using Swashbuckle.AspNetCore.JsonMultipartFormDataSupport.Integrations;
 
 namespace LayeredTemplate.App.Web.Extensions;
 
@@ -34,8 +32,6 @@ public static class ConfigureControllerExtensions
                 opts.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
             })
             .UseCustomValidationErrorResponses();
-
-        services.AddJsonMultipartFormDataSupport(JsonSerializerChoice.SystemText);
 
         services.AddApiVersioning(opts =>
         {

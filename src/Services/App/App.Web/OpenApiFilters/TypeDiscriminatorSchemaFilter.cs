@@ -1,8 +1,9 @@
-﻿using LayeredTemplate.Shared.Extensions;
+﻿using System.Collections.Concurrent;
+using System.Text.Json.Nodes;
+using LayeredTemplate.Shared.Extensions;
 using LayeredTemplate.Shared.Options;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace LayeredTemplate.App.Web.OpenApiFilters;
@@ -16,17 +17,20 @@ public class TypeDiscriminatorSchemaFilter : ISchemaFilter
         this.jsonPolymorphismSettings = jsonPolymorphismSettings.Value;
     }
 
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
     {
         const string discriminator = "$type";
 
-        var targetSchema = schema.AllOf.Count == 2
-            ? schema.AllOf[1]
-            : schema;
+        var targetSchema = schema.AllOf?.Count == 2
+            ? schema.AllOf[1] as OpenApiSchema
+            : schema as OpenApiSchema;
 
-        if (targetSchema.Discriminator?.PropertyName is not null && schema.AllOf.Count > 1)
+        if (targetSchema!.Discriminator?.PropertyName is not null && schema.AllOf?.Count > 1)
         {
+            targetSchema.Required ??= new HashSet<string>();
             targetSchema.Required.Remove("$type");
+
+            targetSchema.Properties ??= new Dictionary<string, IOpenApiSchema>();
             targetSchema.Properties.Remove(discriminator);
             targetSchema.Discriminator = null;
         }
@@ -35,12 +39,8 @@ public class TypeDiscriminatorSchemaFilter : ISchemaFilter
         {
             var enumSchema = this.GetOrCreateEnum(context);
 
-            var discriminatorSchema = targetSchema.Properties[discriminator];
-            discriminatorSchema.Reference = new OpenApiReference()
-            {
-                Id = enumSchema.SchemaId,
-                Type = ReferenceType.Schema,
-            };
+            var discriminatorSchema = targetSchema.Properties![discriminator] as OpenApiSchema;
+            discriminatorSchema!.DynamicRef = enumSchema.SchemaId;
         }
 
         if (targetSchema.Discriminator?.PropertyName is not null)
@@ -52,7 +52,7 @@ public class TypeDiscriminatorSchemaFilter : ISchemaFilter
 
             targetSchema.Discriminator.Mapping = types.ToDictionary(
                 x => x.Name,
-                x => $"#/components/schemas/{x.Name}");
+                x => new OpenApiSchemaReference(x.Name));
         }
     }
 
@@ -63,9 +63,7 @@ public class TypeDiscriminatorSchemaFilter : ISchemaFilter
         var baseType = context.Type.GetRootBaseType();
         var schemaId = $"{baseType.Name}Discriminator";
 
-        var schema = context.SchemaRepository.Schemas.GetValueOrDefault(schemaId);
-
-        if (schema is not null)
+        if (context.SchemaRepository.Schemas.GetValueOrDefault(schemaId) is OpenApiSchema schema)
         {
             return (schemaId, schema);
         }
@@ -75,14 +73,15 @@ public class TypeDiscriminatorSchemaFilter : ISchemaFilter
             .Where(x => x.IsAssignableTo(baseType) && !x.IsAbstract)
             .ToArray();
 
-        schema = context.SchemaRepository.AddDefinition($"{baseType.Name}Discriminator", new OpenApiSchema()
+        var reference = context.SchemaRepository.AddDefinition($"{baseType.Name}Discriminator", new OpenApiSchema()
         {
-            Type = "string",
+            Type = JsonSchemaType.String,
             Enum = types
-                .Select(x => new OpenApiString(x.Name))
-                .ToList<IOpenApiAny>(),
+                .Select(x => JsonNode.Parse(x.Name))
+                .ToList()!,
         });
 
+        schema = (context.SchemaRepository.Schemas.GetValueOrDefault(schemaId) as OpenApiSchema)!;
         return (schemaId, schema);
     }
 }

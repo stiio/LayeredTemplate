@@ -1,6 +1,6 @@
 ﻿using LayeredTemplate.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace LayeredTemplate.App.Web.OpenApiFilters;
@@ -14,41 +14,32 @@ public class AuthOperationFilter : IOperationFilter
         var authAttributes = context.MethodInfo.DeclaringType?.GetCustomAttributes(true)
             .Union(context.MethodInfo.GetCustomAttributes(true))
             .OfType<AuthorizeAttribute>()
-            .ToArray() ?? Array.Empty<AuthorizeAttribute>();
+            .ToArray() ?? [];
 
-        if (authAttributes.Any())
+        if (authAttributes.Length == 0)
         {
-            operation.Responses.Add("401", new OpenApiResponse { Description = "Unauthorized" });
-            operation.Responses.Add("403", new OpenApiResponse { Description = "Forbidden" });
+            return;
+        }
 
-            operation.Security = new List<OpenApiSecurityRequirement>();
-            if (authAttributes.Any(x => x.AuthenticationSchemes == null || x.AuthenticationSchemes.Contains(AppAuthenticationSchemes.Bearer)))
-            {
-                operation.Security.Add(new()
-                {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = AppAuthenticationSchemes.Bearer },
-                        },
-                        System.Array.Empty<string>()
-                    },
-                });
-            }
+        operation.Responses ??= [];
+        operation.Responses.Add("401", new OpenApiResponse { Description = "Unauthorized" });
+        operation.Responses.Add("403", new OpenApiResponse { Description = "Forbidden" });
 
-            if (authAttributes.Any(x => x.AuthenticationSchemes != null && x.AuthenticationSchemes.Contains(AppAuthenticationSchemes.ApiKey)))
+        operation.Security = new List<OpenApiSecurityRequirement>();
+        if (authAttributes.Any(x => x.AuthenticationSchemes == null || x.AuthenticationSchemes.Contains(AppAuthenticationSchemes.Bearer)))
+        {
+            operation.Security.Add(new OpenApiSecurityRequirement
             {
-                operation.Security.Add(new()
-                {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = AppAuthenticationSchemes.ApiKey },
-                        },
-                        System.Array.Empty<string>()
-                    },
-                });
-            }
+                [new OpenApiSecuritySchemeReference(AppAuthenticationSchemes.Bearer)] = [],
+            });
+        }
+
+        if (authAttributes.Any(x => x.AuthenticationSchemes != null && x.AuthenticationSchemes.Contains(AppAuthenticationSchemes.ApiKey)))
+        {
+            operation.Security.Add(new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference(AppAuthenticationSchemes.ApiKey)] = [],
+            });
         }
     }
 }

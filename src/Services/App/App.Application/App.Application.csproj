@@ -24,7 +24,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.8" />
     <PackageReference Include="libphonenumber-csharp" Version="8.13.47" />
-    <PackageReference Include="Stio.JsonMultipartFormDataSupport" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>

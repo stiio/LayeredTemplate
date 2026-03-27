@@ -1,12 +1,13 @@
 ﻿using System.Reflection;
 using System.Text;
+using System.Text.Json.Nodes;
 using Asp.Versioning.ApiExplorer;
 using LayeredTemplate.App.Web.Controllers;
 using LayeredTemplate.App.Web.OpenApiFilters;
 using LayeredTemplate.Shared.Constants;
 using LayeredTemplate.Shared.Extensions;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace LayeredTemplate.App.Web.ConfigureOptions;
@@ -100,16 +101,23 @@ public class ConfigureSwaggerGenOptions : IConfigureOptions<SwaggerGenOptions>
 
         options.MapType<DateOnly>(() => new OpenApiSchema
         {
-            Type = "string",
+            Type = JsonSchemaType.String,
             Format = null,
-            Example = OpenApiAnyFactory.CreateFromJson($"\"{DateOnly.FromDateTime(new DateTime(2022, 11, 15, 12, 0, 0, DateTimeKind.Utc)):O}\""),
+            Example = JsonNode.Parse($"\"{DateOnly.FromDateTime(new DateTime(2022, 11, 15, 12, 0, 0, DateTimeKind.Utc)):O}\""),
         });
 
         options.MapType<DateTime>(() => new OpenApiSchema
         {
-            Type = "string",
+            Type = JsonSchemaType.String,
             Format = null,
-            Example = OpenApiAnyFactory.CreateFromJson($"\"{new DateTime(2022, 11, 15, 12, 0, 0, DateTimeKind.Utc):O}\""),
+            Example = JsonNode.Parse($"\"{new DateTime(2022, 11, 15, 12, 0, 0, DateTimeKind.Utc):O}\""),
+        });
+
+        options.MapType<TimeOnly>(() => new OpenApiSchema
+        {
+            Type = JsonSchemaType.String,
+            Format = null,
+            Example = JsonNode.Parse($"\"{new TimeOnly(12, 0, 0).ToString()}\""),
         });
     }
 

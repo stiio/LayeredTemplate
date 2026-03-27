@@ -1,12 +1,12 @@
 ﻿using Humanizer;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace LayeredTemplate.App.Web.OpenApiFilters;
 
 public class DefaultSchemaDescriptionFilter : ISchemaFilter
 {
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
     {
         schema.Description ??= context.MemberInfo?.Name?.Humanize()
                                ?? context.ParameterInfo?.Name?.Humanize()

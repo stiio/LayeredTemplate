@@ -1,5 +1,5 @@
 ﻿using LayeredTemplate.App.Web.Models;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace LayeredTemplate.App.Web.OpenApiFilters;
@@ -15,6 +15,7 @@ public class DefaultApplicationResponsesFilter : IOperationFilter
             Schema = context.SchemaGenerator.GenerateSchema(typeof(ErrorResult), context.SchemaRepository),
         };
 
+        operation.Responses ??= [];
         operation.Responses.Add(
             "400",
             new OpenApiResponse()

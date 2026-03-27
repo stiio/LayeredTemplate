@@ -11,10 +11,10 @@
 
 	<Import Project="Version.targets" />
 
-	<Target Name="OpenAPI" AfterTargets="Build" Condition="$(Configuration)=='Debug'">
-		<Exec Command="dotnet tool restore" />
-		<Exec Command="dotnet swagger tofile --output ./specs/merged_api.yaml --yaml $(OutputPath)$(AssemblyName).dll merged_api" WorkingDirectory="$(ProjectDir)" />
-	</Target>
+    <Target Name="OpenAPI" AfterTargets="Build" Condition="$(Configuration)=='Debug'">
+        <Exec Command="dotnet tool restore" />
+        <Exec Command="dotnet swagger tofile --output ./specs/merged_api.yaml --yaml $(OutputPath)$(AssemblyName).dll merged_api" WorkingDirectory="$(ProjectDir)" />
+    </Target>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
@@ -27,7 +27,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
     <PackageReference Include="AutoBogus" Version="2.13.1" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.5" />
   </ItemGroup>
 
   <ItemGroup>

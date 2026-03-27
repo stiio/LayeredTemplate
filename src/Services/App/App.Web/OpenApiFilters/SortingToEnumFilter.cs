@@ -1,37 +1,38 @@
 ﻿using System.Reflection;
+using System.Text.Json.Nodes;
 using LayeredTemplate.App.Application.Common.Models;
-using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace LayeredTemplate.App.Web.OpenApiFilters;
 
 public class SortingToEnumFilter : ISchemaFilter
 {
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
     {
         if (context.Type.IsGenericType && context.Type.GetGenericTypeDefinition() == typeof(Sorting<>))
         {
-            var columnSchema = schema.Properties[nameof(Sorting.Column).ToLower()];
+            var targetSchema = schema as OpenApiSchema;
+            var columnSchema = targetSchema!.Properties![nameof(Sorting.Column).ToLower()] as OpenApiSchema;
             var recordType = context.Type.GetGenericArguments()[0];
 
-            columnSchema.Enum = this.CreateOpenApiEnum(recordType);
+            columnSchema!.Enum = this.CreateOpenApiEnum(recordType);
         }
     }
 
-    private IList<IOpenApiAny> CreateOpenApiEnum(Type type)
+    private IList<JsonNode> CreateOpenApiEnum(Type type)
     {
-        var result = new List<OpenApiString>();
+        var result = new List<JsonNode>();
 
         foreach (var property in type.GetProperties())
         {
             this.FillOpenApiEnum(property, result);
         }
 
-        return result.ToList<IOpenApiAny>();
+        return result;
     }
 
-    private void FillOpenApiEnum(PropertyInfo propertyInfo, List<OpenApiString> result, string? prefix = null, int level = 0)
+    private void FillOpenApiEnum(PropertyInfo propertyInfo, List<JsonNode> result, string? prefix = null, int level = 0)
     {
         if (level == 3)
         {
@@ -58,11 +59,11 @@ public class SortingToEnumFilter : ISchemaFilter
         }
 
         var enumValue = prefix is null ? propertyInfo.Name : $"{prefix}.{propertyInfo.Name}";
-        if (result.Any(x => x.Value.Replace(".", string.Empty) == enumValue.Replace(".", string.Empty)))
+        if (result.Any(x => x.ToString().Replace(".", string.Empty) == enumValue.Replace(".", string.Empty)))
         {
             return;
         }
 
-        result.Add(new OpenApiString(enumValue));
+        result.Add(JsonNode.Parse(enumValue)!);
     }
 }

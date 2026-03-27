@@ -1,6 +1,6 @@
 ﻿using LayeredTemplate.Shared.Options;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace LayeredTemplate.App.Web.OpenApiFilters;
@@ -14,7 +14,7 @@ public class OneOfSchemaFilter : ISchemaFilter, IOperationFilter
         this.jsonPolymorphismSettings = jsonPolymorphismSettings.Value;
     }
 
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
     {
         var assemblies = this.jsonPolymorphismSettings.Assemblies;
         var types = assemblies.SelectMany(x => x.GetTypes())
@@ -28,12 +28,8 @@ public class OneOfSchemaFilter : ISchemaFilter, IOperationFilter
             {
                 OneOf = types.Select(x => new OpenApiSchema()
                 {
-                    Reference = new OpenApiReference()
-                    {
-                        Id = $"{x.Name}",
-                        Type = ReferenceType.Schema,
-                    },
-                }).ToList(),
+                    DynamicRef = x.Name,
+                }).ToList<IOpenApiSchema>(),
             };
 
             if (!context.SchemaRepository.Schemas.ContainsKey(schemaId))
@@ -42,20 +38,21 @@ public class OneOfSchemaFilter : ISchemaFilter, IOperationFilter
             }
         }
 
+        if (schema.Properties is null)
+        {
+            return;
+        }
+
         foreach (var schemaProperty in schema.Properties)
         {
-            if (schemaProperty.Value.OneOf.Count > 0)
+            if (schemaProperty.Value.OneOf?.Count > 0)
             {
                 var schemaId = this.FindSchemaId(schemaProperty.Value, context.SchemaRepository);
                 if (schemaId is not null)
                 {
                     schema.Properties[schemaProperty.Key] = new OpenApiSchema()
                     {
-                        Reference = new OpenApiReference()
-                        {
-                            Id = schemaId,
-                            Type = ReferenceType.Schema,
-                        },
+                        DynamicRef = schemaId,
                     };
                 }
             }
@@ -64,50 +61,42 @@ public class OneOfSchemaFilter : ISchemaFilter, IOperationFilter
 
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
-        foreach (var openApiMediaType in operation.RequestBody.Content
-                     .Where(x => x.Value.Schema.OneOf.Count > 0))
+        foreach (var openApiMediaType in operation.RequestBody?.Content?
+                     .Where(x => x.Value.Schema?.OneOf?.Count > 0) ?? [])
         {
-            var schemaId = this.FindSchemaId(openApiMediaType.Value.Schema, context.SchemaRepository);
+            var schemaId = this.FindSchemaId(openApiMediaType.Value.Schema!, context.SchemaRepository);
             if (schemaId is not null)
             {
-                operation.RequestBody.Content[openApiMediaType.Key].Schema = new OpenApiSchema()
+                operation.RequestBody!.Content![openApiMediaType.Key].Schema = new OpenApiSchema()
                 {
-                    Reference = new OpenApiReference()
-                    {
-                        Id = schemaId,
-                        Type = ReferenceType.Schema,
-                    },
+                    DynamicRef = schemaId,
                 };
             }
         }
 
-        foreach (var openApiMediaType in operation.Responses
-                     .Where(x => x.Key == "200")
-                     .SelectMany(x => x.Value.Content))
+        foreach (var openApiMediaType in operation.Responses?
+                     .Where(x => x.Key == "200" && x.Value.Content != null)
+                     .SelectMany(x => x.Value.Content!) ?? [])
         {
-            var schemaId = this.FindSchemaId(openApiMediaType.Value.Schema, context.SchemaRepository);
+            var schemaId = this.FindSchemaId(openApiMediaType.Value.Schema!, context.SchemaRepository);
             if (schemaId is not null)
             {
-                operation.Responses["200"].Content[openApiMediaType.Key].Schema = new OpenApiSchema()
+                operation.Responses!["200"].Content![openApiMediaType.Key].Schema = new OpenApiSchema()
                 {
-                    Reference = new OpenApiReference()
-                    {
-                        Id = schemaId,
-                        Type = ReferenceType.Schema,
-                    },
+                    DynamicRef = schemaId,
                 };
             }
         }
     }
 
-    private string? FindSchemaId(OpenApiSchema schema, SchemaRepository schemaRepository)
+    private string? FindSchemaId(IOpenApiSchema schema, SchemaRepository schemaRepository)
     {
-        var oneOfIds = schema.OneOf.Select(x => x.Reference.Id).ToArray();
+        var oneOfIds = schema.OneOf?.Select(x => x.DynamicRef).ToArray() ?? [];
 
         var existsSchema = schemaRepository.Schemas
-            .Where(x => x.Value.OneOf.Count > 0)
+            .Where(x => x.Value.OneOf?.Count > 0)
             .FirstOrDefault(x =>
-                x.Value.OneOf.All(o => oneOfIds.Contains(o.Reference?.Id))
+                x.Value.OneOf?.All(o => oneOfIds.Contains(o.DynamicRef)) == true
                                        && oneOfIds.Length == x.Value.OneOf.Count);
 
         return string.IsNullOrEmpty(existsSchema.Key) ? null : existsSchema.Key;
