@@ -47,7 +47,7 @@ public class CustomAuthorizationPolicyProvider : IAuthorizationPolicyProvider
 
     private AuthorizationPolicy GetHasPermissionOnActionPolicy(string policyName)
     {
-        var actionNames = policyName.Split(":")[1].Split(',').ToArray();
+        var actionNames = policyName.Split(":")[1].Split(',');
         if (actionNames.Length == 0)
         {
             throw new ArgumentOutOfRangeException($"{nameof(actionNames)} cannot cannot be empty.");
@@ -67,7 +67,7 @@ public class CustomAuthorizationPolicyProvider : IAuthorizationPolicyProvider
     private AuthorizationPolicy GetHasPermissionOnResourcePolicy(string policyName)
     {
         var parts = policyName.Split(":");
-        var requirementActions = parts[1].Split(',').ToArray();
+        var requirementActions = parts[1].Split(',');
         if (requirementActions.Length == 0)
         {
             throw new ArgumentOutOfRangeException($"{nameof(requirementActions)} cannot cannot be empty.");

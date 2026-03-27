@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace LayeredTemplate.App.Infrastructure.Authorization.Requirements;
 
+// ReSharper disable once UnusedTypeParameter
 public class HasPermissionRequirement<T> : IAuthorizationRequirement
     where T : class, IBaseEntity
 {

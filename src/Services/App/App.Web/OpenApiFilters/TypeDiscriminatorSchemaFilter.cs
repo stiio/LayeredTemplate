@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using LayeredTemplate.Shared.Extensions;
 using LayeredTemplate.Shared.Options;
 using Microsoft.Extensions.Options;

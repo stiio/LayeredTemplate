@@ -19,14 +19,13 @@ namespace LayeredTemplate.Tests.App.Integration;
 
 public class WebApp : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer postgreSqlTestContainer = new PostgreSqlBuilder()
+    private readonly PostgreSqlContainer postgreSqlTestContainer = new PostgreSqlBuilder("postgres:13.2")
         .WithDatabase("appDbName-test")
         .WithUsername("postgres")
         .WithPassword("postgres")
         .WithExposedPort(5555)
         .WithPortBinding(5555, 5555)
         .WithAutoRemove(true)
-        .WithImage("postgres:13.2")
         .Build();
 
     public async Task InitializeAsync()

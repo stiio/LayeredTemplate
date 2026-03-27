@@ -14,6 +14,7 @@ public class Sorting
     public DirectionType Direction { get; set; } = DirectionType.Desc;
 }
 
+// ReSharper disable once UnusedTypeParameter
 public class Sorting<TRecord> : Sorting
     where TRecord : class
 {

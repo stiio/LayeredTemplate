@@ -11,7 +11,6 @@ public class HasPermissionRequirementAttribute<T> : AuthorizeAttribute
         string resourceIdElementName,
         BindFrom bindFrom,
         params RequirementAction[] actions)
-        : base()
     {
         this.Policy = GetPolicyName(resourceIdElementName, bindFrom, actions);
     }

@@ -51,7 +51,7 @@ public static class QueryableExtensions
         var orderBy = Expression.Call(
             typeof(Queryable),
             sorting.Direction == DirectionType.Asc ? "OrderBy" : "OrderByDescending",
-            new Type[] { typeof(T), keySelector.ReturnType },
+            [typeof(T), keySelector.ReturnType],
             query.Expression,
             Expression.Quote(keySelector));
 

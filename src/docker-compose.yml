@@ -8,7 +8,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - 5433:5432
+      - "5433:5432"
     networks:
       - app-network
 
@@ -18,7 +18,7 @@ services:
     env_file:
       - .env
     ports:
-      - 3080:3080
+      - "3080:3080"
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
       - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro

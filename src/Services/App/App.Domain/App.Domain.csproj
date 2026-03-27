@@ -4,11 +4,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ulid" Version="1.3.4" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Attributes\" />
+    <PackageReference Include="Ulid" Version="1.4.1" />
   </ItemGroup>
 
 </Project>

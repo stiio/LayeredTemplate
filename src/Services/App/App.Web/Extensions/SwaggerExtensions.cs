@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning.ApiExplorer;
 using LayeredTemplate.App.Web.ConfigureOptions;
+using Microsoft.OpenApi;
 
 namespace LayeredTemplate.App.Web.Extensions;
 
@@ -16,7 +17,11 @@ public static class SwaggerExtensions
         IWebHostEnvironment env,
         IApiVersionDescriptionProvider apiVersionDescriptionProvider)
     {
-        app.UseSwagger(options => options.RouteTemplate = "/api-docs/{documentName}/swagger.json");
+        app.UseSwagger(options =>
+        {
+            options.RouteTemplate = "/api-docs/{documentName}/swagger.json";
+            options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1;
+        });
         app.UseSwaggerUI(c =>
         {
             foreach (var description in apiVersionDescriptionProvider.ApiVersionDescriptions)
