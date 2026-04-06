@@ -7,4 +7,9 @@
     <PackageReference Include="Ulid" Version="1.4.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Plugins\Plugins.Authorization.Abstractions\Plugins.Authorization.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Plugins\Plugins.SharedExtensions\Plugins.SharedExtensions.csproj" />
+  </ItemGroup>
+
 </Project>

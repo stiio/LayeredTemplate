@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(update-config)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const ti=(JSON.parse(d).tool_input||{});const paths=[ti.file_path||'',ti.pattern||'',(ti.path||'').toString(),ti.glob||''];if(paths.some(p=>p.toLowerCase().includes('appsettings.local.json')))process.stdout.write(JSON.stringify({continue:false,stopReason:'Access to appsettings.local.json is blocked \u2014 this file contains local secrets.'}));}catch(e){}});\"",
+            "statusMessage": "Checking file access policy..."
+          }
+        ]
+      }
+    ]
+  }
+}

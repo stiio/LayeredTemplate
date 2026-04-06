@@ -1,6 +1,6 @@
 ﻿using LayeredTemplate.App.Domain.Enums;
 using LayeredTemplate.App.Infrastructure.Authorization.Requirements;
-using LayeredTemplate.Shared.Constants;
+using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;

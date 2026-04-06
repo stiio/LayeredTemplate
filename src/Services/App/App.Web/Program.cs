@@ -3,7 +3,6 @@ using HealthChecks.UI.Client;
 using LayeredTemplate.App.Application;
 using LayeredTemplate.App.Infrastructure;
 using LayeredTemplate.App.Web.Extensions;
-using LayeredTemplate.Shared;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
 using Serilog.Exceptions;
@@ -60,9 +59,6 @@ void ConfigureConfiguration(ConfigurationManager configuration, IWebHostEnvironm
 
 void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
 {
-    services.RegisterSharedOptions(configuration);
-    services.AddStartupRunner();
-
     services.AddInfrastructureServices(configuration, env);
     services.AddApplicationServices(configuration);
 

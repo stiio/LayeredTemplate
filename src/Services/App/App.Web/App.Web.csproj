@@ -9,6 +9,12 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
+    <ItemGroup>
+        <AssemblyAttribute Include="LayeredTemplate.Plugins.AssemblyExtensions.Attributes.AssemblyBuildDateAttribute">
+            <_Parameter1>$([System.DateTime]::UtcNow.ToString("O"))</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
 	<Import Project="Version.targets" />
 
     <Target Name="OpenAPI" AfterTargets="Build" Condition="$(Configuration)=='Debug'">
@@ -35,7 +41,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Json\TypeResolvers\" />
     <Folder Include="specs\" />
     <Folder Include="Conventions\" />
   </ItemGroup>

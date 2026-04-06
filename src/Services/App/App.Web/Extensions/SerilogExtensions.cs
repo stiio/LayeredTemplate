@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
-using LayeredTemplate.Shared.Constants;
+using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
+using LayeredTemplate.Plugins.Http.Extensions;
 using Serilog;
 
 namespace LayeredTemplate.App.Web.Extensions;
@@ -10,25 +11,23 @@ public static class SerilogExtensions
     {
         app.UseSerilogRequestLogging(opts =>
         {
-            opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms; User: {@User}";
+            opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms.";
             opts.IncludeQueryInRequestPath = true;
 
             opts.EnrichDiagnosticContext = (context, httpContext) =>
             {
+                context.Set("RequestIp", httpContext.GetRequestIp());
+                context.Set("Referer", httpContext.Request.Headers.Referer.ToString());
                 if (httpContext.User.Identity?.IsAuthenticated ?? false)
                 {
                     context.Set(
                         "User",
                         new
                         {
-                            UserId = httpContext.User.FindFirstValue(AppClaims.UserId),
-                            Role = httpContext.User.FindFirstValue(AppClaims.Role),
+                            Id = httpContext.User.FindFirstValue(AppClaims.UserId),
+                            Email = httpContext.User.FindFirstValue(AppClaims.Email),
                         },
                         true);
-                }
-                else
-                {
-                    context.Set("User", null);
                 }
             };
         });

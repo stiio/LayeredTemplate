@@ -3,7 +3,7 @@ using LayeredTemplate.App.Application.Common.Services;
 using LayeredTemplate.App.Infrastructure.Data.Context;
 using LayeredTemplate.App.Infrastructure.Data.Interceptors;
 using LayeredTemplate.App.Infrastructure.Data.Services;
-using LayeredTemplate.Shared;
+using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

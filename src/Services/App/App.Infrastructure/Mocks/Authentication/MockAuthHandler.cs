@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 using System.Text.Encodings.Web;
-using LayeredTemplate.Shared.Constants;
+using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -39,7 +39,6 @@ internal class MockAuthHandler : AuthenticationHandler<AuthenticationSchemeOptio
             new Claim(TokenKeys.UserId, this.mockUser.Id!),
             new Claim(TokenKeys.Email, this.mockUser.Email!),
             new Claim(TokenKeys.EmailVerified, true.ToString().ToLower()),
-            new Claim(TokenKeys.Role, this.mockUser.Role ?? string.Empty),
             new Claim(TokenKeys.Phone, this.mockUser.Phone ?? string.Empty),
         };
 

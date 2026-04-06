@@ -25,8 +25,13 @@ COPY ["Services/App/App.Application/*.csproj", "Services/App/App.Application/"]
 COPY ["Services/App/App.Domain/*.csproj", "Services/App/App.Domain/"]
 COPY ["Services/App/App.Infrastructure/*.csproj", "Services/App/App.Infrastructure/"]
 COPY ["Services/App/App.Infrastructure.Data/*.csproj", "Services/App/App.Infrastructure.Data/"]
-COPY ["Shared/Shared/*.csproj", "Shared/Shared/"]
-COPY ["Shared/Shared.Messaging/*.csproj", "Shared/Shared.Messaging/"]
+COPY ["Services/Plugins/Plugins.AssemblyExtensions/*.csproj", "Services/Plugins/Plugins.AssemblyExtensions/"]
+COPY ["Services/Plugins/Plugins.Authorization.Abstractions/*.csproj", "Services/Plugins/Plugins.Authorization.Abstractions/"]
+COPY ["Services/Plugins/Plugins.Http.Extensions/*.csproj", "Services/Plugins/Plugins.Http.Extensions/"]
+COPY ["Services/Plugins/Plugins.Logging.HttpClientLog/*.csproj", "Services/Plugins/Plugins.Logging.HttpClientLog/"]
+COPY ["Services/Plugins/Plugins.Options/*.csproj", "Services/Plugins/Plugins.Options/"]
+COPY ["Services/Plugins/Plugins.SharedExtensions/*.csproj", "Services/Plugins/Plugins.SharedExtensions/"]
+COPY ["Services/Plugins/Plugins.StartupRunner/*.csproj", "Services/Plugins/Plugins.StartupRunner/"]
 
 RUN dotnet restore "Services/App/App.Web/App.Web.csproj"
 

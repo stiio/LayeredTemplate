@@ -2,8 +2,8 @@
 using LayeredTemplate.App.Application.Common.Services;
 using LayeredTemplate.App.Domain.Enums;
 using LayeredTemplate.App.Infrastructure.Extensions;
-using LayeredTemplate.Shared.Constants;
-using LayeredTemplate.Shared.Extensions;
+using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
+using LayeredTemplate.Plugins.SharedExtensions.Extensions;
 using Microsoft.AspNetCore.Authentication;
 
 namespace LayeredTemplate.App.Infrastructure.Services.Common;
@@ -34,7 +34,6 @@ internal class AppClaimTransformation : IClaimsTransformation
                     claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.UserId, AppClaims.UserId));
                     claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.Email, AppClaims.Email));
                     claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.Phone, AppClaims.Phone));
-                    claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.Role, AppClaims.Role));
                     claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.EmailVerified, AppClaims.EmailVerified));
                     claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.PhoneVerified, AppClaims.PhoneVerified));
                     claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.NameKey, AppClaims.Name));

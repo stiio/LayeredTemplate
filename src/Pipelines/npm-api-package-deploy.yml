@@ -27,7 +27,7 @@ npm-api-package-build$[[ inputs.job-suffix ]]:
 
 npm-api-package-codegen$[[ inputs.job-suffix ]]:
   stage: npm-api-package-codegen
-  image: openapitools/openapi-generator-cli:v7.9.0
+  image: openapitools/openapi-generator-cli:v7.22.0
   only:
     - $[[ inputs.branch ]]
   dependencies:

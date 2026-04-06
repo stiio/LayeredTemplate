@@ -4,6 +4,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Plugins\Plugins.Http.Extensions\Plugins.Http.Extensions.csproj" />
+    <ProjectReference Include="..\..\Plugins\Plugins.Logging.HttpClientLog\Plugins.Logging.HttpClientLog.csproj" />
     <ProjectReference Include="..\App.Infrastructure.Data\App.Infrastructure.Data.csproj" />
   </ItemGroup>
 

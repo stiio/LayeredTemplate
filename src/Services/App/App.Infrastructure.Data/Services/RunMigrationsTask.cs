@@ -1,6 +1,6 @@
 ﻿using LayeredTemplate.App.Application.Common.Models;
 using LayeredTemplate.App.Application.Common.Services;
-using LayeredTemplate.Shared.Interfaces;
+using LayeredTemplate.Plugins.StartupRunner.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;

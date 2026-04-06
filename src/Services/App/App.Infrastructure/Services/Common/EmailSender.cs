@@ -1,5 +1,5 @@
 ﻿using LayeredTemplate.App.Application.Common.Services;
-using LayeredTemplate.Shared.Options;
+using LayeredTemplate.Plugins.Options.Models;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Logging;

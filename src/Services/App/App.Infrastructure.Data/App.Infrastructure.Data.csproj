@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Plugins\Plugins.StartupRunner\Plugins.StartupRunner.csproj" />
     <ProjectReference Include="..\App.Application\App.Application.csproj" />
   </ItemGroup>
 

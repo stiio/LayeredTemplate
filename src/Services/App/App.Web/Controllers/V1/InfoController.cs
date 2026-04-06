@@ -1,7 +1,5 @@
-﻿using System.Reflection;
-using LayeredTemplate.App.Application.Features.Info.Models;
+﻿using LayeredTemplate.App.Application.Features.Info.Models;
 using LayeredTemplate.App.Application.Features.Info.Requests;
-using LayeredTemplate.Shared.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.App.Web.Controllers.V1;
@@ -14,7 +12,6 @@ public class InfoController : AppControllerBase
     public async Task<InfoResponse> GetInfo()
     {
         var response = await this.Sender.Send(new InfoGetRequest());
-        response.NpmPackageVersion = Assembly.GetExecutingAssembly().GetVersion();
         return response;
     }
 }

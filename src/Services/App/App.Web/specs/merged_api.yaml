@@ -257,11 +257,11 @@ components:
             - string
           description: Build date
           example: '2022-11-15T12:00:00.0000000Z'
-        npmPackageVersion:
+        version:
           type:
             - 'null'
             - string
-          description: Npm package version
+          description: Version
       additionalProperties: false
       description: Info response
     SuccessfulResult:

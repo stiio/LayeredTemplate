@@ -5,7 +5,9 @@ using LayeredTemplate.App.Infrastructure.Extensions;
 using LayeredTemplate.App.Infrastructure.Mocks.Services;
 using LayeredTemplate.App.Infrastructure.Services.Common;
 using LayeredTemplate.App.Infrastructure.Services.Users;
-using LayeredTemplate.Shared.Constants;
+using LayeredTemplate.Plugins.Options;
+using LayeredTemplate.Plugins.Options.Constants;
+using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +19,9 @@ public static class ConfigureServices
 {
     public static void AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
     {
-        services.RegisterDbContext(configuration[ConnectionStrings.DefaultConnection]!);
+        services.AddPluginOptions(configuration);
+        services.AddPluginStartupRunner();
+        services.RegisterDbContext(configuration[ConnectionStrings.WriteDbConnection]!);
         services.ConfigureAuthentication(configuration);
         services.ConfigureAuthorization();
 
@@ -40,6 +44,6 @@ public static class ConfigureServices
         });
 
         services.AddHealthChecks()
-            .AddNpgSql(configuration[ConnectionStrings.DefaultConnection]!);
+            .AddNpgSql(configuration[ConnectionStrings.WriteDbConnection]!);
     }
 }

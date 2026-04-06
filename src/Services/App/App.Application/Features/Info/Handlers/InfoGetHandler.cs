@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using LayeredTemplate.App.Application.Features.Info.Models;
 using LayeredTemplate.App.Application.Features.Info.Requests;
-using LayeredTemplate.Shared.Extensions;
+using LayeredTemplate.Plugins.AssemblyExtensions.Extensions;
 using Mediator;
 
 namespace LayeredTemplate.App.Application.Features.Info.Handlers;
@@ -12,7 +12,8 @@ internal class InfoGetHandler : IRequestHandler<InfoGetRequest, InfoResponse>
     {
         return ValueTask.FromResult(new InfoResponse()
         {
-            BuildDate = Assembly.GetExecutingAssembly().GetBuildDate(),
+            BuildDate = Assembly.GetEntryAssembly()!.GetBuildDate(),
+            Version = Assembly.GetEntryAssembly()!.GetVersion(),
         });
     }
 }

@@ -4,5 +4,5 @@ public class InfoResponse
 {
     public DateTime? BuildDate { get; set; }
 
-    public string? NpmPackageVersion { get; set; }
+    public string? Version { get; set; }
 }

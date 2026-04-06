@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/.claude/">
+    <File Path=".claude/settings.json" />
+  </Folder>
   <Folder Name="/Pipelines/">
     <File Path="Pipelines/backend-deploy.yml" />
     <File Path="Pipelines/npm-api-package-deploy.yml" />
@@ -11,9 +14,14 @@
     <Project Path="Services/App/App.Infrastructure/App.Infrastructure.csproj" />
     <Project Path="Services/App/App.Web/App.Web.csproj" />
   </Folder>
-  <Folder Name="/Shared/">
-    <Project Path="Shared/Shared.Messaging/Shared.Messaging.csproj" />
-    <Project Path="Shared/Shared/Shared.csproj" />
+  <Folder Name="/Services/Plugins/">
+    <Project Path="Services/Plugins/Plugins.AssemblyExtensions/Plugins.AssemblyExtensions.csproj" />
+    <Project Path="Services/Plugins/Plugins.Authorization.Abstractions/Plugins.Authorization.Abstractions.csproj" />
+    <Project Path="Services/Plugins/Plugins.Http.Extensions/Plugins.Http.Extensions.csproj" />
+    <Project Path="Services/Plugins/Plugins.Logging.HttpClientLog/Plugins.Logging.HttpClientLog.csproj" />
+    <Project Path="Services/Plugins/Plugins.Options/Plugins.Options.csproj" />
+    <Project Path="Services/Plugins/Plugins.SharedExtensions/Plugins.SharedExtensions.csproj" />
+    <Project Path="Services/Plugins/Plugins.StartupRunner/Plugins.StartupRunner.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />

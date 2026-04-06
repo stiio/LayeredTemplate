@@ -2,7 +2,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using LayeredTemplate.App.Infrastructure.Mocks.Authentication;
-using LayeredTemplate.Shared.Constants;
+using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -41,7 +41,6 @@ public class TestAuthHandler : AuthenticationHandler<TestAuthAuthenticationOptio
         {
             new Claim(TokenKeys.UserId, mockUser.Id!),
             new Claim(TokenKeys.Email, mockUser.Email!),
-            new Claim(TokenKeys.Role, mockUser.Role ?? string.Empty),
             new Claim(TokenKeys.Phone, mockUser.Phone ?? string.Empty),
         };
 

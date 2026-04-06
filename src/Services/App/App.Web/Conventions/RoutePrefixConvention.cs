@@ -7,7 +7,7 @@ public class RoutePrefixConvention : IApplicationModelConvention
 {
     public void Apply(ApplicationModel application)
     {
-        var routePrefix = new AttributeRouteModel(new RouteAttribute("api/v{version:apiVersion}"));
+        var routePrefix = new AttributeRouteModel(new RouteAttribute("api/app/v{version:apiVersion}"));
         foreach (var selector in application.Controllers.SelectMany(c => c.Selectors))
         {
             selector.AttributeRouteModel = selector.AttributeRouteModel != null
