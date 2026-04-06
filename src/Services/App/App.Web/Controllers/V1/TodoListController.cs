@@ -21,6 +21,12 @@ public class TodoListController : AppControllerBase
         return this.Sender.Send(request, this.HttpContext.RequestAborted);
     }
 
+    [HttpPost("create_with_file")]
+    public ValueTask<TodoListDto> CreateTodoListFile(TodoListFileCreateRequest request)
+    {
+        return this.Sender.Send(request, this.HttpContext.RequestAborted);
+    }
+
     [HttpGet("{id}")]
     public ValueTask<TodoListDto> GetTodoList(TodoListGetRequest request)
     {

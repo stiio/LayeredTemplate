@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.1.7" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Plugins.JsonMultipart.Abstractions\Plugins.JsonMultipart.Abstractions.csproj" />
+    </ItemGroup>
+    
+</Project>

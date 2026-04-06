@@ -5,6 +5,7 @@ using LayeredTemplate.App.Infrastructure.Extensions;
 using LayeredTemplate.App.Infrastructure.Mocks.Services;
 using LayeredTemplate.App.Infrastructure.Services.Common;
 using LayeredTemplate.App.Infrastructure.Services.Users;
+using LayeredTemplate.Plugins.JsonMultipart;
 using LayeredTemplate.Plugins.Options;
 using LayeredTemplate.Plugins.Options.Constants;
 using LayeredTemplate.Plugins.StartupRunner;
@@ -21,6 +22,8 @@ public static class ConfigureServices
     {
         services.AddPluginOptions(configuration);
         services.AddPluginStartupRunner();
+        services.AddPluginJsonMultipart();
+
         services.RegisterDbContext(configuration[ConnectionStrings.WriteDbConnection]!);
 
         services.AddDataProtection().PersistKeysToAppDbContext();

@@ -18,6 +18,8 @@
     <Project Path="Services/Plugins/Plugins.AssemblyExtensions/Plugins.AssemblyExtensions.csproj" />
     <Project Path="Services/Plugins/Plugins.Authorization.Abstractions/Plugins.Authorization.Abstractions.csproj" />
     <Project Path="Services/Plugins/Plugins.Http.Extensions/Plugins.Http.Extensions.csproj" />
+    <Project Path="Services/Plugins/Plugins.JsonMultipart.Abstractions/Plugins.JsonMultipart.Abstractions.csproj" />
+    <Project Path="Services/Plugins/Plugins.JsonMultipart/Plugins.JsonMultipart.csproj" />
     <Project Path="Services/Plugins/Plugins.Logging.HttpClientLog/Plugins.Logging.HttpClientLog.csproj" />
     <Project Path="Services/Plugins/Plugins.Options/Plugins.Options.csproj" />
     <Project Path="Services/Plugins/Plugins.SharedExtensions/Plugins.SharedExtensions.csproj" />

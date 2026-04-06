@@ -32,6 +32,9 @@ COPY ["Services/Plugins/Plugins.Logging.HttpClientLog/*.csproj", "Services/Plugi
 COPY ["Services/Plugins/Plugins.Options/*.csproj", "Services/Plugins/Plugins.Options/"]
 COPY ["Services/Plugins/Plugins.SharedExtensions/*.csproj", "Services/Plugins/Plugins.SharedExtensions/"]
 COPY ["Services/Plugins/Plugins.StartupRunner/*.csproj", "Services/Plugins/Plugins.StartupRunner/"]
+COPY ["Services/Plugins/Plugins.StartupRunner/*.csproj", "Services/Plugins/Plugins.StartupRunner/"]
+COPY ["Services/Plugins/Plugins.JsonMultipart/*.csproj", "Services/Plugins/Plugins.JsonMultipart/"]
+COPY ["Services/Plugins/Plugins.JsonMultipart.Abstractions/*.csproj", "Services/Plugins/Plugins.JsonMultipart.Abstractions/"]
 
 RUN dotnet restore "Services/App/App.Web/App.Web.csproj"
 

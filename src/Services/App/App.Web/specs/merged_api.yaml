@@ -141,6 +141,68 @@ paths:
               schema:
                 description: Error result
                 $ref: '#/components/schemas/ErrorResult'
+  /api/app/v1/todo_lists/create_with_file:
+    post:
+      tags:
+        - TodoList
+      summary: Create todo list file
+      operationId: CreateTodoListFileV1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+                - body.name
+                - file
+              type: object
+              properties:
+                body.name:
+                  type: string
+                  description: Name
+                body.description:
+                  type: string
+                  description: Description
+                file:
+                  type: string
+                  description: File
+                  format: binary
+            encoding:
+              body.name:
+                style: form
+              body.description:
+                style: form
+              file:
+                style: form
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+            application/json:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+            text/json:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
   '/api/app/v1/todo_lists/{id}':
     get:
       tags:

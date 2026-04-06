@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Plugins\Plugins.AssemblyExtensions\Plugins.AssemblyExtensions.csproj" />
+    <ProjectReference Include="..\..\Plugins\Plugins.JsonMultipart.Abstractions\Plugins.JsonMultipart.Abstractions.csproj" />
     <ProjectReference Include="..\..\Plugins\Plugins.Options\Plugins.Options.csproj" />
     <ProjectReference Include="..\App.Domain\App.Domain.csproj" />
   </ItemGroup>
