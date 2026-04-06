@@ -1,7 +1,4 @@
 ﻿using System.Reflection;
-using LayeredTemplate.App.Application.Common.Services;
-using LayeredTemplate.App.Domain.Common;
-using LayeredTemplate.App.Infrastructure.Authorization.Handlers;
 using LayeredTemplate.App.Infrastructure.Authorization.PolicyProviders;
 using LayeredTemplate.App.Infrastructure.Services.Common;
 using Microsoft.AspNetCore.Authentication;

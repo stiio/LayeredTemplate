@@ -3,7 +3,7 @@ info:
   title: Merged Api
   version: 1.0.0
 paths:
-  /api/v1/info:
+  /api/app/v1/info:
     get:
       tags:
         - Info
@@ -39,7 +39,257 @@ paths:
               schema:
                 description: Error result
                 $ref: '#/components/schemas/ErrorResult'
-  /api/v1/users/current_user:
+  /api/app/v1/todo_lists/search:
+    post:
+      tags:
+        - TodoList
+      summary: Search todo list
+      operationId: SearchTodoListV1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: Todo list search request body
+              $ref: '#/components/schemas/TodoListSearchRequestBody'
+          text/json:
+            schema:
+              description: Todo list search request body
+              $ref: '#/components/schemas/TodoListSearchRequestBody'
+          application/*+json:
+            schema:
+              description: Todo list search request body
+              $ref: '#/components/schemas/TodoListSearchRequestBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                description: Todo list search response
+                $ref: '#/components/schemas/TodoListSearchResponse'
+            application/json:
+              schema:
+                description: Todo list search response
+                $ref: '#/components/schemas/TodoListSearchResponse'
+            text/json:
+              schema:
+                description: Todo list search response
+                $ref: '#/components/schemas/TodoListSearchResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
+  /api/app/v1/todo_lists:
+    post:
+      tags:
+        - TodoList
+      summary: Create todo list
+      operationId: CreateTodoListV1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: Todo list create request body
+              $ref: '#/components/schemas/TodoListCreateRequestBody'
+          text/json:
+            schema:
+              description: Todo list create request body
+              $ref: '#/components/schemas/TodoListCreateRequestBody'
+          application/*+json:
+            schema:
+              description: Todo list create request body
+              $ref: '#/components/schemas/TodoListCreateRequestBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+            application/json:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+            text/json:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
+  '/api/app/v1/todo_lists/{id}':
+    get:
+      tags:
+        - TodoList
+      summary: Get todo list
+      operationId: GetTodoListV1
+      parameters:
+        - name: id
+          in: path
+          description: Id
+          required: true
+          schema:
+            type: string
+            description: Id
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+            application/json:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+            text/json:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
+    put:
+      tags:
+        - TodoList
+      summary: Update todo list
+      operationId: UpdateTodoListV1
+      parameters:
+        - name: id
+          in: path
+          description: Id
+          required: true
+          schema:
+            type: string
+            description: Id
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: Todo list update request body
+              $ref: '#/components/schemas/TodoListUpdateRequestBody'
+          text/json:
+            schema:
+              description: Todo list update request body
+              $ref: '#/components/schemas/TodoListUpdateRequestBody'
+          application/*+json:
+            schema:
+              description: Todo list update request body
+              $ref: '#/components/schemas/TodoListUpdateRequestBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+            application/json:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+            text/json:
+              schema:
+                description: Todo list dto
+                $ref: '#/components/schemas/TodoListDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
+    delete:
+      tags:
+        - TodoList
+      summary: Delete todo list
+      operationId: DeleteTodoListV1
+      parameters:
+        - name: id
+          in: path
+          description: Id
+          required: true
+          schema:
+            type: string
+            description: Id
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                description: Successful result
+                $ref: '#/components/schemas/SuccessfulResult'
+            application/json:
+              schema:
+                description: Successful result
+                $ref: '#/components/schemas/SuccessfulResult'
+            text/json:
+              schema:
+                description: Successful result
+                $ref: '#/components/schemas/SuccessfulResult'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                description: Error result
+                $ref: '#/components/schemas/ErrorResult'
+  /api/app/v1/users/current_user:
     get:
       tags:
         - User
@@ -81,7 +331,7 @@ paths:
           description: Forbidden
       security:
         - { }
-  /api/v1/users/email/send_code:
+  /api/app/v1/users/email/send_code:
     post:
       tags:
         - User
@@ -137,7 +387,7 @@ paths:
           description: Forbidden
       security:
         - { }
-  /api/v1/users/email/verify_code:
+  /api/app/v1/users/email/verify_code:
     put:
       tags:
         - User
@@ -233,6 +483,12 @@ components:
           example: Doe
       additionalProperties: false
       description: Current user
+    DirectionType:
+      enum:
+        - Asc
+        - Desc
+      type: string
+      description: Direction type
     ErrorResult:
       type: object
       properties:
@@ -264,6 +520,75 @@ components:
           description: Version
       additionalProperties: false
       description: Info response
+    PaginationRequest:
+      required:
+        - limit
+        - page
+      type: object
+      properties:
+        page:
+          maximum: 2147483647
+          minimum: 1
+          type: integer
+          description: 'Page number (default: 1)'
+          format: int32
+          example: 1
+        limit:
+          maximum: 100
+          minimum: 1
+          type: integer
+          description: 'Limit items on page (default: 10)'
+          format: int32
+          example: 10
+      additionalProperties: false
+      description: Pagination request
+    PaginationResponse:
+      required:
+        - limit
+        - page
+        - total
+      type: object
+      properties:
+        page:
+          maximum: 2147483647
+          minimum: 1
+          type: integer
+          description: Page number
+          format: int32
+          example: 1
+        limit:
+          maximum: 100
+          minimum: 1
+          type: integer
+          description: Limit items on page
+          format: int32
+          example: 10
+        total:
+          type: integer
+          description: Total items
+          format: int64
+          example: 100
+      additionalProperties: false
+      description: Pagination response
+    SortingTodoListDto:
+      required:
+        - column
+        - direction
+      type: object
+      properties:
+        column:
+          minLength: 1
+          enum:
+            - Id
+            - Name
+            - Description
+            - CreatedAt
+          type: string
+          description: Name of field for sort
+        direction:
+          description: Direction type
+          $ref: '#/components/schemas/DirectionType'
+      additionalProperties: false
     SuccessfulResult:
       type: object
       properties:
@@ -274,6 +599,107 @@ components:
           description: Message
       additionalProperties: false
       description: Successful result
+    TodoListCreateRequestBody:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: Name
+        description:
+          type:
+            - 'null'
+            - string
+          description: Description
+      additionalProperties: false
+      description: Todo list create request body
+    TodoListDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id
+          format: uuid
+        name:
+          type:
+            - 'null'
+            - string
+          description: Name
+        description:
+          type:
+            - 'null'
+            - string
+          description: Description
+        createdAt:
+          type: string
+          description: Created at
+          example: '2022-11-15T12:00:00.0000000Z'
+      additionalProperties: false
+      description: Todo list dto
+    TodoListSearchFilterDto:
+      type: object
+      properties:
+        search:
+          type:
+            - 'null'
+            - string
+          description: Search
+      additionalProperties: false
+      description: Todo list search filter dto
+    TodoListSearchRequestBody:
+      type: object
+      properties:
+        filter:
+          description: Todo list search filter dto
+          $ref: '#/components/schemas/TodoListSearchFilterDto'
+        sorting:
+          description: Sorting
+          $ref: '#/components/schemas/SortingTodoListDto'
+        pagination:
+          description: Pagination request
+          $ref: '#/components/schemas/PaginationRequest'
+      additionalProperties: false
+      description: Todo list search request body
+    TodoListSearchResponse:
+      type: object
+      properties:
+        filter:
+          description: Filter
+          $ref: '#/components/schemas/TodoListSearchFilterDto'
+        sorting:
+          description: Sorting
+          $ref: '#/components/schemas/SortingTodoListDto'
+        pagination:
+          description: Pagination response
+          $ref: '#/components/schemas/PaginationResponse'
+        data:
+          type:
+            - 'null'
+            - array
+          items:
+            description: Todo list dto
+            $ref: '#/components/schemas/TodoListDto'
+          description: Data
+      additionalProperties: false
+      description: Todo list search response
+    TodoListUpdateRequestBody:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          minLength: 1
+          type: string
+          description: Name
+        description:
+          type:
+            - 'null'
+            - string
+          description: Description
+      additionalProperties: false
+      description: Todo list update request body
     UserEmailCodeSendRequest:
       required:
         - email
@@ -321,4 +747,5 @@ components:
       in: header
 tags:
   - name: Info
+  - name: TodoList
   - name: User

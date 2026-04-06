@@ -1,6 +1,5 @@
 ﻿using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace LayeredTemplate.App.Infrastructure.Authorization.PolicyProviders;

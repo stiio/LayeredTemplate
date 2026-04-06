@@ -1,6 +1,5 @@
 ﻿using System.Security.Claims;
 using LayeredTemplate.App.Application.Common.Services;
-using LayeredTemplate.App.Domain.Enums;
 using LayeredTemplate.App.Infrastructure.Extensions;
 using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
 using LayeredTemplate.Plugins.Authorization.Abstractions.Models;

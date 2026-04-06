@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using LayeredTemplate.App.Application.Common.Models;
 using Microsoft.OpenApi;
@@ -10,9 +11,8 @@ public class SortingToEnumFilter : ISchemaFilter
 {
     public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
     {
-        if (context.Type.IsGenericType && context.Type.GetGenericTypeDefinition() == typeof(Sorting<>))
+        if (context.Type.IsGenericType && context.Type.GetGenericTypeDefinition() == typeof(Sorting<>) && schema is OpenApiSchema targetSchema)
         {
-            var targetSchema = schema as OpenApiSchema;
             var columnSchema = targetSchema!.Properties![nameof(Sorting.Column).ToLower()] as OpenApiSchema;
             var recordType = context.Type.GetGenericArguments()[0];
 
@@ -64,6 +64,6 @@ public class SortingToEnumFilter : ISchemaFilter
             return;
         }
 
-        result.Add(JsonNode.Parse(enumValue)!);
+        result.Add(JsonSerializer.SerializeToNode(enumValue)!);
     }
 }
