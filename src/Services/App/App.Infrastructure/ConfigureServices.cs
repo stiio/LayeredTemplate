@@ -22,6 +22,9 @@ public static class ConfigureServices
         services.AddPluginOptions(configuration);
         services.AddPluginStartupRunner();
         services.RegisterDbContext(configuration[ConnectionStrings.WriteDbConnection]!);
+
+        services.AddDataProtection().PersistKeysToAppDbContext();
+
         services.ConfigureAuthentication(configuration);
         services.ConfigureAuthorization();
 

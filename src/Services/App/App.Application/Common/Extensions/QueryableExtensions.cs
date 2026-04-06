@@ -60,7 +60,7 @@ public static class QueryableExtensions
 
     public static string SortSql(this string query, Sorting sorting)
     {
-        var column = "\"" + sorting.Column.Replace("\"", "\"\"") + "\"";
+        var column = "\"" + sorting.Column.Trim().Replace("\"", "\"\"") + "\"";
         return query += $"\nORDER BY {column} {sorting.Direction}";
     }
 

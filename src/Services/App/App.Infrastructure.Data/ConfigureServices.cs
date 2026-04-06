@@ -32,9 +32,11 @@ public static class ConfigureServices
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IApplicationDbConnection>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
-        services.AddDataProtection()
-            .PersistKeysToDbContext<ApplicationDbContext>();
-
         services.AddStartupTask<RunMigrationsTask<ApplicationDbContext>>();
+    }
+
+    public static IDataProtectionBuilder PersistKeysToAppDbContext(this IDataProtectionBuilder builder)
+    {
+        return builder.PersistKeysToDbContext<ApplicationDbContext>();
     }
 }

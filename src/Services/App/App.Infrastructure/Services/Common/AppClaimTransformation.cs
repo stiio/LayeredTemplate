@@ -3,6 +3,7 @@ using LayeredTemplate.App.Application.Common.Services;
 using LayeredTemplate.App.Domain.Enums;
 using LayeredTemplate.App.Infrastructure.Extensions;
 using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
+using LayeredTemplate.Plugins.Authorization.Abstractions.Models;
 using LayeredTemplate.Plugins.SharedExtensions.Extensions;
 using Microsoft.AspNetCore.Authentication;
 
@@ -40,6 +41,9 @@ internal class AppClaimTransformation : IClaimsTransformation
                     claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.FirstNameKey, AppClaims.FirstName));
                     claims.AddIfNotNull(targetIdentity.FindAndConvertClaim(TokenKeys.LastNameKey, AppClaims.LastName));
 
+                    claims.AddRange(Enum.GetValues<Permissions>()
+                        .Select(x => new Claim(AppClaims.Permissions, x.ToString())));
+
                     var identity = new ClaimsIdentity(claims, principal.Identity.AuthenticationType);
                     result = new ClaimsPrincipal(identity);
                 }
@@ -55,8 +59,8 @@ internal class AppClaimTransformation : IClaimsTransformation
                     claims.AddIfNotNull(user.FirstName.CreateClaimIfNotNull(AppClaims.FirstName));
                     claims.AddIfNotNull(user.LastName.CreateClaimIfNotNull(AppClaims.LastName));
 
-                    claims.AddRange(Enum.GetValues<ActionType>()
-                        .Select(x => new Claim(AppClaims.AllowedActions, x.ToString())));
+                    claims.AddRange(Enum.GetValues<Permissions>()
+                        .Select(x => new Claim(AppClaims.Permissions, x.ToString())));
 
                     var identity = new ClaimsIdentity(claims, principal.Identity.AuthenticationType);
                     result = new ClaimsPrincipal(identity);

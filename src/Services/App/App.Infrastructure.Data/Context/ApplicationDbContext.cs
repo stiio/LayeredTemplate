@@ -52,7 +52,6 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
             sql,
             parameters: param,
             transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
-            flags: CommandFlags.NoCache,
             cancellationToken: cancellationToken));
     }
 
@@ -62,7 +61,6 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
             sql,
             parameters: param,
             transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
-            flags: CommandFlags.NoCache,
             cancellationToken: cancellationToken));
     }
 
@@ -72,7 +70,6 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
             sql,
             parameters: param,
             transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
-            flags: CommandFlags.NoCache,
             cancellationToken: cancellationToken));
     }
 
@@ -82,7 +79,6 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
             sql,
             parameters: param,
             transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
-            flags: CommandFlags.NoCache,
             cancellationToken: cancellationToken));
     }
 
@@ -92,7 +88,6 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
             sql,
             parameters: param,
             transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
-            flags: CommandFlags.NoCache,
             cancellationToken: cancellationToken));
     }
 
@@ -102,7 +97,6 @@ internal class ApplicationDbContext : DbContext, IDataProtectionKeyContext, IApp
             sql,
             parameters: param,
             transaction: this.Database.CurrentTransaction?.GetDbTransaction(),
-            flags: CommandFlags.NoCache,
             cancellationToken: cancellationToken));
     }
 

@@ -4,9 +4,7 @@ public static class AuthorizeConstants
 {
     public static class PolicyPrefix
     {
-        public const string HasPermissionOnAction = "HasPermissionOnAction";
-
-        public const string HasPermissionRequirement = "HasPermissionRequirement";
+        public const string HasPermission = "HasPermission";
     }
 
     public static class Roles
