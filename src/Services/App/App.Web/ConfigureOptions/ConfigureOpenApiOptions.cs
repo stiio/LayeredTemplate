@@ -60,6 +60,7 @@ public class ConfigureOpenApiOptions : IConfigureNamedOptions<OpenApiOptions>
         options.AddOperationTransformer<AuthOperationTransformer>();
         options.AddOperationTransformer<DefaultOperationSummaryTransformer>();
         options.AddOperationTransformer<CustomOperationIdTransformer>();
+        options.AddOperationTransformer<CamelCaseParametersTransformer>();
 
         options.AddSchemaTransformer<SortingToEnumTransformer>();
         options.AddSchemaTransformer<DefaultSchemaDescriptionTransformer>();

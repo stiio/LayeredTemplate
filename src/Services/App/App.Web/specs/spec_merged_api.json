@@ -286,7 +286,7 @@
         "operationId": "GetTodoListV1",
         "parameters": [
           {
-            "name": "Id",
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
@@ -347,7 +347,7 @@
         "operationId": "UpdateTodoListV1",
         "parameters": [
           {
-            "name": "Id",
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
@@ -428,7 +428,7 @@
         "operationId": "DeleteTodoListV1",
         "parameters": [
           {
-            "name": "Id",
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
