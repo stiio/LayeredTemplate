@@ -1,4 +1,4 @@
-using Asp.Versioning.ApiExplorer;
+using System.Reflection;
 using HealthChecks.UI.Client;
 using LayeredTemplate.App.Application;
 using LayeredTemplate.App.Infrastructure;
@@ -22,21 +22,37 @@ Log.Information("Starting up");
 
 try
 {
-    var builder = WebApplication.CreateBuilder(args);
+    // register minimal required services for generate openapi document on build.
+    if (Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider")
+    {
+        var builder = WebApplication.CreateBuilder(args);
+        ConfigureSerilog(builder.Host);
+        builder.Services.ConfigureControllers(builder.Configuration);
+        builder.Services.ConfigureOpenApi();
+        builder.Services.AddEndpointsApiExplorer();
+        var webApplication = builder.Build();
+        webApplication.UseConfiguredOpenApi();
+        webApplication.UseRequestLogging();
+        webApplication.Run();
+    }
+    else
+    {
+        var builder = WebApplication.CreateBuilder(args);
 
-    ConfigureSerilog(builder.Host);
+        ConfigureSerilog(builder.Host);
 
-    ConfigureConfiguration(builder.Configuration, builder.Environment);
+        ConfigureConfiguration(builder.Configuration, builder.Environment);
 
-    ConfigureServices(builder.Services, builder.Configuration, builder.Environment);
+        ConfigureServices(builder.Services, builder.Configuration, builder.Environment);
 
-    var webApplication = builder.Build();
+        var webApplication = builder.Build();
 
-    ConfigureMiddleware(webApplication, webApplication.Environment, webApplication.Services.GetRequiredService<IApiVersionDescriptionProvider>());
+        ConfigureMiddleware(webApplication, webApplication.Environment);
 
-    ConfigureEndpoints(webApplication);
+        ConfigureEndpoints(webApplication);
 
-    webApplication.Run();
+        webApplication.Run();
+    }
 }
 catch (Exception e)
 {
@@ -63,23 +79,21 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddApplicationServices(configuration);
 
     services.ConfigureControllers(configuration);
-    services.ConfigureSwagger();
-
+    services.ConfigureOpenApi();
     services.AddEndpointsApiExplorer();
+
     services.AddHttpClient();
     services.AddHttpContextAccessor();
     services.AddHealthChecks();
 }
 
-void ConfigureMiddleware(IApplicationBuilder app, IWebHostEnvironment env, IApiVersionDescriptionProvider apiVersionDescriptionProvider)
+void ConfigureMiddleware(WebApplication app, IWebHostEnvironment env)
 {
     if (env.IsDevelopment() || env.IsStaging())
     {
         app.UseDeveloperExceptionPage();
-        app.UseConfiguredSwagger(env, apiVersionDescriptionProvider);
+        app.UseConfiguredOpenApi();
     }
-
-    app.UseStaticFiles("/api/static");
 
     app.UseRequestLogging();
     app.UseRouting();

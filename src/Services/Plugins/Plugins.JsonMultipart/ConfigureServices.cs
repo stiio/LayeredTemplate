@@ -8,7 +8,7 @@ public static class ConfigureServices
     public static IServiceCollection AddPluginJsonMultipart(this IServiceCollection services)
     {
         services.ConfigureOptions<ConfigureMvcOptions>();
-        services.ConfigureOptions<ConfigureSwaggerGenOptions>();
+        services.ConfigureOptions<ConfigureOpenApiOptions>();
 
         return services;
     }

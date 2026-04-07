@@ -3,7 +3,7 @@
     "Web": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "api-docs",
+      "launchUrl": "api/docs/v1-dev",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
@@ -13,7 +13,7 @@
     "Web Mock Client": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "api-docs",
+      "launchUrl": "api/docs/v1-dev",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "USE_MOCK_AUTH": "true",
@@ -27,7 +27,7 @@
     "Web Mock Client 2": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "api-docs",
+      "launchUrl": "api/docs/v1-dev",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "USE_MOCK_AUTH": "true",
@@ -41,7 +41,7 @@
     "Web Mock Admin": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "api-docs",
+      "launchUrl": "api/docs/v1-dev",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "USE_MOCK_AUTH": "true",
@@ -55,7 +55,7 @@
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
-      "launchUrl": "api-docs",
+      "launchUrl": "api/docs/v1-dev",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -63,7 +63,7 @@
     "Docker": {
       "commandName": "Docker",
       "launchBrowser": true,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/api-docs",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/api/docs/v1-dev",
       "environmentVariables": {
         "ASPNETCORE_HTTPS_PORTS": "8081",
         "ASPNETCORE_HTTP_PORTS": "8080"

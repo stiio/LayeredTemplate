@@ -1,24 +1,29 @@
-﻿using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
+using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace LayeredTemplate.App.Web.OpenApiFilters;
+namespace LayeredTemplate.App.Web.OpenApiTransformers;
 
-/// <inheritdoc />
-public class AuthOperationFilter : IOperationFilter
+public class AuthOperationTransformer : IOpenApiOperationTransformer
 {
-    /// <inheritdoc />
-    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
     {
-        var authAttributes = context.MethodInfo.DeclaringType?.GetCustomAttributes(true)
-            .Union(context.MethodInfo.GetCustomAttributes(true))
+        var methodInfo = (context.Description.ActionDescriptor as ControllerActionDescriptor)?.MethodInfo;
+        if (methodInfo is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        var authAttributes = methodInfo.DeclaringType?.GetCustomAttributes(true)
+            .Union(methodInfo.GetCustomAttributes(true))
             .OfType<AuthorizeAttribute>()
             .ToArray() ?? [];
 
         if (authAttributes.Length == 0)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         operation.Responses ??= [];
@@ -41,5 +46,7 @@ public class AuthOperationFilter : IOperationFilter
                 [new OpenApiSecuritySchemeReference(AppAuthenticationSchemes.ApiKey)] = [],
             });
         }
+
+        return Task.CompletedTask;
     }
 }

@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-      <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.1.7" />
+      <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
+      <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
     <ItemGroup>

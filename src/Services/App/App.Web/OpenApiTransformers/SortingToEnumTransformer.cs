@@ -1,28 +1,40 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using LayeredTemplate.App.Application.Common.Models;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace LayeredTemplate.App.Web.OpenApiFilters;
+namespace LayeredTemplate.App.Web.OpenApiTransformers;
 
-public class SortingToEnumFilter : ISchemaFilter
+public class SortingToEnumTransformer : IOpenApiSchemaTransformer
 {
-    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
+    public Task TransformAsync(OpenApiSchema schema, OpenApiSchemaTransformerContext context, CancellationToken cancellationToken)
     {
-        if (context.Type.IsGenericType && context.Type.GetGenericTypeDefinition() == typeof(Sorting<>) && schema is OpenApiSchema targetSchema)
-        {
-            var columnSchema = targetSchema!.Properties![nameof(Sorting.Column).ToLower()] as OpenApiSchema;
-            var recordType = context.Type.GetGenericArguments()[0];
+        var type = context.JsonTypeInfo.Type;
 
-            columnSchema!.Enum = this.CreateOpenApiEnum(recordType);
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Sorting<>))
+        {
+            if (schema.Properties?[nameof(Sorting.Column).ToLower()] is OpenApiSchema columnSchema)
+            {
+                var recordType = type.GetGenericArguments()[0];
+                columnSchema.Enum = this.CreateOpenApiEnum(recordType);
+            }
         }
+
+        return Task.CompletedTask;
     }
 
     private IList<JsonNode> CreateOpenApiEnum(Type type)
     {
         var result = new List<JsonNode>();
+
+        if (type.IsEnum)
+        {
+            var values = Enum.GetNames(type);
+            result.AddRange(values.Select(value => JsonSerializer.SerializeToNode(value)!));
+            return result;
+        }
 
         foreach (var property in type.GetProperties())
         {

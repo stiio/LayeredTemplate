@@ -15,6 +15,11 @@ public class TodoListController : AppControllerBase
         return this.Sender.Send(request, this.HttpContext.RequestAborted);
     }
 
+    /// <summary>
+    /// Create TodoList Summary
+    /// </summary>
+    /// <param name="request">some request description</param>
+    /// <returns>Response description</returns>
     [HttpPost]
     public ValueTask<TodoListDto> CreateTodoList(TodoListCreateRequest request)
     {

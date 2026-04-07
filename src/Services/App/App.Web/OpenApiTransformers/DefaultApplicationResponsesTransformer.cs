@@ -1,18 +1,18 @@
-﻿using LayeredTemplate.App.Web.Models;
+using LayeredTemplate.App.Web.Models;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace LayeredTemplate.App.Web.OpenApiFilters;
+namespace LayeredTemplate.App.Web.OpenApiTransformers;
 
-/// <inheritdoc />
-public class DefaultApplicationResponsesFilter : IOperationFilter
+public class DefaultApplicationResponsesTransformer : IOpenApiOperationTransformer
 {
-    /// <inheritdoc />
-    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
     {
+        var errorSchemaRef = new OpenApiSchemaReference(nameof(ErrorResult));
+
         var badResponseType = new OpenApiMediaType()
         {
-            Schema = context.SchemaGenerator.GenerateSchema(typeof(ErrorResult), context.SchemaRepository),
+            Schema = errorSchemaRef,
         };
 
         operation.Responses ??= [];
@@ -37,5 +37,7 @@ public class DefaultApplicationResponsesFilter : IOperationFilter
                     { "application/json", badResponseType },
                 },
             });
+
+        return Task.CompletedTask;
     }
 }

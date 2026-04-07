@@ -1,18 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using System.Net.Mime;
 using System.Reflection;
 using LayeredTemplate.Plugins.JsonMultipart.Abstractions;
 using LayeredTemplate.Plugins.JsonMultipart.Extensions;
 using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace LayeredTemplate.Plugins.JsonMultipart.Integrations;
 
-internal class MultiPartJsonOperationFilter : IOperationFilter
+internal class MultiPartJsonOperationTransformer : IOpenApiOperationTransformer
 {
-    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
     {
-        var descriptors = context.ApiDescription.ActionDescriptor.Parameters.ToList();
+        var descriptors = context.Description.ActionDescriptor.Parameters.ToList();
         foreach (var descriptor in descriptors)
         {
             if (!this.HasJsonProperties(descriptor))
@@ -21,11 +22,12 @@ internal class MultiPartJsonOperationFilter : IOperationFilter
             }
 
             var mediaType = operation.RequestBody!.Content!.First().Value;
+            var mediaTypeSchema = mediaType.Schema as OpenApiSchema;
+            mediaTypeSchema!.Required ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            mediaTypeSchema.Required.Clear();
+            mediaTypeSchema.Properties ??= new Dictionary<string, IOpenApiSchema>();
 
-            mediaType.Schema!.Required!.Clear();
-
-            // Group all exploded properties.
-            var groupedProperties = mediaType.Schema.Properties!
+            var groupedProperties = mediaTypeSchema.Properties
                 .GroupBy(pair => pair.Key.Split('.')[0]);
 
             var schemaProperties = new Dictionary<string, IOpenApiSchema>();
@@ -38,7 +40,7 @@ internal class MultiPartJsonOperationFilter : IOperationFilter
 
                 if (isRequired)
                 {
-                    mediaType.Schema.Required.Add(property.Key.ToCamelCase());
+                    mediaTypeSchema.Required.Add(property.Key.ToCamelCase());
                 }
 
                 var jsonPropertyInfo = this.GetJsonPropertyInfo(descriptor, property.Key);
@@ -46,7 +48,7 @@ internal class MultiPartJsonOperationFilter : IOperationFilter
                 {
                     this.AddEncoding(mediaType, jsonPropertyInfo);
 
-                    var openApiSchema = this.GetSchema(context, jsonPropertyInfo);
+                    var openApiSchema = this.GetSchema(jsonPropertyInfo);
                     schemaProperties.Add(property.Key.ToCamelCase(), openApiSchema);
                 }
                 else
@@ -55,45 +57,26 @@ internal class MultiPartJsonOperationFilter : IOperationFilter
                 }
             }
 
-            var mediaTypeSchema = mediaType.Schema as OpenApiSchema;
-
-            // Override schema properties
-            mediaTypeSchema?.Properties = schemaProperties;
-        }
-    }
-
-    /// <summary>
-    /// Generate schema for propertyInfo
-    /// </summary>
-    /// <returns></returns>
-    private OpenApiSchemaReference GetSchema(OperationFilterContext context, PropertyInfo propertyInfo)
-    {
-        var present = context.SchemaRepository.TryLookupByType(propertyInfo.PropertyType, out var openApiSchemaReference);
-        if (present)
-        {
-            return openApiSchemaReference;
+            mediaTypeSchema.Properties = schemaProperties;
         }
 
-        var openApiSchema = (context.SchemaGenerator.GenerateSchema(propertyInfo.PropertyType, context.SchemaRepository) as OpenApiSchema)!;
-        this.AddDescription(openApiSchema, openApiSchema.Title!);
-
-        return new OpenApiSchemaReference(openApiSchema.Id!);
+        return Task.CompletedTask;
     }
 
-    private void AddDescription(OpenApiSchema openApiSchema, string schemaDisplayName)
+    private OpenApiSchemaReference GetSchema(PropertyInfo propertyInfo)
     {
-        openApiSchema.Description += $"\n See {schemaDisplayName} model.";
+        var typeName = propertyInfo.PropertyType.Name;
+        return new OpenApiSchemaReference(typeName);
     }
 
     private void AddEncoding(OpenApiMediaType mediaType, PropertyInfo propertyInfo)
     {
-        mediaType.Encoding = mediaType.Encoding!
+        mediaType.Encoding = mediaType.Encoding?
             .Where(pair => !pair.Key.ToLower().Contains(propertyInfo.Name.ToLower()))
-            .ToDictionary(pair => pair.Key.ToCamelCase(), pair => pair.Value);
+            .ToDictionary(pair => pair.Key.ToCamelCase(), pair => pair.Value) ?? new Dictionary<string, OpenApiEncoding>();
 
         mediaType.Encoding.Add(propertyInfo.Name.ToCamelCase(), new OpenApiEncoding()
         {
-            // Style = ParameterStyle.DeepObject,
             ContentType = "application/json",
         });
     }

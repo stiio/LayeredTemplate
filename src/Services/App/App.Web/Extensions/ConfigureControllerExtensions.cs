@@ -4,6 +4,7 @@ using Asp.Versioning.Conventions;
 using LayeredTemplate.App.Web.Conventions;
 using LayeredTemplate.App.Web.Filters;
 using LayeredTemplate.App.Web.Json.Converters;
+using LayeredTemplate.Plugins.JsonMultipart;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.App.Web.Extensions;
@@ -12,6 +13,8 @@ public static class ConfigureControllerExtensions
 {
     public static void ConfigureControllers(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddPluginJsonMultipart();
+
         services.Configure<ApiBehaviorOptions>(opts =>
         {
             opts.SuppressInferBindingSourcesForParameters = true;

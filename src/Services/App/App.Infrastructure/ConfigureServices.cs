@@ -22,7 +22,6 @@ public static class ConfigureServices
     {
         services.AddPluginOptions(configuration);
         services.AddPluginStartupRunner();
-        services.AddPluginJsonMultipart();
 
         services.RegisterDbContext(configuration[ConnectionStrings.WriteDbConnection]!);
 

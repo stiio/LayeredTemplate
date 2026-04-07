@@ -1,0 +1,33 @@
+using Asp.Versioning.ApiExplorer;
+using LayeredTemplate.App.Web.ConfigureOptions;
+using Scalar.AspNetCore;
+
+namespace LayeredTemplate.App.Web.Extensions;
+
+public static class OpenApiExtensions
+{
+    public static void ConfigureOpenApi(this IServiceCollection services)
+    {
+        services.AddOpenApi("v1");
+        services.AddOpenApi("v1-dev");
+        services.AddOpenApi("merged_api");
+
+        services.ConfigureOptions<ConfigureOpenApiOptions>();
+    }
+
+    public static void UseConfiguredOpenApi(this WebApplication app)
+    {
+        app.MapOpenApi("api/openapi/{documentName}.json");
+
+        app.MapScalarApiReference("api/docs", options =>
+        {
+            options.Title = "Api Documentation";
+            options.Agent = new ScalarAgentOptions() { Disabled = true };
+            options.DotNetFlag = true;
+            options.OpenApiRoutePattern = "api/openapi/{documentName}.json";
+            options.HiddenClients = true;
+            options.Mcp = new ScalarMcpOptions() { Disabled = true };
+            options.ShowOperationId = true;
+        });
+    }
+}
