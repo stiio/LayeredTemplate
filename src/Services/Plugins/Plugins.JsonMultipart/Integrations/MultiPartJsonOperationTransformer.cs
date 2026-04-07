@@ -21,7 +21,15 @@ internal class MultiPartJsonOperationTransformer : IOpenApiOperationTransformer
                 continue;
             }
 
-            var mediaType = operation.RequestBody!.Content!.First().Value;
+            var contentEntry = operation.RequestBody!.Content!.First();
+            var mediaType = contentEntry.Value;
+
+            if (contentEntry.Key != "multipart/form-data")
+            {
+                operation.RequestBody.Content!.Remove(contentEntry.Key);
+                operation.RequestBody.Content["multipart/form-data"] = mediaType;
+            }
+
             var mediaTypeSchema = mediaType.Schema as OpenApiSchema;
             mediaTypeSchema!.Required ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             mediaTypeSchema.Required.Clear();

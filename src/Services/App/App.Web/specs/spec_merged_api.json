@@ -208,7 +208,7 @@
         "operationId": "CreateTodoListFileV1",
         "requestBody": {
           "content": {
-            "application/x-www-form-urlencoded": {
+            "multipart/form-data": {
               "schema": {
                 "required": [
                   "body",
@@ -710,7 +710,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "Id",
+            "description": "Id of user",
             "format": "uuid"
           },
           "email": {
@@ -718,36 +718,39 @@
               "null",
               "string"
             ],
-            "description": "Email"
+            "description": "Email of user",
+            "example": "example@email.com"
           },
           "emailVerified": {
             "type": "boolean",
-            "description": "Email verified"
+            "description": "Email Verified"
           },
           "phone": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Phone"
+            "description": "Phone of user"
           },
           "phoneVerified": {
             "type": "boolean",
-            "description": "Phone verified"
+            "description": "Phone Verified"
           },
           "firstName": {
             "type": [
               "null",
               "string"
             ],
-            "description": "First name"
+            "description": "First Name of user",
+            "example": "John"
           },
           "lastName": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Last name"
+            "description": "Last Name of user",
+            "example": "Doe"
           }
         },
         "description": "Current user"
@@ -817,8 +820,9 @@
               "integer",
               "string"
             ],
-            "description": "Page",
-            "format": "int32"
+            "description": "Page number (default: 1)",
+            "format": "int32",
+            "example": 1
           },
           "limit": {
             "maximum": 100,
@@ -828,8 +832,9 @@
               "integer",
               "string"
             ],
-            "description": "Limit",
-            "format": "int32"
+            "description": "Limit items on page (default: 10)",
+            "format": "int32",
+            "example": 10
           }
         },
         "description": "Pagination"
@@ -850,8 +855,9 @@
               "integer",
               "string"
             ],
-            "description": "Page",
-            "format": "int32"
+            "description": "Page number",
+            "format": "int32",
+            "example": 1
           },
           "limit": {
             "maximum": 100,
@@ -861,8 +867,9 @@
               "integer",
               "string"
             ],
-            "description": "Limit",
-            "format": "int32"
+            "description": "Limit items on page",
+            "format": "int32",
+            "example": 10
           },
           "total": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -870,8 +877,9 @@
               "integer",
               "string"
             ],
-            "description": "Total",
-            "format": "int64"
+            "description": "Total items",
+            "format": "int64",
+            "example": 100
           }
         },
         "description": "Pagination"
@@ -891,7 +899,7 @@
               "CreatedAt"
             ],
             "type": "string",
-            "description": "Column"
+            "description": "Name of field for sort"
           },
           "direction": {
             "$ref": "#/components/schemas/DirectionType"
@@ -1052,7 +1060,8 @@
           "email": {
             "maxLength": 255,
             "type": "string",
-            "description": "Email"
+            "description": "Email",
+            "example": "example@email.com"
           }
         },
         "description": "User email code send request"
@@ -1067,7 +1076,8 @@
           "email": {
             "maxLength": 255,
             "type": "string",
-            "description": "Email"
+            "description": "Email",
+            "example": "example@email.com"
           },
           "code": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -1076,7 +1086,8 @@
               "string"
             ],
             "description": "Code",
-            "format": "int32"
+            "format": "int32",
+            "example": 124567
           }
         },
         "description": "User email code verify request"

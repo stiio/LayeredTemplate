@@ -22,12 +22,14 @@ public static class OpenApiExtensions
         app.MapScalarApiReference("api/docs", options =>
         {
             options.Title = "Api Documentation";
-            options.Agent = new ScalarAgentOptions() { Disabled = true };
-            options.DotNetFlag = true;
             options.OpenApiRoutePattern = "api/openapi/{documentName}.json";
-            options.HiddenClients = true;
+            options.Agent = new ScalarAgentOptions() { Disabled = true };
             options.Mcp = new ScalarMcpOptions() { Disabled = true };
             options.ShowOperationId = true;
+            options.HiddenClients = false;
+            options.DotNetFlag = true;
+            options.Theme = ScalarTheme.Purple;
+            options.HideClientButton = true;
         });
     }
 }
