@@ -2,6 +2,7 @@
   "npmName": "@npmClientName/api-docs",
   "useSingleRequestParameter": false,
   "prefixParameterInterfaces": true,
-  "legacyDiscriminatorBehavior": true,
-  "validationAttributes": true
+  "legacyDiscriminatorBehavior": false,
+  "validationAttributes": true,
+  "supportsES6": true
 }

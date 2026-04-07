@@ -1172,28 +1172,28 @@
           "$type"
         ],
         "type": "object",
-        "anyOf": [
+        "oneOf": [
           {
-            "$ref": "#/components/schemas/TodoListItemBaseTodoListItemOne"
+            "$ref": "#/components/schemas/TodoListItemOne"
           },
           {
-            "$ref": "#/components/schemas/TodoListItemBaseTodoListItemTwo"
+            "$ref": "#/components/schemas/TodoListItemTwo"
           },
           {
-            "$ref": "#/components/schemas/TodoListItemBaseTodoListItemThree"
+            "$ref": "#/components/schemas/TodoListItemThree"
           }
         ],
         "description": "Todo list item base",
         "discriminator": {
           "propertyName": "$type",
           "mapping": {
-            "One": "#/components/schemas/TodoListItemBaseTodoListItemOne",
-            "Two": "#/components/schemas/TodoListItemBaseTodoListItemTwo",
-            "Three": "#/components/schemas/TodoListItemBaseTodoListItemThree"
+            "One": "#/components/schemas/TodoListItemOne",
+            "Two": "#/components/schemas/TodoListItemTwo",
+            "Three": "#/components/schemas/TodoListItemThree"
           }
         }
       },
-      "TodoListItemBaseTodoListItemOne": {
+      "TodoListItemOne": {
         "properties": {
           "$type": {
             "enum": [
@@ -1222,7 +1222,7 @@
         },
         "description": "Todo list item one"
       },
-      "TodoListItemBaseTodoListItemThree": {
+      "TodoListItemThree": {
         "properties": {
           "$type": {
             "enum": [
@@ -1244,7 +1244,7 @@
         },
         "description": "Todo list item three"
       },
-      "TodoListItemBaseTodoListItemTwo": {
+      "TodoListItemTwo": {
         "properties": {
           "$type": {
             "enum": [
