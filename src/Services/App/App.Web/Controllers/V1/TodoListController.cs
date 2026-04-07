@@ -58,4 +58,16 @@ public class TodoListController : AppControllerBase
         await this.Sender.Send(request, this.HttpContext.RequestAborted);
         return this.SuccessfulResult();
     }
+
+    [HttpGet("items")]
+    public virtual ValueTask<TodoListItemBase[]> ListTodoListItems()
+    {
+        return this.Sender.Send(new TodoListItemListRequest(),  this.HttpContext.RequestAborted);
+    }
+
+    [HttpPost("items")]
+    public virtual ValueTask<TodoListItemBase[]> CreateTodoListItems(TodoListItemsCreateRequest request)
+    {
+        return this.Sender.Send(request, this.HttpContext.RequestAborted);
+    }
 }
