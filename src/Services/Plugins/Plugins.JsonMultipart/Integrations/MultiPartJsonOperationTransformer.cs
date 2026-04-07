@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Net.Mime;
 using System.Reflection;
 using LayeredTemplate.Plugins.JsonMultipart.Abstractions;
 using LayeredTemplate.Plugins.JsonMultipart.Extensions;

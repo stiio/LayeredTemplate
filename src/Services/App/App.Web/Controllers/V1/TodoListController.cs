@@ -1,5 +1,6 @@
 ﻿using LayeredTemplate.App.Application.Features.TodoLists.Models;
 using LayeredTemplate.App.Application.Features.TodoLists.Requests;
+using LayeredTemplate.App.Web.Attributes;
 using LayeredTemplate.App.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,10 +27,17 @@ public class TodoListController : AppControllerBase
         return this.Sender.Send(request, this.HttpContext.RequestAborted);
     }
 
-    [HttpPost("create_with_file")]
+    [HttpPost("file")]
     public ValueTask<TodoListDto> CreateTodoListFile(TodoListFileCreateRequest request)
     {
         return this.Sender.Send(request, this.HttpContext.RequestAborted);
+    }
+
+    [FileResponse]
+    [HttpGet("file")]
+    public async ValueTask<ActionResult> DownloadTodoListFile()
+    {
+        return await this.Sender.Send(new TodoListFileDownloadRequest());
     }
 
     [HttpGet("{id}")]

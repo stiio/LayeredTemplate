@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text;
 using Asp.Versioning.ApiExplorer;
 using LayeredTemplate.App.Web.Controllers;
@@ -62,6 +61,7 @@ public class ConfigureOpenApiOptions : IConfigureNamedOptions<OpenApiOptions>
         options.AddOperationTransformer<CustomOperationIdTransformer>();
         options.AddOperationTransformer<CamelCaseParametersTransformer>();
 
+        options.AddSchemaTransformer<FileResultTransformer>();
         options.AddSchemaTransformer<SortingToEnumTransformer>();
         options.AddSchemaTransformer<DefaultSchemaDescriptionTransformer>();
         options.AddSchemaTransformer<DateTimeSchemaTransformer>();

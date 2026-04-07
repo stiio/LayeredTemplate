@@ -1,6 +1,5 @@
 using LayeredTemplate.Plugins.JsonMultipart.Integrations;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace LayeredTemplate.Plugins.JsonMultipart.Options;

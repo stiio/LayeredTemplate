@@ -1,5 +1,4 @@
 using LayeredTemplate.App.Web.Models;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 

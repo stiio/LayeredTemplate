@@ -1,4 +1,3 @@
-using Asp.Versioning.ApiExplorer;
 using LayeredTemplate.App.Web.ConfigureOptions;
 using Scalar.AspNetCore;
 

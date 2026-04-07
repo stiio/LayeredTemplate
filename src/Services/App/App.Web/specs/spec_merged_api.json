@@ -199,7 +199,7 @@
         }
       }
     },
-    "/api/app/v1/todo_lists/create_with_file": {
+    "/api/app/v1/todo_lists/file": {
       "post": {
         "tags": [
           "TodoList"
@@ -250,6 +250,45 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TodoListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "TodoList"
+        ],
+        "summary": "Download todo list file",
+        "operationId": "DownloadTodoListFileV1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileResult"
                 }
               }
             }
@@ -778,6 +817,11 @@
           }
         },
         "description": "Error result"
+      },
+      "FileResult": {
+        "type": "string",
+        "description": "File result",
+        "format": "binary"
       },
       "IFormFile": {
         "type": "string",
