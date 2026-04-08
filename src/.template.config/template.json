@@ -107,7 +107,9 @@
         "**/*.lock.json",
         "**/**/*.lock.json",
         "**/**/**/*.lock.json",
-        ".vs/**/*"
+        ".vs/**/*",
+        "*.sln",
+        "*.sln.DotSettings"
       ],
       "modifiers": [
         {
