@@ -28,6 +28,7 @@
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path=".gitlab-ci.yml" />
+    <File Path="CLAUDE.md" />
     <File Path="Directory.Build.props" />
     <File Path="env.example.json" />
     <File Path="openapitools.json" />
