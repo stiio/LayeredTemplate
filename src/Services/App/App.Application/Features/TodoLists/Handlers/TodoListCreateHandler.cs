@@ -1,4 +1,5 @@
-﻿using LayeredTemplate.App.Application.Features.TodoLists.Models;
+﻿using LayeredTemplate.App.Application.Common.Exceptions;
+using LayeredTemplate.App.Application.Features.TodoLists.Models;
 using LayeredTemplate.App.Application.Features.TodoLists.Requests;
 using Mediator;
 
@@ -8,6 +9,7 @@ internal class TodoListCreateHandler : IRequestHandler<TodoListCreateRequest, To
 {
     public ValueTask<TodoListDto> Handle(TodoListCreateRequest request, CancellationToken cancellationToken)
     {
+        throw new HttpStatusException("Some message");
         return new ValueTask<TodoListDto>(new TodoListDto()
         {
             Id = Guid.NewGuid(),

@@ -17,9 +17,13 @@ public class TodoListController : AppControllerBase
     }
 
     /// <summary>
-    /// Create TodoList Summary
+    /// Create TodoList
     /// </summary>
+    /// <remarks>
+    /// This is remarks
+    /// </remarks>
     /// <param name="request">some request description</param>
+    /// <example>{ "name": "some name", "description": "some description" }</example>
     /// <returns>Response description</returns>
     [HttpPost]
     public ValueTask<TodoListDto> CreateTodoList(TodoListCreateRequest request)

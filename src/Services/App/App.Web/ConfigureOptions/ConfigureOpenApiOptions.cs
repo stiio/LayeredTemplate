@@ -34,6 +34,7 @@ public class ConfigureOpenApiOptions : IConfigureNamedOptions<OpenApiOptions>
 
         options.AddDocumentTransformer((document, context, cancellationToken) =>
         {
+            document.JsonSchemaDialect = new Uri("http://json-schema.org/draft-07/schema#");
             if (name == "merged_api")
             {
                 document.Info = new OpenApiInfo() { Title = "Merged Api", Version = packageVersion };

@@ -1,5 +1,6 @@
 {
   "openapi": "3.1.1",
+  "jsonSchemaDialect": "http://json-schema.org/draft-07/schema#",
   "info": {
     "title": "Merged Api",
     "version": "1.0.0"
@@ -132,7 +133,8 @@
         "tags": [
           "TodoList"
         ],
-        "summary": "Create TodoList Summary",
+        "summary": "Create TodoList",
+        "description": "This is remarks",
         "operationId": "CreateTodoListV1",
         "requestBody": {
           "description": "some request description",
@@ -1138,7 +1140,11 @@
             "description": "Description"
           }
         },
-        "description": "Todo list create request body"
+        "description": "TodoListCreateRequestBody",
+        "example": {
+          "name": "some name",
+          "description": "some description"
+        }
       },
       "TodoListDto": {
         "type": "object",
