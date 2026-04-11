@@ -35,7 +35,7 @@ public class AuthOperationTransformer : IOpenApiOperationTransformer
         {
             operation.Security.Add(new OpenApiSecurityRequirement
             {
-                [new OpenApiSecuritySchemeReference(AppAuthenticationSchemes.Bearer)] = [],
+                [new OpenApiSecuritySchemeReference(AppAuthenticationSchemes.Bearer, context.Document)] = [],
             });
         }
 
@@ -43,7 +43,7 @@ public class AuthOperationTransformer : IOpenApiOperationTransformer
         {
             operation.Security.Add(new OpenApiSecurityRequirement
             {
-                [new OpenApiSecuritySchemeReference(AppAuthenticationSchemes.ApiKey)] = [],
+                [new OpenApiSecuritySchemeReference(AppAuthenticationSchemes.ApiKey, context.Document)] = [],
             });
         }
 
