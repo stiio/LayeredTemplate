@@ -14,6 +14,9 @@
     <Project Path="Services/App/App.Infrastructure/App.Infrastructure.csproj" />
     <Project Path="Services/App/App.Web/App.Web.csproj" />
   </Folder>
+  <Folder Name="/Services/Auth/">
+    <Project Path="Services/Auth/Auth.Web/Auth.Web.csproj" />
+  </Folder>
   <Folder Name="/Services/Plugins/">
     <Project Path="Services/Plugins/Plugins.AssemblyExtensions/Plugins.AssemblyExtensions.csproj" />
     <Project Path="Services/Plugins/Plugins.Authorization.Abstractions/Plugins.Authorization.Abstractions.csproj" />

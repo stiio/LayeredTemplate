@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using LayeredTemplate.App.Application.Common.Models;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
