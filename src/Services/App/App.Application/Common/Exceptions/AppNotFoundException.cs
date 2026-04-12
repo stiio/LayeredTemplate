@@ -1,9 +1,13 @@
-﻿namespace LayeredTemplate.App.Application.Common.Exceptions;
+﻿using LayeredTemplate.App.Application.Common.Models;
 
-public class AppNotFoundException : HttpStatusException
+namespace LayeredTemplate.App.Application.Common.Exceptions;
+
+public class AppNotFoundException : AppMessageException
 {
     public AppNotFoundException(string name, object key)
-        : base($"Entity \"{name}\" ({key}) was not found.")
+        : base($"Not found.")
     {
+        this.ErrorType = AppErrorType.NotFound;
+        this.Details = $"Entity {name} with key {key} was not found.";
     }
 }

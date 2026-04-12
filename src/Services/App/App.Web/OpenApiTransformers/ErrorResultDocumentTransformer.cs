@@ -1,4 +1,4 @@
-using LayeredTemplate.App.Web.Models;
+using LayeredTemplate.App.Application.Common.Models;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
@@ -12,10 +12,14 @@ public class ErrorResultDocumentTransformer : IOpenApiDocumentTransformer
 
         document.Components.Schemas ??= new Dictionary<string, IOpenApiSchema>();
 
-        if (!document.Components.Schemas.ContainsKey(nameof(ErrorResult)))
+        if (!document.Components.Schemas.ContainsKey(nameof(AppProblemDetails)))
         {
-            var schema = await context.GetOrCreateSchemaAsync(typeof(ErrorResult), cancellationToken: cancellationToken);
-            document.Components.Schemas.Add(nameof(ErrorResult), schema);
+            var schema = await context.GetOrCreateSchemaAsync(typeof(AppProblemDetails), cancellationToken: cancellationToken);
+            var statusProperty = schema.Properties!["status"] as OpenApiSchema;
+            statusProperty!.Pattern = null;
+            statusProperty.Type = JsonSchemaType.Integer | JsonSchemaType.Null;
+
+            document.Components.Schemas.Add(nameof(AppProblemDetails), schema);
         }
     }
 }

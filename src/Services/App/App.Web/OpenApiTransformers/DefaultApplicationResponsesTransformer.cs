@@ -1,4 +1,4 @@
-using LayeredTemplate.App.Web.Models;
+using LayeredTemplate.App.Application.Common.Models;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
@@ -8,7 +8,7 @@ public class DefaultApplicationResponsesTransformer : IOpenApiOperationTransform
 {
     public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
     {
-        var errorSchemaRef = new OpenApiSchemaReference(nameof(ErrorResult));
+        var errorSchemaRef = new OpenApiSchemaReference(nameof(AppProblemDetails));
 
         var badResponseType = new OpenApiMediaType()
         {

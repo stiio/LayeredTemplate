@@ -32,6 +32,7 @@
 
   <ItemGroup>
     <Folder Include="Common\Behaviors\" />
+    <Folder Include="Features\TodoLists\Validators\" />
   </ItemGroup>
 
 </Project>

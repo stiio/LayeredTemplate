@@ -9,13 +9,6 @@ internal class TodoListCreateHandler : IRequestHandler<TodoListCreateRequest, To
 {
     public ValueTask<TodoListDto> Handle(TodoListCreateRequest request, CancellationToken cancellationToken)
     {
-        throw new HttpStatusException("Some message");
-        return new ValueTask<TodoListDto>(new TodoListDto()
-        {
-            Id = Guid.NewGuid(),
-            Name = "List 1",
-            Description = "List description",
-            CreatedAt = DateTime.UtcNow,
-        });
+        throw new AppMessageException("Some message");
     }
 }

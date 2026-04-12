@@ -96,6 +96,7 @@ void ConfigureMiddleware(WebApplication app, IWebHostEnvironment env)
     }
 
     app.UseRequestLogging();
+    app.UseExceptionHandler();
     app.UseRouting();
 
     app.UseAuthentication();

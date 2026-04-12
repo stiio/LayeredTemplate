@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.App.Web.Models;
+using LayeredTemplate.App.Web.Models;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,16 +15,5 @@ public abstract class AppControllerBase : ControllerBase
         {
             Message = message,
         });
-    }
-
-    [NonAction]
-    public BadRequestObjectResult ErrorResult(string message = "Validation Error.")
-    {
-        return this.BadRequest(
-            new ErrorResult()
-            {
-                Message = message,
-                TraceId = this.HttpContext.TraceIdentifier,
-            });
     }
 }

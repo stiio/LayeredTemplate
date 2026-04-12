@@ -13,7 +13,7 @@ public static class ConfigureServices
     {
         ValidatorOptions.Global.LanguageManager.Enabled = false;
 
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly(), includeInternalTypes: true);
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly(), includeInternalTypes: true, lifetime: ServiceLifetime.Singleton);
         services.AddMediator(opts =>
         {
             opts.Assemblies = [typeof(InfoGetRequest)];

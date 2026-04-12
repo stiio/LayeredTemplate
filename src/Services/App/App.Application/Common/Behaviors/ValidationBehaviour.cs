@@ -1,8 +1,6 @@
 ﻿using FluentValidation;
-using FluentValidation.Results;
 using LayeredTemplate.App.Application.Common.Exceptions;
 using Mediator;
-using Microsoft.Extensions.Logging;
 
 namespace LayeredTemplate.App.Application.Common.Behaviors;
 
@@ -10,14 +8,11 @@ internal class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TReq
     where TRequest : IMessage
 {
     private readonly IEnumerable<IValidator<TRequest>> validators;
-    private readonly ILogger<ValidationBehaviour<TRequest, TResponse>> logger;
 
     public ValidationBehaviour(
-        IEnumerable<IValidator<TRequest>> validators,
-        ILogger<ValidationBehaviour<TRequest, TResponse>> logger)
+        IEnumerable<IValidator<TRequest>> validators)
     {
         this.validators = validators;
-        this.logger = logger;
     }
 
     public async ValueTask<TResponse> Handle(TRequest message, MessageHandlerDelegate<TRequest, TResponse> next, CancellationToken cancellationToken)
@@ -27,26 +22,25 @@ internal class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TReq
             return await next(message, cancellationToken);
         }
 
-        var validationResults = new List<ValidationResult>();
-        foreach (var validator in this.validators)
+        var errors = this.validators
+            .Select(x => x.Validate(message))
+            .SelectMany(x => x.Errors)
+            .Where(x => x != null)
+            .GroupBy(
+                x => x.PropertyName,
+                x => x.ErrorMessage,
+                (propertyName, errorMessages) => new
+                {
+                    Key = propertyName,
+                    Values = errorMessages.Distinct().ToArray(),
+                })
+            .ToDictionary(x => x.Key, x => x.Values);
+
+        if (errors.Any())
         {
-            this.logger.LogInformation($"Validator process: {validator.GetType().Name}");
-            var result = await validator.ValidateAsync(message, cancellationToken);
-            validationResults.Add(result);
+            throw new AppValidationException(errors);
         }
 
-        var errors = validationResults
-            .Where(r => r.Errors.Any())
-            .SelectMany(r => r.Errors)
-            .Select(error => error.ErrorMessage)
-            .ToArray();
-
-        if (!errors.Any())
-        {
-            return await next(message, cancellationToken);
-        }
-
-        var exceptionMessage = string.Join("\n", errors);
-        throw new HttpStatusException(exceptionMessage);
+        return await next(message, cancellationToken);
     }
 }
