@@ -5,6 +5,8 @@
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.WebUtilities
 
+@using LayeredTemplate.Auth.Web.Services
+
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
 @inject SignInManager<ApplicationUser> SignInManager
@@ -12,6 +14,7 @@
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject ReCaptchaService ReCaptchaService
 
 <PageTitle>Register</PageTitle>
 
@@ -20,8 +23,9 @@
 <div style="background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
     <h3 style="text-align: center; margin-bottom: 24px;">Register</h3>
 
-    <form method="post" @formname="register" @onsubmit="RegisterUser">
+    <form method="post" @formname="register" @onsubmit="RegisterUser" id="register-form">
         <AntiforgeryToken/>
+        <ReCaptcha FormId="register-form" />
 
         @if (!string.IsNullOrEmpty(Message))
         {
@@ -64,12 +68,16 @@
 
 @code {
     private IEnumerable<IdentityError>? identityErrors;
+    private string? captchaError;
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm] private InputModel Input { get; set; } = default!;
 
     [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
 
-    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+    private string? Message => captchaError
+                               ?? (identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}");
 
     protected override void OnInitialized()
     {
@@ -78,6 +86,12 @@
 
     public async Task RegisterUser()
     {
+        if (!await ReCaptchaService.ValidateAsync(HttpContext))
+        {
+            captchaError = "Error: reCAPTCHA validation failed. Please try again.";
+            return;
+        }
+
         var user = CreateUser();
 
         await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);

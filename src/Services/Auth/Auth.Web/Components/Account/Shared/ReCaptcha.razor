@@ -1,0 +1,48 @@
+@using LayeredTemplate.Auth.Web.Services
+@using Microsoft.Extensions.Options
+
+@inject IOptions<ReCaptchaSettings> ReCaptchaOptions
+
+@if (IsEnabled)
+{
+    <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response-@FormId" />
+
+    <script src="https://www.google.com/recaptcha/api.js?onload=__recaptchaLoaded_@(SafeId)&render=explicit" async defer></script>
+    <script>
+        function __recaptchaLoaded_@(SafeId)() {
+            var form = document.getElementById('@FormId');
+            if (!form) return;
+
+            var submitBtn = form.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
+
+            var widgetId = grecaptcha.render(submitBtn, {
+                sitekey: '@SiteKey',
+                size: 'invisible',
+                callback: function(token) {
+                    document.getElementById('g-recaptcha-response-@FormId').value = token;
+                    form.requestSubmit();
+                }
+            });
+
+            form.addEventListener('submit', function(e) {
+                var tokenInput = document.getElementById('g-recaptcha-response-@FormId');
+                if (!tokenInput.value) {
+                    e.preventDefault();
+                    grecaptcha.execute(widgetId);
+                }
+            });
+        }
+    </script>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string FormId { get; set; } = default!;
+
+    private string SiteKey => ReCaptchaOptions.Value.SiteKey;
+
+    private bool IsEnabled => !string.IsNullOrEmpty(SiteKey);
+
+    private string SafeId => FormId.Replace("-", "_");
+}

@@ -2,11 +2,13 @@
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
+@using LayeredTemplate.Auth.Web.Services
 
 @inject SignInManager<ApplicationUser> SignInManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject ReCaptchaService ReCaptchaService
 
 <PageTitle>Log in</PageTitle>
 
@@ -15,8 +17,9 @@
 <div style="background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
     <h3 style="text-align: center; margin-bottom: 24px;">Log in</h3>
 
-    <form method="post" @formname="login" @onsubmit="LoginUser">
+    <form method="post" @formname="login" @onsubmit="LoginUser" id="login-form">
         <AntiforgeryToken/>
+        <ReCaptcha FormId="login-form" />
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
@@ -80,6 +83,12 @@
 
     public async Task LoginUser()
     {
+        if (!await ReCaptchaService.ValidateAsync(HttpContext))
+        {
+            errorMessage = "Error: reCAPTCHA validation failed. Please try again.";
+            return;
+        }
+
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
         var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);

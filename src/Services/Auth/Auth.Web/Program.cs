@@ -2,6 +2,7 @@ using HealthChecks.UI.Client;
 using LayeredTemplate.Auth.Web.Components;
 using LayeredTemplate.Auth.Web.Components.Account;
 using LayeredTemplate.Auth.Web.Data;
+using LayeredTemplate.Auth.Web.Services;
 using LayeredTemplate.Auth.Web.Extensions;
 using LayeredTemplate.Auth.Web.StartupTasks;
 using LayeredTemplate.Plugins.StartupRunner;
@@ -70,6 +71,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddRazorComponents();
     services.AddControllersWithViews();
     services.AddAntDesign();
+
+    services.Configure<ReCaptchaSettings>(configuration.GetSection("ReCaptcha"));
+    services.AddHttpClient<ReCaptchaService>();
 
     services.AddCascadingAuthenticationState();
     services.AddScoped<IdentityRedirectManager>();
