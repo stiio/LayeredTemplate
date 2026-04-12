@@ -4,4 +4,9 @@
     <NavLink style="padding: 4px 12px; border-radius: 6px; text-decoration: none; color: #1677ff; border: 1px solid #d9d9d9; font-size: 14px;" href="Account/Manage/ChangePassword">Password</NavLink>
     <NavLink style="padding: 4px 12px; border-radius: 6px; text-decoration: none; color: #1677ff; border: 1px solid #d9d9d9; font-size: 14px;" href="Account/Manage/TwoFactorAuthentication">Two-factor</NavLink>
     <NavLink style="padding: 4px 12px; border-radius: 6px; text-decoration: none; color: #1677ff; border: 1px solid #d9d9d9; font-size: 14px;" href="Account/Manage/PersonalData">Personal data</NavLink>
+    <form action="Account/Logout" method="post" style="display: inline;">
+        <AntiforgeryToken />
+        <input type="hidden" name="returnUrl" value="" />
+        <button type="submit" style="padding: 4px 12px; border-radius: 6px; text-decoration: none; color: #ff4d4f; border: 1px solid #ffa39e; font-size: 14px; background: #fff1f0; cursor: pointer;">Logout</button>
+    </form>
 </nav>
