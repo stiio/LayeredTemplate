@@ -8,5 +8,7 @@ public class TodoListDto
 
     public string? Description { get; set; }
 
+    public TodoListType Type { get; set; }
+
     public DateTime CreatedAt { get; set; }
 }

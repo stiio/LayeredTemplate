@@ -908,6 +908,19 @@
   },
   "components": {
     "schemas": {
+      "AppErrorType": {
+        "enum": [
+          "InternalServerError",
+          "ValidationError",
+          "Message",
+          "NotFound",
+          "AccessDenied",
+          "DomainError",
+          "NotSupported",
+          "NotImplemented"
+        ],
+        "type": "string"
+      },
       "AppProblemDetails": {
         "type": "object",
         "properties": {
@@ -963,18 +976,7 @@
             "description": "Errors"
           },
           "errorType": {
-            "enum": [
-              "InternalServerError",
-              "ValidationError",
-              "Message",
-              "NotFound",
-              "AccessDenied",
-              "DomainError",
-              "NotSupported",
-              "NotImplemented",
-              null
-            ],
-            "description": "Error type"
+            "$ref": "#/components/schemas/AppErrorType"
           }
         },
         "description": "App problem details"
@@ -1030,7 +1032,11 @@
         "description": "Current user"
       },
       "DirectionType": {
-        "type": "integer",
+        "enum": [
+          "Asc",
+          "Desc"
+        ],
+        "type": "string",
         "description": "Direction"
       },
       "FileResult": {
@@ -1155,6 +1161,7 @@
               "Id",
               "Name",
               "Description",
+              "Type",
               "CreatedAt"
             ],
             "type": "string",
@@ -1221,6 +1228,9 @@
               "string"
             ],
             "description": "Description"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TodoListType"
           },
           "createdAt": {
             "type": "string",
@@ -1399,6 +1409,14 @@
           }
         },
         "description": "Todo list search response"
+      },
+      "TodoListType": {
+        "enum": [
+          "Type1",
+          "Type2"
+        ],
+        "type": "string",
+        "description": "Type"
       },
       "TodoListUpdateRequestBody": {
         "required": [
