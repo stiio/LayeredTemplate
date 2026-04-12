@@ -6,9 +6,9 @@ public class TodoListSearchRequestBody
 {
     public TodoListSearchFilterDto? Filter { get; set; }
 
-    public Sorting<TodoListDto> Sorting { get; set; } = new Sorting<TodoListDto>()
+    public Sorting<TodoListFields> Sorting { get; set; } = new Sorting<TodoListFields>()
     {
-        Column = nameof(TodoListDto.CreatedAt),
+        Column = TodoListFields.CreatedAt,
         Direction = DirectionType.Desc,
     };
 

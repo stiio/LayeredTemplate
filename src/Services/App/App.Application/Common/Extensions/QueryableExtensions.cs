@@ -44,23 +44,25 @@ public static class QueryableExtensions
         return query += $"\nLIMIT {pagination.Limit} OFFSET {(pagination.Page - 1) * pagination.Limit}";
     }
 
-    public static IQueryable<T> Sort<T>(this IQueryable<T> query, Sorting sorting)
+    public static IQueryable<TEntity> Sort<TEntity, TFields>(this IQueryable<TEntity> query, Sorting<TFields> sorting)
+        where TFields : Enum
     {
-        var keySelector = CreateKeySelector(typeof(T), sorting.Column);
+        var keySelector = CreateKeySelector(typeof(TEntity), sorting.Column.ToString());
 
         var orderBy = Expression.Call(
             typeof(Queryable),
             sorting.Direction == DirectionType.Asc ? "OrderBy" : "OrderByDescending",
-            [typeof(T), keySelector.ReturnType],
+            [typeof(TEntity), keySelector.ReturnType],
             query.Expression,
             Expression.Quote(keySelector));
 
-        return query.Provider.CreateQuery<T>(orderBy);
+        return query.Provider.CreateQuery<TEntity>(orderBy);
     }
 
-    public static string SortSql(this string query, Sorting sorting)
+    public static string SortSql<TFields>(this string query, Sorting<TFields> sorting)
+        where TFields : Enum
     {
-        var column = "\"" + sorting.Column.Trim().Replace("\"", "\"\"") + "\"";
+        var column = "\"" + sorting.Column + "\"";
         return query += $"\nORDER BY {column} {sorting.Direction}";
     }
 

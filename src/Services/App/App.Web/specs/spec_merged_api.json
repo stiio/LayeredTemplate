@@ -1149,7 +1149,7 @@
         },
         "description": "Pagination"
       },
-      "SortingOfTodoListDto": {
+      "SortingOfTodoListFields": {
         "required": [
           "column",
           "direction"
@@ -1157,15 +1157,8 @@
         "type": "object",
         "properties": {
           "column": {
-            "enum": [
-              "Id",
-              "Name",
-              "Description",
-              "Type",
-              "CreatedAt"
-            ],
-            "type": "string",
-            "description": "Name of field for sort"
+            "description": "Name of field for sort",
+            "$ref": "#/components/schemas/TodoListFields"
           },
           "direction": {
             "$ref": "#/components/schemas/DirectionType"
@@ -1239,6 +1232,15 @@
           }
         },
         "description": "Todo list dto"
+      },
+      "TodoListFields": {
+        "enum": [
+          "Id",
+          "Name",
+          "CreatedAt"
+        ],
+        "type": "string",
+        "description": "Column"
       },
       "TodoListItemBase": {
         "required": [
@@ -1373,7 +1375,7 @@
             ]
           },
           "sorting": {
-            "$ref": "#/components/schemas/SortingOfTodoListDto"
+            "$ref": "#/components/schemas/SortingOfTodoListFields"
           },
           "pagination": {
             "$ref": "#/components/schemas/PaginationRequest"
@@ -1395,7 +1397,7 @@
             ]
           },
           "sorting": {
-            "$ref": "#/components/schemas/SortingOfTodoListDto"
+            "$ref": "#/components/schemas/SortingOfTodoListFields"
           },
           "pagination": {
             "$ref": "#/components/schemas/PaginationResponse"

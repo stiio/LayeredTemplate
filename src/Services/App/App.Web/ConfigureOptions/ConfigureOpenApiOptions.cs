@@ -64,7 +64,6 @@ public class ConfigureOpenApiOptions : IConfigureNamedOptions<OpenApiOptions>
 
         options.AddSchemaTransformer<StringEnumSchemaTransformer>();
         options.AddSchemaTransformer<FileResultTransformer>();
-        options.AddSchemaTransformer<SortingToEnumTransformer>();
         options.AddSchemaTransformer<DefaultSchemaDescriptionTransformer>();
         options.AddSchemaTransformer<DateTimeSchemaTransformer>();
         options.AddSchemaTransformer<PolymorphismOneOfTransformer>();

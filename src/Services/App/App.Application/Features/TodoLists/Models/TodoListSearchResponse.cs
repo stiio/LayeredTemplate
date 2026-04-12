@@ -6,11 +6,7 @@ public class TodoListSearchResponse
 {
     public TodoListSearchFilterDto? Filter { get; set; }
 
-    public Sorting<TodoListDto> Sorting { get; set; } = new Sorting<TodoListDto>()
-    {
-        Column = nameof(TodoListDto.CreatedAt),
-        Direction = DirectionType.Desc,
-    };
+    public Sorting<TodoListFields> Sorting { get; set; } = null!;
 
     public PaginationResponse Pagination { get; set; } = null!;
 
