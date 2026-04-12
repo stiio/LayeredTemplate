@@ -1,7 +1,10 @@
-﻿@if (!string.IsNullOrEmpty(DisplayMessage))
+@if (!string.IsNullOrEmpty(DisplayMessage))
 {
-    var statusMessageClass = DisplayMessage.StartsWith("Error") ? "danger" : "success";
-    <div class="alert alert-@statusMessageClass" role="alert">
+    var isError = DisplayMessage.StartsWith("Error");
+    var bgColor = isError ? "#fff2f0" : "#f6ffed";
+    var borderColor = isError ? "#ffccc7" : "#b7eb8f";
+    var textColor = isError ? "#a8071a" : "#389e0d";
+    <div style="padding: 8px 12px; margin-bottom: 16px; border: 1px solid @borderColor; border-radius: 6px; background: @bgColor; color: @textColor;" role="alert">
         @DisplayMessage
     </div>
 }

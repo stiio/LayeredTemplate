@@ -1,8 +1,6 @@
 ﻿@page "/Account/Manage/DeletePersonalData"
 
 @using System.ComponentModel.DataAnnotations
-@using Microsoft.AspNetCore.Identity
-@using Auth.Web.Data
 
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
@@ -15,26 +13,25 @@
 
 <h3>Delete Personal Data</h3>
 
-<div class="alert alert-warning" role="alert">
+<div style="padding:12px 16px; background:#fff7e6; border:1px solid #ffd591; border-radius:6px; margin-bottom:16px;" role="alert">
     <p>
         <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
     </p>
 </div>
 
-<div>
-    <EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
-        <DataAnnotationsValidator/>
-        <ValidationSummary class="text-danger" role="alert"/>
+<div style="max-width:400px;">
+    <form method="post" @formname="delete-user" @onsubmit="OnValidSubmitAsync">
+        <AntiforgeryToken />
+
         @if (requirePassword)
         {
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Please enter your password."/>
-                <label for="Input.Password" class="form-label">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger"/>
+            <div style="margin-bottom:16px;">
+                <label for="Input.Password" style="display:block; margin-bottom:4px; font-weight:500;">Password</label>
+                <input type="password" name="Input.Password" id="Input.Password" value="@Input.Password" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px;" autocomplete="current-password" aria-required="true" placeholder="Please enter your password." />
             </div>
         }
-        <button class="w-100 btn btn-lg btn-danger" type="submit">Delete data and close my account</button>
-    </EditForm>
+        <button type="submit" style="width:100%; padding:8px 16px; background:#ff4d4f; color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px;">Delete data and close my account</button>
+    </form>
 </div>
 
 @code {

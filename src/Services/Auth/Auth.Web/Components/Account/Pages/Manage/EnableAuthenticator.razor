@@ -1,11 +1,9 @@
-﻿@page "/Account/Manage/EnableAuthenticator"
+@page "/Account/Manage/EnableAuthenticator"
 
 @using System.ComponentModel.DataAnnotations
 @using System.Globalization
 @using System.Text
 @using System.Text.Encodings.Web
-@using Microsoft.AspNetCore.Identity
-@using LayeredTemplate.Auth.Web.Data
 
 @inject UserManager<ApplicationUser> UserManager
 @inject UrlEncoder UrlEncoder
@@ -24,7 +22,7 @@ else
     <h3>Configure authenticator app</h3>
     <div>
         <p>To use an authenticator app go through the following steps:</p>
-        <ol class="list">
+        <ol>
             <li>
                 <p>
                     Download a two-factor authenticator app like Microsoft Authenticator for
@@ -37,7 +35,7 @@ else
             </li>
             <li>
                 <p>Scan the QR Code or enter this key <kbd>@sharedKey</kbd> into your two factor authenticator app. Spaces and casing do not matter.</p>
-                <div class="alert alert-info">Learn how to <a href="https://go.microsoft.com/fwlink/?Linkid=852423">enable QR code generation</a>.</div>
+                <div style="padding:12px 16px; background:#e6f4ff; border:1px solid #91caff; border-radius:6px; margin-bottom:12px;">Learn how to <a href="https://go.microsoft.com/fwlink/?Linkid=852423">enable QR code generation</a>.</div>
                 <div></div>
                 <div data-url="@authenticatorUri"></div>
             </li>
@@ -46,19 +44,16 @@ else
                     Once you have scanned the QR code or input the key above, your two factor authentication app will provide you
                     with a unique code. Enter the code in the confirmation box below.
                 </p>
-                <div class="row">
-                    <div class="col-xl-6">
-                        <EditForm Model="Input" FormName="send-code" OnValidSubmit="OnValidSubmitAsync" method="post">
-                            <DataAnnotationsValidator/>
-                            <div class="form-floating mb-3">
-                                <InputText @bind-Value="Input.Code" id="Input.Code" class="form-control" autocomplete="off" placeholder="Enter the code"/>
-                                <label for="Input.Code" class="control-label form-label">Verification Code</label>
-                                <ValidationMessage For="() => Input.Code" class="text-danger"/>
-                            </div>
-                            <button type="submit" class="w-100 btn btn-lg btn-primary">Verify</button>
-                            <ValidationSummary class="text-danger" role="alert"/>
-                        </EditForm>
-                    </div>
+                <div style="max-width:400px;">
+                    <form method="post" @formname="send-code" @onsubmit="OnValidSubmitAsync">
+                        <AntiforgeryToken />
+
+                        <div style="margin-bottom:16px;">
+                            <label for="Input.Code" style="display:block; margin-bottom:4px; font-weight:500;">Verification Code</label>
+                            <input name="Input.Code" id="Input.Code" value="@Input.Code" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px;" autocomplete="off" placeholder="Enter the code" />
+                        </div>
+                        <button type="submit" style="width:100%; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px;">Verify</button>
+                    </form>
                 </div>
             </li>
         </ol>

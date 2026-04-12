@@ -3,9 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
-@using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using Auth.Web.Data
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IEmailSender<ApplicationUser> EmailSender
@@ -17,40 +15,37 @@
 <h3>Manage email</h3>
 
 <StatusMessage Message="@message"/>
-<div class="row">
-    <div class="col-xl-6">
-        <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
-            <AntiforgeryToken/>
-        </form>
-        <EditForm Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <DataAnnotationsValidator/>
-            <ValidationSummary class="text-danger" role="alert"/>
-            @if (isEmailConfirmed)
-            {
-                <div class="form-floating mb-3 input-group">
-                    <input type="text" value="@email" id="email" class="form-control" placeholder="Enter your email" disabled/>
-                    <div class="input-group-append">
-                        <span class="h-100 input-group-text text-success font-weight-bold">✓</span>
-                    </div>
-                    <label for="email" class="form-label">Email</label>
+<div style="max-width:400px;">
+    <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
+        <AntiforgeryToken/>
+    </form>
+    <form method="post" @formname="change-email" @onsubmit="OnValidSubmitAsync">
+        <AntiforgeryToken />
+
+        @if (isEmailConfirmed)
+        {
+            <div style="margin-bottom:16px;">
+                <label for="email" style="display:block; margin-bottom:4px; font-weight:500;">Email</label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <input type="text" value="@email" id="email" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px; background:#f5f5f5;" placeholder="Enter your email" disabled/>
+                    <span style="color:#52c41a; font-weight:bold; font-size:18px;">&#10003;</span>
                 </div>
-            }
-            else
-            {
-                <div class="form-floating mb-3">
-                    <input type="text" value="@email" id="email" class="form-control" placeholder="Enter your email" disabled/>
-                    <label for="email" class="form-label">Email</label>
-                    <button type="submit" class="btn btn-link" form="send-verification-form">Send verification email</button>
-                </div>
-            }
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.NewEmail" id="Input.NewEmail" class="form-control" autocomplete="email" aria-required="true" placeholder="Enter a new email"/>
-                <label for="Input.NewEmail" class="form-label">New email</label>
-                <ValidationMessage For="() => Input.NewEmail" class="text-danger"/>
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Change email</button>
-        </EditForm>
-    </div>
+        }
+        else
+        {
+            <div style="margin-bottom:16px;">
+                <label for="email" style="display:block; margin-bottom:4px; font-weight:500;">Email</label>
+                <input type="text" value="@email" id="email" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px; background:#f5f5f5;" placeholder="Enter your email" disabled/>
+                <button type="submit" form="send-verification-form" style="background:none; border:none; color:#1677ff; cursor:pointer; padding:4px 0; font-size:14px;">Send verification email</button>
+            </div>
+        }
+        <div style="margin-bottom:16px;">
+            <label for="Input.NewEmail" style="display:block; margin-bottom:4px; font-weight:500;">New email</label>
+            <input name="Input.NewEmail" id="Input.NewEmail" value="@Input.NewEmail" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px;" autocomplete="email" aria-required="true" placeholder="Enter a new email" />
+        </div>
+        <button type="submit" style="width:100%; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px;">Change email</button>
+    </form>
 </div>
 
 @code {

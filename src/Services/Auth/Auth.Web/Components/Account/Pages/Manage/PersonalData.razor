@@ -1,8 +1,5 @@
 ﻿@page "/Account/Manage/PersonalData"
 
-@using Microsoft.AspNetCore.Identity
-@using Auth.Web.Data
-
 @inject UserManager<ApplicationUser> UserManager
 @inject IdentityRedirectManager RedirectManager
 
@@ -11,20 +8,18 @@
 <StatusMessage/>
 <h3>Personal Data</h3>
 
-<div class="row">
-    <div class="col-md-6">
-        <p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
-        <p>
-            <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
-        </p>
-        <form action="Account/Manage/DownloadPersonalData" method="post">
-            <AntiforgeryToken/>
-            <button class="btn btn-primary" type="submit">Download</button>
-        </form>
-        <p>
-            <a href="Account/Manage/DeletePersonalData" class="btn btn-danger">Delete</a>
-        </p>
-    </div>
+<div style="max-width:500px;">
+    <p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
+    <p>
+        <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
+    </p>
+    <form action="Account/Manage/DownloadPersonalData" method="post">
+        <AntiforgeryToken/>
+        <button type="submit" style="padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px;">Download</button>
+    </form>
+    <p style="margin-top:12px;">
+        <a href="Account/Manage/DeletePersonalData" style="display:inline-block; padding:8px 16px; background:#ff4d4f; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; text-decoration:none;">Delete</a>
+    </p>
 </div>
 
 @code {

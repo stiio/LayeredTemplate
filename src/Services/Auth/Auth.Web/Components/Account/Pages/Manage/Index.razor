@@ -1,8 +1,6 @@
 ﻿@page "/Account/Manage"
 
 @using System.ComponentModel.DataAnnotations
-@using Microsoft.AspNetCore.Identity
-@using Auth.Web.Data
 
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
@@ -13,23 +11,20 @@
 <h3>Profile</h3>
 <StatusMessage/>
 
-<div class="row">
-    <div class="col-xl-6">
-        <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <DataAnnotationsValidator/>
-            <ValidationSummary class="text-danger" role="alert"/>
-            <div class="form-floating mb-3">
-                <input type="text" value="@username" id="username" class="form-control" placeholder="Choose your username." disabled/>
-                <label for="username" class="form-label">Username</label>
-            </div>
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.PhoneNumber" id="Input.PhoneNumber" class="form-control" placeholder="Enter your phone number"/>
-                <label for="Input.PhoneNumber" class="form-label">Phone number</label>
-                <ValidationMessage For="() => Input.PhoneNumber" class="text-danger"/>
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
-        </EditForm>
-    </div>
+<div style="max-width:400px;">
+    <form method="post" @formname="profile" @onsubmit="OnValidSubmitAsync">
+        <AntiforgeryToken />
+
+        <div style="margin-bottom:16px;">
+            <label for="username" style="display:block; margin-bottom:4px; font-weight:500;">Username</label>
+            <input type="text" value="@username" id="username" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px; background:#f5f5f5;" placeholder="Choose your username." disabled/>
+        </div>
+        <div style="margin-bottom:16px;">
+            <label for="Input.PhoneNumber" style="display:block; margin-bottom:4px; font-weight:500;">Phone number</label>
+            <input name="Input.PhoneNumber" id="Input.PhoneNumber" value="@Input.PhoneNumber" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px;" placeholder="Enter your phone number" />
+        </div>
+        <button type="submit" style="width:100%; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px;">Save</button>
+    </form>
 </div>
 
 @code {

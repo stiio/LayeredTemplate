@@ -1,17 +1,11 @@
-﻿@inherits LayoutComponentBase
-@layout Auth.Web.Components.Layout.MainLayout
+@inherits LayoutComponentBase
+@layout MainLayout
 
-<h1>Manage your account</h1>
+<h3 style="text-align: center; margin-bottom: 8px;">Manage your account</h3>
+<p style="text-align: center; color: #888; margin-bottom: 24px;">Change your account settings</p>
 
-<div>
-    <h2>Change your account settings</h2>
-    <hr/>
-    <div class="row">
-        <div class="col-lg-3">
-            <ManageNavMenu/>
-        </div>
-        <div class="col-lg-9">
-            @Body
-        </div>
-    </div>
+<ManageNavMenu/>
+
+<div style="margin-top: 16px;">
+    @Body
 </div>

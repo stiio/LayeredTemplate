@@ -1,11 +1,9 @@
-﻿@page "/Account/ResendEmailConfirmation"
+@page "/Account/ResendEmailConfirmation"
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
-@using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using Auth.Web.Data
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IEmailSender<ApplicationUser> EmailSender
@@ -18,19 +16,17 @@
 <h2>Enter your email.</h2>
 <hr/>
 <StatusMessage Message="@message"/>
-<div class="row">
-    <div class="col-md-4">
-        <EditForm Model="Input" FormName="resend-email-confirmation" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <DataAnnotationsValidator/>
-            <ValidationSummary class="text-danger" role="alert"/>
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" aria-required="true" placeholder="name@example.com"/>
-                <label for="Input.Email" class="form-label">Email</label>
-                <ValidationMessage For="() => Input.Email" class="text-danger"/>
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Resend</button>
-        </EditForm>
-    </div>
+
+<div style="max-width:400px;">
+    <form method="post" @formname="resend-email-confirmation" @onsubmit="OnValidSubmitAsync">
+        <AntiforgeryToken />
+
+        <div style="margin-bottom:16px;">
+            <label for="Input.Email" style="display:block; margin-bottom:4px; font-weight:500;">Email</label>
+            <input name="Input.Email" id="Input.Email" value="@Input.Email" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px;" aria-required="true" placeholder="name@example.com" />
+        </div>
+        <button type="submit" style="width:100%; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px;">Resend</button>
+    </form>
 </div>
 
 @code {

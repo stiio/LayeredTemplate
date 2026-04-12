@@ -1,11 +1,9 @@
-﻿@page "/Account/Register"
+@page "/Account/Register"
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
-@using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using Auth.Web.Data
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
@@ -17,40 +15,50 @@
 
 <PageTitle>Register</PageTitle>
 
-<h1>Register</h1>
+<StatusMessage Message="@Message"/>
 
-<div class="row">
-    <div class="col-lg-6">
-        <StatusMessage Message="@Message"/>
-        <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
-            <DataAnnotationsValidator/>
-            <h2>Create a new account.</h2>
-            <hr/>
-            <ValidationSummary class="text-danger" role="alert"/>
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com"/>
-                <label for="Input.Email">Email</label>
-                <ValidationMessage For="() => Input.Email" class="text-danger"/>
+<div style="background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+    <h3 style="text-align: center; margin-bottom: 24px;">Register</h3>
+
+    <form method="post">
+        <AntiforgeryToken/>
+
+        @if (!string.IsNullOrEmpty(Message))
+        {
+            <div style="padding: 8px 12px; margin-bottom: 16px; border: 1px solid #ffccc7; border-radius: 6px; background: #fff2f0; color: #a8071a;">
+                @Message
             </div>
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password"/>
-                <label for="Input.Password">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger"/>
-            </div>
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password"/>
-                <label for="Input.ConfirmPassword">Confirm Password</label>
-                <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger"/>
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </EditForm>
-    </div>
-    <div class="col-lg-4 col-lg-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr/>
-            <ExternalLoginPicker/>
-        </section>
+        }
+
+        <div style="margin-bottom: 16px;">
+            <label for="Input.Email" style="display: block; margin-bottom: 4px; font-size: 14px;">Email</label>
+            <input type="email" name="Input.Email" id="Input.Email" value="@Input.Email" required autocomplete="username"
+                   placeholder="name@example.com"
+                   style="width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; box-sizing: border-box;"/>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label for="Input.Password" style="display: block; margin-bottom: 4px; font-size: 14px;">Password</label>
+            <input type="password" name="Input.Password" id="Input.Password" required autocomplete="new-password"
+                   placeholder="Password"
+                   style="width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; box-sizing: border-box;"/>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label for="Input.ConfirmPassword" style="display: block; margin-bottom: 4px; font-size: 14px;">Confirm Password</label>
+            <input type="password" name="Input.ConfirmPassword" id="Input.ConfirmPassword" required autocomplete="new-password"
+                   placeholder="Confirm password"
+                   style="width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; box-sizing: border-box;"/>
+        </div>
+
+        <button type="submit"
+                style="width: 100%; padding: 8px 16px; background: #1677ff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">
+            Register
+        </button>
+    </form>
+
+    <div style="margin-top: 16px; text-align: center; font-size: 14px;">
+        <p><a href="@(NavigationManager.GetUriWithQueryParameters("Account/Login", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" style="color: #1677ff;">Already have an account? Log in</a></p>
     </div>
 </div>
 
@@ -68,7 +76,7 @@
         Input ??= new();
     }
 
-    public async Task RegisterUser(EditContext editContext)
+    public async Task RegisterUser()
     {
         var user = CreateUser();
 
