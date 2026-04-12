@@ -1,18 +1,25 @@
+﻿using LayeredTemplate.Plugins.StartupRunner.Services;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
-namespace LayeredTemplate.Auth.Web.Data;
+namespace LayeredTemplate.Auth.Web.StartupTasks;
 
-public class SeedOpenIddictClients(IServiceProvider serviceProvider) : IHostedService
+public class SeedOidcClientsTask : IStartupTask
 {
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+    private readonly IOpenIddictApplicationManager manager;
 
-        if (await manager.FindByClientIdAsync("default_client", cancellationToken) is null)
+    public SeedOidcClientsTask(IOpenIddictApplicationManager manager)
+    {
+        this.manager = manager;
+    }
+
+    public int Order => 20;
+
+    public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        if (await this.manager.FindByClientIdAsync("default_client", cancellationToken) is null)
         {
-            await manager.CreateAsync(
+            await this.manager.CreateAsync(
                 new OpenIddictApplicationDescriptor
                 {
                     ClientId = "default_client",
@@ -46,6 +53,4 @@ public class SeedOpenIddictClients(IServiceProvider serviceProvider) : IHostedSe
                 cancellationToken);
         }
     }
-
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

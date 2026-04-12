@@ -13,6 +13,14 @@
         <PackageReference Include="AntDesign" Version="*"/>
         <PackageReference Include="OpenIddict.AspNetCore" Version="*"/>
         <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="*"/>
+        <PackageReference Include="Serilog" Version="4.3.1" />
+        <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+        <PackageReference Include="Serilog.Exceptions" Version="8.4.0" />
+        <PackageReference Include="Serilog.Exceptions.EntityFrameworkCore" Version="8.4.0" />
+        <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
+        <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+        <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -22,6 +30,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\Plugins\Plugins.AssemblyExtensions\Plugins.AssemblyExtensions.csproj" />
+      <ProjectReference Include="..\..\Plugins\Plugins.Authorization.Abstractions\Plugins.Authorization.Abstractions.csproj" />
+      <ProjectReference Include="..\..\Plugins\Plugins.Http.Extensions\Plugins.Http.Extensions.csproj" />
+      <ProjectReference Include="..\..\Plugins\Plugins.Options\Plugins.Options.csproj" />
       <ProjectReference Include="..\..\Plugins\Plugins.StartupRunner\Plugins.StartupRunner.csproj" />
     </ItemGroup>
 
