@@ -14,17 +14,17 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
     public async Task<IActionResult> Logout(string? returnUrl = null)
     {
         await signInManager.SignOutAsync();
-        return LocalRedirect(returnUrl ?? "/");
+        return this.LocalRedirect(returnUrl ?? "/");
     }
 
     [Authorize]
     [HttpPost("Manage/DownloadPersonalData")]
     public async Task<IActionResult> DownloadPersonalData()
     {
-        var user = await userManager.GetUserAsync(User);
+        var user = await userManager.GetUserAsync(this.User);
         if (user is null)
         {
-            return NotFound($"Unable to load user with ID '{userManager.GetUserId(User)}'.");
+            return this.NotFound($"Unable to load user with ID '{userManager.GetUserId(this.User)}'.");
         }
 
         var personalData = new Dictionary<string, string>();
@@ -46,7 +46,7 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
 
         personalData.Add("Authenticator Key", (await userManager.GetAuthenticatorKeyAsync(user))!);
 
-        return File(
+        return this.File(
             JsonSerializer.SerializeToUtf8Bytes(personalData),
             "application/json",
             "PersonalData.json");

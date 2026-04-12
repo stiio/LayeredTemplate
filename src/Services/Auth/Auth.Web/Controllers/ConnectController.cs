@@ -18,16 +18,16 @@ public class ConnectController(
     [HttpPost("~/connect/authorize")]
     public async Task<IActionResult> Authorize()
     {
-        var request = HttpContext.GetOpenIddictServerRequest() ??
+        var request = this.HttpContext.GetOpenIddictServerRequest() ??
                       throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
-        var user = await userManager.GetUserAsync(User);
+        var user = await userManager.GetUserAsync(this.User);
         if (user is null)
         {
-            var returnUrl = Request.PathBase + Request.Path + QueryString.Create(
-                Request.HasFormContentType ? Request.Form.ToList() : Request.Query.ToList());
+            var returnUrl = this.Request.PathBase + this.Request.Path + QueryString.Create(
+                this.Request.HasFormContentType ? this.Request.Form.ToList() : this.Request.Query.ToList());
 
-            return Challenge(
+            return this.Challenge(
                 new AuthenticationProperties { RedirectUri = returnUrl },
                 IdentityConstants.ApplicationScheme);
         }
@@ -51,24 +51,24 @@ public class ConnectController(
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(request.GetScopes());
 
-        return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        return this.SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
     [HttpPost("~/connect/token")]
     public async Task<IActionResult> Exchange()
     {
-        var request = HttpContext.GetOpenIddictServerRequest() ??
+        var request = this.HttpContext.GetOpenIddictServerRequest() ??
                       throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
         if (request.IsAuthorizationCodeGrantType())
         {
-            var result = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            var result = await this.HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             var userId = result.Principal?.GetClaim(Claims.Subject);
 
             var user = await userManager.FindByIdAsync(userId!);
             if (user is null)
             {
-                return Forbid(
+                return this.Forbid(
                     authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
                     properties: new AuthenticationProperties(new Dictionary<string, string?>
                     {
@@ -95,10 +95,10 @@ public class ConnectController(
             var principal = new ClaimsPrincipal(identity);
             principal.SetScopes(result.Principal!.GetScopes());
 
-            return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            return this.SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
-        return Forbid(
+        return this.Forbid(
             authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
             properties: new AuthenticationProperties(new Dictionary<string, string?>
             {
@@ -110,13 +110,13 @@ public class ConnectController(
     [HttpGet("~/connect/userinfo")]
     public async Task<IActionResult> Userinfo()
     {
-        var result = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        var result = await this.HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         var userId = result.Principal?.GetClaim(Claims.Subject);
 
         var user = await userManager.FindByIdAsync(userId!);
         if (user is null)
         {
-            return Challenge(
+            return this.Challenge(
                 authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
                 properties: new AuthenticationProperties(new Dictionary<string, string?>
                 {
@@ -132,7 +132,7 @@ public class ConnectController(
             [Claims.Email] = (await userManager.GetEmailAsync(user))!,
         };
 
-        return Ok(claims);
+        return this.Ok(claims);
     }
 
     [HttpPost("~/connect/logout")]
@@ -140,7 +140,7 @@ public class ConnectController(
     {
         await signInManager.SignOutAsync();
 
-        return SignOut(
+        return this.SignOut(
             authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
             properties: new AuthenticationProperties { RedirectUri = "/" });
     }

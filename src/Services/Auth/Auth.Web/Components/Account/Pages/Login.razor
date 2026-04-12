@@ -15,7 +15,7 @@
 <div style="background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
     <h3 style="text-align: center; margin-bottom: 24px;">Log in</h3>
 
-    <form method="post">
+    <form method="post" @formname="login" @onsubmit="LoginUser">
         <AntiforgeryToken/>
 
         @if (!string.IsNullOrEmpty(errorMessage))

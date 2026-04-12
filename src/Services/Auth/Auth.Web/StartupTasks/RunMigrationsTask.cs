@@ -1,8 +1,6 @@
 ﻿using LayeredTemplate.Auth.Web.Data;
 using LayeredTemplate.Plugins.StartupRunner.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace LayeredTemplate.Auth.Web.StartupTasks;
 
