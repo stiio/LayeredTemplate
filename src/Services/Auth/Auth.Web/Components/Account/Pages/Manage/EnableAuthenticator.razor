@@ -4,16 +4,19 @@
 
 @if (recoveryCodes is not null)
 {
-    <ShowRecoveryCodes RecoveryCodes="recoveryCodes.ToArray()" StatusMessage="@message"/>
+    <div class="card">
+        <ShowRecoveryCodes RecoveryCodes="recoveryCodes.ToArray()" StatusMessage="@message"/>
+    </div>
 }
 else
 {
     <StatusMessage Message="@message"/>
     <h3>Configure authenticator app</h3>
-    <div>
+
+    <div class="card">
         <p>To use an authenticator app go through the following steps:</p>
-        <ol>
-            <li>
+        <ol style="padding-left: 20px; margin-bottom: 16px;">
+            <li style="margin-bottom: 12px;">
                 <p>
                     Download a two-factor authenticator app like Microsoft Authenticator for
                     <a href="https://go.microsoft.com/fwlink/?Linkid=825072">Android</a> and
@@ -23,7 +26,7 @@ else
                     <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>.
                 </p>
             </li>
-            <li>
+            <li style="margin-bottom: 12px;">
                 <p>Scan the QR Code or enter this key <kbd>@sharedKey</kbd> into your two factor authenticator app. Spaces and casing do not matter.</p>
                 @if (!string.IsNullOrEmpty(qrCodeDataUri))
                 {
@@ -37,18 +40,20 @@ else
                     Once you have scanned the QR code or input the key above, your two factor authentication app will provide you
                     with a unique code. Enter the code in the confirmation box below.
                 </p>
-                <div class="card">
-                    <EditForm Model="Input" method="post" FormName="send-code" OnValidSubmit="OnValidSubmitAsync">
-                        <DataAnnotationsValidator />
-
-                        <div class="form-group">
-                            <label for="@Input.Code" class="form-label">Verification Code</label>
-                            <InputText @bind-Value="Input.Code" name="Input.Code" class="form-input" placeholder="Enter the code" />
-                        </div>
-                        <button type="submit" class="btn-primary btn-block">Verify</button>
-                    </EditForm>
-                </div>
             </li>
         </ol>
+
+        <hr />
+
+        <EditForm Model="Input" method="post" FormName="send-code" OnValidSubmit="OnValidSubmitAsync">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label for="Input.Code" class="form-label">Verification Code</label>
+                <InputText @bind-Value="Input.Code" name="Input.Code" class="form-input" placeholder="Enter the code" />
+                <ValidationMessage For="() => Input.Code" />
+            </div>
+            <button type="submit" class="btn-primary btn-block">Verify</button>
+        </EditForm>
     </div>
 }
