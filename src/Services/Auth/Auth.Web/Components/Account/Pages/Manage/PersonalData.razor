@@ -1,7 +1,4 @@
-﻿@page "/Account/Manage/PersonalData"
-
-@inject UserManager<ApplicationUser> UserManager
-@inject IdentityRedirectManager RedirectManager
+@page "/Account/Manage/PersonalData"
 
 <PageTitle>Personal Data</PageTitle>
 
@@ -21,17 +18,3 @@
         <a href="Account/Manage/DeletePersonalData" style="display:inline-block; padding:8px 16px; background:#ff4d4f; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; text-decoration:none;">Delete</a>
     </p>
 </div>
-
-@code {
-    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var user = await UserManager.GetUserAsync(HttpContext.User);
-        if (user is null)
-        {
-            RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
-        }
-    }
-
-}

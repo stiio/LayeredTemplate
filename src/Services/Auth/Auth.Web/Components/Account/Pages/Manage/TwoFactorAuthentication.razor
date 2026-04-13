@@ -1,11 +1,5 @@
 @page "/Account/Manage/TwoFactorAuthentication"
 
-@using Microsoft.AspNetCore.Http.Features
-
-@inject UserManager<ApplicationUser> UserManager
-@inject SignInManager<ApplicationUser> SignInManager
-@inject IdentityRedirectManager RedirectManager
-
 <PageTitle>Two-factor authentication (2FA)</PageTitle>
 
 <StatusMessage/>
@@ -69,40 +63,4 @@ else
         <strong>Privacy and cookie policy have not been accepted.</strong>
         <p>You must accept the policy before you can enable two factor authentication.</p>
     </div>
-}
-
-@code {
-    private bool canTrack;
-    private bool hasAuthenticator;
-    private int recoveryCodesLeft;
-    private bool is2FaEnabled;
-    private bool isMachineRemembered;
-
-    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var user = await UserManager.GetUserAsync(HttpContext.User);
-        if (user is null)
-        {
-            RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
-            return;
-        }
-
-        canTrack = HttpContext.Features.Get<ITrackingConsentFeature>()?.CanTrack ?? true;
-        hasAuthenticator = await UserManager.GetAuthenticatorKeyAsync(user) is not null;
-        is2FaEnabled = await UserManager.GetTwoFactorEnabledAsync(user);
-        isMachineRemembered = await SignInManager.IsTwoFactorClientRememberedAsync(user);
-        recoveryCodesLeft = await UserManager.CountRecoveryCodesAsync(user);
-    }
-
-    private async Task OnSubmitForgetBrowserAsync()
-    {
-        await SignInManager.ForgetTwoFactorClientAsync();
-
-        RedirectManager.RedirectToCurrentPageWithStatus(
-            "The current browser has been forgotten. When you login again from this browser you will be prompted for your 2fa code.",
-            HttpContext);
-    }
-
 }
