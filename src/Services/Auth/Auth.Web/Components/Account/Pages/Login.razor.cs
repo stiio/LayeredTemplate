@@ -50,7 +50,7 @@ public partial class Login : ComponentBase
         if (result.Succeeded)
         {
             this.Logger.LogInformation("User logged in.");
-            this.RedirectManager.RedirectTo(this.ReturnUrl);
+            this.RedirectManager.RedirectTo(this.ReturnUrl ?? "Account/Manage");
         }
         else if (result.RequiresTwoFactor)
         {

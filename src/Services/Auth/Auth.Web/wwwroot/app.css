@@ -30,6 +30,8 @@ h4 { font-size: 1.1rem; }
 p { margin-bottom: 12px; color: #5e5d59; }
 a { color: #c96442; text-decoration: none; }
 a:hover { color: #b5553a; text-decoration: underline; }
+a.btn { text-decoration: none; }
+a.btn:hover { text-decoration: none; }
 
 hr.divider, hr {
     border: none;
@@ -76,13 +78,13 @@ button, .btn {
     color: #faf9f5;
     box-shadow: #c96442 0px 0px 0px 0px, #c96442 0px 0px 0px 1px;
 }
-.btn-primary:hover { background: #b5553a; }
+.btn-primary:hover { background: #b5553a; color: #faf9f5; }
 
 .btn-danger {
     background: #b53333;
     color: #faf9f5;
 }
-.btn-danger:hover { background: #9a2b2b; }
+.btn-danger:hover { background: #9a2b2b; color: #faf9f5; }
 
 .btn-default {
     background: #e8e6dc;

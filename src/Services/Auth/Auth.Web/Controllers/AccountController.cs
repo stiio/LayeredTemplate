@@ -14,7 +14,7 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
     public async Task<IActionResult> Logout(string? returnUrl = null)
     {
         await signInManager.SignOutAsync();
-        return this.LocalRedirect(returnUrl ?? "/");
+        return this.LocalRedirect(returnUrl ?? "~/Account/Login");
     }
 
     [Authorize]
