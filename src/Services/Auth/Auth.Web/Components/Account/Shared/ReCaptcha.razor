@@ -1,8 +1,3 @@
-@using LayeredTemplate.Auth.Web.Services
-@using Microsoft.Extensions.Options
-
-@inject IOptions<ReCaptchaSettings> ReCaptchaOptions
-
 @if (IsEnabled)
 {
     <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response-@FormId" />
@@ -34,15 +29,4 @@
             });
         }
     </script>
-}
-
-@code {
-    [Parameter, EditorRequired]
-    public string FormId { get; set; } = default!;
-
-    private string SiteKey => ReCaptchaOptions.Value.SiteKey;
-
-    private bool IsEnabled => !string.IsNullOrEmpty(SiteKey);
-
-    private string SafeId => FormId.Replace("-", "_");
 }
