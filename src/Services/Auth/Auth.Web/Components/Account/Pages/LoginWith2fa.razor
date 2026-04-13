@@ -2,31 +2,41 @@
 
 <PageTitle>Two-factor authentication</PageTitle>
 
-<h1>Two-factor authentication</h1>
-<hr/>
-<StatusMessage Message="@message"/>
-<p>Your login is protected with an authenticator app. Enter your authenticator code below.</p>
+<div class="card">
+    <h3 style="text-align: center;">Two-factor authentication</h3>
 
-<div style="max-width:400px;">
-    <form method="post" @formname="login-with-2fa" @onsubmit="OnValidSubmitAsync">
-        <AntiforgeryToken />
+    <hr />
+
+    <StatusMessage Message="@message"/>
+
+    <p>Your login is protected with an authenticator app. Enter your authenticator code below.</p>
+
+    <EditForm Model="Input" method="post" FormName="login-with-2fa" OnValidSubmit="OnValidSubmitAsync">
+        <DataAnnotationsValidator />
+
         <input type="hidden" name="ReturnUrl" value="@ReturnUrl"/>
         <input type="hidden" name="RememberMe" value="@RememberMe"/>
 
-        <div style="margin-bottom:16px;">
-            <label for="Input.TwoFactorCode" style="display:block; margin-bottom:4px; font-weight:500;">Authenticator code</label>
-            <input name="Input.TwoFactorCode" id="Input.TwoFactorCode" value="@Input.TwoFactorCode" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px;" autocomplete="off" />
+        <div class="form-group">
+            <label for="Input.TwoFactorCode" class="form-label">Authenticator code</label>
+            <InputText @bind-Value="Input.TwoFactorCode" name="Input.TwoFactorCode" id="Input.TwoFactorCode"
+                   class="form-input" />
         </div>
-        <div style="margin-bottom:16px;">
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+
+        <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" name="Input.RememberMachine" value="true" checked="@Input.RememberMachine" />
                 Remember this machine
             </label>
         </div>
-        <button type="submit" style="width:100%; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px;">Log in</button>
-    </form>
+
+        <button type="submit" class="btn-primary btn-block">Log in</button>
+    </EditForm>
+
+    <hr />
+
+    <p>
+        Don't have access to your authenticator device? You can
+        <a href="Account/LoginWithRecoveryCode?ReturnUrl=@ReturnUrl">log in with a recovery code</a>.
+    </p>
 </div>
-<p>
-    Don't have access to your authenticator device? You can
-    <a href="Account/LoginWithRecoveryCode?ReturnUrl=@ReturnUrl">log in with a recovery code</a>.
-</p>

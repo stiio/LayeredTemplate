@@ -2,19 +2,23 @@
 
 <PageTitle>Resend email confirmation</PageTitle>
 
-<h1>Resend email confirmation</h1>
-<h2>Enter your email.</h2>
-<hr/>
-<StatusMessage Message="@message"/>
+<div class="card">
+    <h3 style="text-align: center;">Resend email confirmation</h3>
+    <p>Enter your email.</p>
 
-<div style="max-width:400px;">
-    <form method="post" @formname="resend-email-confirmation" @onsubmit="OnValidSubmitAsync">
-        <AntiforgeryToken />
+    <hr />
 
-        <div style="margin-bottom:16px;">
-            <label for="Input.Email" style="display:block; margin-bottom:4px; font-weight:500;">Email</label>
-            <input name="Input.Email" id="Input.Email" value="@Input.Email" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px;" aria-required="true" placeholder="name@example.com" />
+    <StatusMessage Message="@message"/>
+
+    <EditForm Model="Input" method="post" FormName="resend-email-confirmation" OnValidSubmit="OnValidSubmitAsync">
+        <DataAnnotationsValidator />
+
+        <div class="form-group">
+            <label for="Input.Email" class="form-label">Email</label>
+            <InputText @bind-Value="Input.Email" name="Input.Email" id="Input.Email"
+                   placeholder="@("name@example.com")" class="form-input" />
         </div>
-        <button type="submit" style="width:100%; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px;">Resend</button>
-    </form>
+
+        <button type="submit" class="btn-primary btn-block">Resend</button>
+    </EditForm>
 </div>

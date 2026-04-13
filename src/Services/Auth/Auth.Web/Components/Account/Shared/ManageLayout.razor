@@ -1,11 +1,13 @@
 @inherits LayoutComponentBase
-@layout MainLayout
 
-<h3 style="text-align: center; margin-bottom: 8px;">Manage your account</h3>
-<p style="text-align: center; color: #888; margin-bottom: 24px;">Change your account settings</p>
-
-<ManageNavMenu/>
-
-<div style="margin-top: 16px;">
-    @Body
+<div class="manage-wrapper">
+    <div class="manage-card">
+        <div class="manage-sidebar">
+            <div class="manage-sidebar-title">Account</div>
+            <ManageNavMenu />
+        </div>
+        <div class="manage-content">
+            @Body
+        </div>
+    </div>
 </div>

@@ -4,49 +4,41 @@
 
 <StatusMessage Message="@errorMessage"/>
 
-<div style="background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
-    <h3 style="text-align: center; margin-bottom: 24px;">Log in</h3>
+<div class="card">
+    <h3 style="text-align: center;">Log in</h3>
 
-    <form method="post" @formname="login" @onsubmit="LoginUser" id="login-form">
-        <AntiforgeryToken/>
+    <EditForm Model="Input" method="post" FormName="login" OnValidSubmit="LoginUser" id="login-form">
+        <DataAnnotationsValidator />
         <ReCaptcha FormId="login-form" />
 
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div style="padding: 8px 12px; margin-bottom: 16px; border: 1px solid #ffccc7; border-radius: 6px; background: #fff2f0; color: #a8071a;">
-                @errorMessage
-            </div>
-        }
-
-        <div style="margin-bottom: 16px;">
-            <label for="Input.Email" style="display: block; margin-bottom: 4px; font-size: 14px;">Email</label>
-            <input type="email" name="Input.Email" id="Input.Email" value="@Input.Email" required autocomplete="username"
-                   placeholder="name@example.com"
-                   style="width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; box-sizing: border-box;"/>
+        <div class="form-group">
+            <label class="form-label" for="Input.Email">Email</label>
+            <InputText @bind-Value="Input.Email" id="Input.Email" name="Input.Email" class="form-input"
+                       placeholder="@("name@example.com")" autocomplete="username" />
+            <ValidationMessage For="() => Input.Email" />
         </div>
 
-        <div style="margin-bottom: 16px;">
-            <label for="Input.Password" style="display: block; margin-bottom: 4px; font-size: 14px;">Password</label>
-            <input type="password" name="Input.Password" id="Input.Password" required autocomplete="current-password"
-                   placeholder="Password"
-                   style="width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; box-sizing: border-box;"/>
+        <div class="form-group">
+            <label class="form-label" for="Input.Password">Password</label>
+            <InputText @bind-Value="Input.Password" id="Input.Password" name="Input.Password" type="password" class="form-input"
+                       placeholder="Password" autocomplete="current-password" />
+            <ValidationMessage For="() => Input.Password" />
         </div>
 
-        <div style="margin-bottom: 16px;">
-            <label style="font-size: 14px; cursor: pointer;">
-                <input type="checkbox" name="Input.RememberMe" value="true"/>
+        <div class="form-group">
+            <label>
+                <InputCheckbox @bind-Value="Input.RememberMe" name="Input.RememberMe" />
                 Remember me
             </label>
         </div>
 
-        <button type="submit"
-                style="width: 100%; padding: 8px 16px; background: #1677ff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">
-            Log in
-        </button>
-    </form>
+        <button type="submit" class="btn-primary btn-block">Log in</button>
+    </EditForm>
 
-    <div style="margin-top: 16px; text-align: center; font-size: 14px;">
-        <p><a href="Account/ForgotPassword" style="color: #1677ff;">Forgot your password?</a></p>
-        <p><a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" style="color: #1677ff;">Register as a new user</a></p>
+    <hr />
+
+    <div style="text-align: center;">
+        <p><a href="Account/ForgotPassword">Forgot your password?</a></p>
+        <p><a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a></p>
     </div>
 </div>

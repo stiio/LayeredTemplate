@@ -10,21 +10,21 @@
     {
         if (recoveryCodesLeft == 0)
         {
-            <div style="padding:12px 16px; background:#fff1f0; border:1px solid #ffa39e; border-radius:6px; margin-bottom:12px;">
+            <div class="alert alert-error">
                 <strong>You have no recovery codes left.</strong>
                 <p>You must <a href="Account/Manage/GenerateRecoveryCodes">generate a new set of recovery codes</a> before you can log in with a recovery code.</p>
             </div>
         }
         else if (recoveryCodesLeft == 1)
         {
-            <div style="padding:12px 16px; background:#fff1f0; border:1px solid #ffa39e; border-radius:6px; margin-bottom:12px;">
+            <div class="alert alert-error">
                 <strong>You have 1 recovery code left.</strong>
                 <p>You can <a href="Account/Manage/GenerateRecoveryCodes">generate a new set of recovery codes</a>.</p>
             </div>
         }
         else if (recoveryCodesLeft <= 3)
         {
-            <div style="padding:12px 16px; background:#fff7e6; border:1px solid #ffd591; border-radius:6px; margin-bottom:12px;">
+            <div class="alert alert-warning">
                 <strong>You have @recoveryCodesLeft recovery codes left.</strong>
                 <p>You should <a href="Account/Manage/GenerateRecoveryCodes">generate a new set of recovery codes</a>.</p>
             </div>
@@ -34,32 +34,32 @@
         {
             <form style="display:inline-block; margin-bottom:12px;" @formname="forget-browser" @onsubmit="OnSubmitForgetBrowserAsync" method="post">
                 <AntiforgeryToken/>
-                <button type="submit" style="padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px;">Forget this browser</button>
+                <button type="submit" class="btn-primary">Forget this browser</button>
             </form>
         }
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
-            <a href="Account/Manage/Disable2fa" style="display:inline-block; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; text-decoration:none;">Disable 2FA</a>
-            <a href="Account/Manage/GenerateRecoveryCodes" style="display:inline-block; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; text-decoration:none;">Reset recovery codes</a>
+            <a href="Account/Manage/Disable2fa" class="btn btn-default">Disable 2FA</a>
+            <a href="Account/Manage/GenerateRecoveryCodes" class="btn btn-default">Reset recovery codes</a>
         </div>
     }
 
     <h4>Authenticator app</h4>
     @if (!hasAuthenticator)
     {
-        <a href="Account/Manage/EnableAuthenticator" style="display:inline-block; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; text-decoration:none;">Add authenticator app</a>
+        <a href="Account/Manage/EnableAuthenticator" class="btn btn-default">Add authenticator app</a>
     }
     else
     {
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <a href="Account/Manage/EnableAuthenticator" style="display:inline-block; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; text-decoration:none;">Set up authenticator app</a>
-            <a href="Account/Manage/ResetAuthenticator" style="display:inline-block; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; text-decoration:none;">Reset authenticator app</a>
+            <a href="Account/Manage/EnableAuthenticator" class="btn btn-default">Set up authenticator app</a>
+            <a href="Account/Manage/ResetAuthenticator" class="btn btn-default">Reset authenticator app</a>
         </div>
     }
 }
 else
 {
-    <div style="padding:12px 16px; background:#fff1f0; border:1px solid #ffa39e; border-radius:6px;">
+    <div class="alert alert-error">
         <strong>Privacy and cookie policy have not been accepted.</strong>
         <p>You must accept the policy before you can enable two factor authentication.</p>
     </div>

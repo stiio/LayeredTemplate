@@ -6,23 +6,19 @@
 
 <h3>Delete Personal Data</h3>
 
-<div style="padding:12px 16px; background:#fff7e6; border:1px solid #ffd591; border-radius:6px; margin-bottom:16px;" role="alert">
-    <p>
-        <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
-    </p>
-</div>
+<div class="alert alert-warning">Deleting this data will permanently remove your account, and this cannot be recovered.</div>
 
-<div style="max-width:400px;">
-    <form method="post" @formname="delete-user" @onsubmit="OnValidSubmitAsync">
-        <AntiforgeryToken />
+<div class="card">
+    <EditForm Model="Input" method="post" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync">
+        <DataAnnotationsValidator />
 
         @if (requirePassword)
         {
-            <div style="margin-bottom:16px;">
-                <label for="Input.Password" style="display:block; margin-bottom:4px; font-weight:500;">Password</label>
-                <input type="password" name="Input.Password" id="Input.Password" value="@Input.Password" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px;" autocomplete="current-password" aria-required="true" placeholder="Please enter your password." />
+            <div class="form-group">
+                <label for="@Input.Password" class="form-label">Password</label>
+                <InputText type="password" @bind-Value="Input.Password" name="Input.Password" class="form-input" placeholder="Please enter your password." />
             </div>
         }
-        <button type="submit" style="width:100%; padding:8px 16px; background:#ff4d4f; color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px;">Delete data and close my account</button>
-    </form>
+        <button type="submit" class="btn-danger btn-block">Delete data and close my account</button>
+    </EditForm>
 </div>

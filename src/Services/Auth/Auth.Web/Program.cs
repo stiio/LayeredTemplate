@@ -70,7 +70,6 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     services.AddRazorComponents();
     services.AddControllersWithViews();
-    services.AddAntDesign();
 
     services.Configure<ReCaptchaSettings>(configuration.GetSection("ReCaptcha"));
     services.AddHttpClient<ReCaptchaService>();

@@ -2,22 +2,27 @@
 
 <PageTitle>Recovery code verification</PageTitle>
 
-<h1>Recovery code verification</h1>
-<hr/>
-<StatusMessage Message="@message"/>
-<p>
-    You have requested to log in with a recovery code. This login will not be remembered until you provide
-    an authenticator app code at log in or disable 2FA and log in again.
-</p>
+<div class="card">
+    <h3 style="text-align: center;">Recovery code verification</h3>
 
-<div style="max-width:400px;">
-    <form method="post" @formname="login-with-recovery-code" @onsubmit="OnValidSubmitAsync">
-        <AntiforgeryToken />
+    <hr />
 
-        <div style="margin-bottom:16px;">
-            <label for="Input.RecoveryCode" style="display:block; margin-bottom:4px; font-weight:500;">Recovery Code</label>
-            <input name="Input.RecoveryCode" id="Input.RecoveryCode" value="@Input.RecoveryCode" style="width:100%; padding:8px 12px; border:1px solid #d9d9d9; border-radius:6px; font-size:14px;" autocomplete="off" placeholder="RecoveryCode" />
+    <StatusMessage Message="@message"/>
+
+    <p>
+        You have requested to log in with a recovery code. This login will not be remembered until you provide
+        an authenticator app code at log in or disable 2FA and log in again.
+    </p>
+
+    <EditForm Model="Input" method="post" FormName="login-with-recovery-code" OnValidSubmit="OnValidSubmitAsync">
+        <DataAnnotationsValidator />
+
+        <div class="form-group">
+            <label for="Input.RecoveryCode" class="form-label">Recovery Code</label>
+            <InputText @bind-Value="Input.RecoveryCode" name="Input.RecoveryCode" id="Input.RecoveryCode"
+                   placeholder="RecoveryCode" class="form-input" />
         </div>
-        <button type="submit" style="width:100%; padding:8px 16px; background:#1677ff; color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px;">Log in</button>
-    </form>
+
+        <button type="submit" class="btn-primary btn-block">Log in</button>
+    </EditForm>
 </div>
