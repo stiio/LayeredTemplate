@@ -239,3 +239,89 @@ input[type="checkbox"] {
     border-top: 1px solid #f0eee6;
     margin-top: 8px;
 }
+
+/* --- Mobile logout (hidden on desktop) --- */
+.manage-mobile-logout { display: none; }
+
+/* ========================================
+   Responsive
+   ======================================== */
+
+/* Tablet & below: manage sidebar → top nav */
+@media (max-width: 768px) {
+    /* Auth pages */
+    .auth-center { padding: 16px; align-items: flex-start; padding-top: 48px; }
+    .auth-container { max-width: 100%; }
+    .card { padding: 24px 20px; border-radius: 12px; }
+
+    /* Manage layout: stack vertically */
+    .manage-wrapper { padding: 0; align-items: stretch; }
+    .manage-card {
+        flex-direction: column;
+        max-width: 100%;
+        min-height: 100vh;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+    }
+    .manage-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #f0eee6;
+        padding: 12px 0 0;
+        flex-direction: column;
+    }
+    .manage-sidebar-title {
+        padding: 0 16px 12px;
+        font-size: 16px;
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    .manage-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 0;
+        padding: 0 12px;
+    }
+    .manage-nav::-webkit-scrollbar { display: none; }
+    .manage-nav a {
+        white-space: nowrap;
+        padding: 8px 14px;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        font-size: 13px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+    .manage-nav a.active {
+        border-left-color: transparent;
+        border-bottom-color: #c96442;
+    }
+    .manage-nav a:hover {
+        border-left-color: transparent;
+    }
+    .manage-nav-footer { display: none; }
+    .manage-mobile-logout { display: block; margin-top: 24px; }
+    .manage-content { padding: 20px 16px; }
+
+    /* Typography */
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.3rem; }
+    h3 { font-size: 1.15rem; }
+
+    /* Buttons: taller touch targets */
+    button, .btn { min-height: 44px; padding: 12px 20px; }
+    .form-input { min-height: 44px; padding: 12px 14px; }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+    .auth-center { padding: 12px; padding-top: 32px; }
+    .card { padding: 20px 16px; border-radius: 8px; box-shadow: none; border: 1px solid #f0eee6; }
+
+    .manage-nav a { padding: 8px 10px; font-size: 12px; }
+    .manage-content { padding: 16px 12px; }
+}
