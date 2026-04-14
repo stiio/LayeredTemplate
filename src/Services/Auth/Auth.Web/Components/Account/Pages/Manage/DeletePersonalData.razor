@@ -16,7 +16,10 @@
         {
             <div class="form-group">
                 <label for="@Input.Password" class="form-label">Password</label>
-                <InputText type="password" @bind-Value="Input.Password" name="Input.Password" class="form-input" placeholder="Please enter your password." />
+                <div class="password-wrapper">
+                    <InputText type="password" @bind-Value="Input.Password" name="Input.Password" class="form-input" placeholder="Please enter your password." />
+                    <button type="button" class="password-toggle" aria-label="Toggle password">&#x25C8;</button>
+                </div>
             </div>
         }
         <button type="submit" class="btn-danger btn-block">Delete data and close my account</button>

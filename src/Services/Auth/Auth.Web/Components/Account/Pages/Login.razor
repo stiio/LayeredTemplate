@@ -20,8 +20,11 @@
 
         <div class="form-group">
             <label class="form-label" for="Input.Password">Password</label>
-            <InputText @bind-Value="Input.Password" id="Input.Password" name="Input.Password" type="password" class="form-input"
-                       placeholder="Password" autocomplete="current-password" />
+            <div class="password-wrapper">
+                <InputText @bind-Value="Input.Password" id="Input.Password" name="Input.Password" type="password" class="form-input"
+                           placeholder="Password" autocomplete="current-password" />
+                <button type="button" class="password-toggle" aria-label="Toggle password">&#x25C8;</button>
+            </div>
             <ValidationMessage For="() => Input.Password" />
         </div>
 

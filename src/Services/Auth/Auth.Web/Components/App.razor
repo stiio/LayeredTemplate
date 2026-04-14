@@ -10,5 +10,16 @@
 </head>
 <body>
     <Routes/>
+    <script>
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('.password-toggle');
+            if (!btn) return;
+            var input = btn.parentElement.querySelector('input');
+            if (!input) return;
+            var isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            btn.textContent = isPassword ? '\u25C9' : '\u25C8';
+        });
+    </script>
 </body>
 </html>

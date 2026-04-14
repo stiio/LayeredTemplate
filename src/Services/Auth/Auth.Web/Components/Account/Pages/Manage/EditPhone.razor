@@ -1,0 +1,48 @@
+@page "/Account/Manage/EditPhone"
+
+<PageTitle>Edit phone number</PageTitle>
+
+<h3>Edit phone number</h3>
+<StatusMessage Message="@message"/>
+
+<div class="card">
+    @if (!codeSent)
+    {
+        <EditForm Model="PhoneInput" method="post" FormName="send-code" OnValidSubmit="OnSendCodeAsync">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label class="form-label" for="@PhoneInput.PhoneNumber">Phone number</label>
+                <InputText @bind-Value="PhoneInput.PhoneNumber" name="PhoneInput.PhoneNumber" class="form-input"
+                           placeholder="@("+1234567890")" />
+                <ValidationMessage For="() => PhoneInput.PhoneNumber" />
+            </div>
+            <button type="submit" class="btn-primary btn-block">Send code</button>
+        </EditForm>
+    }
+    else
+    {
+        <div class="form-group">
+            <label class="form-label">Phone number</label>
+            <input type="text" value="@pendingPhone" disabled class="form-input" />
+        </div>
+
+        <EditForm Model="CodeInput" method="post" FormName="verify-code" OnValidSubmit="OnVerifyCodeAsync">
+            <DataAnnotationsValidator />
+            <input type="hidden" name="CodeInput.PhoneNumber" value="@pendingPhone" />
+
+            <div class="form-group">
+                <label class="form-label" for="@CodeInput.Code">Verification code</label>
+                <InputText @bind-Value="CodeInput.Code" name="CodeInput.Code" class="form-input"
+                           placeholder="Enter code" />
+                <ValidationMessage For="() => CodeInput.Code" />
+            </div>
+            <button type="submit" class="btn-primary btn-block">Verify</button>
+        </EditForm>
+    }
+
+    <hr />
+    <div style="text-align: center;">
+        <a href="Account/Manage">Back to profile</a>
+    </div>
+</div>

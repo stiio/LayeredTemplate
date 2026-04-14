@@ -123,10 +123,11 @@ input[type="password"].form-input, input[type="tel"].form-input {
     border-color: #3898ec;
     box-shadow: 0 0 0 3px rgba(56, 152, 236, 0.15);
 }
-.form-input:disabled {
-    background: #f0eee6;
+.form-input:disabled, .form-input[disabled] {
+    background: #edece4;
     color: #87867f;
     cursor: not-allowed;
+    border-color: #e0ded6;
 }
 .form-input::placeholder { color: #b0aea5; }
 
@@ -159,6 +160,54 @@ input[type="checkbox"] {
 .alert-success { background: #f4f8f0; border: 1px solid #c8d8b8; color: #4a7c2e; }
 .alert-warning { background: #fdf8f0; border: 1px solid #e8dcc0; color: #8a6d3b; }
 .alert-info    { background: #f0f4f8; border: 1px solid #c0d4e8; color: #3d6b8e; }
+
+/* --- Status Icons --- */
+.status-verified { color: #4a7c2e; font-weight: bold; font-size: 18px; flex-shrink: 0; }
+.status-unverified { color: #b53333; font-weight: bold; font-size: 18px; flex-shrink: 0; }
+
+/* --- Field Row (input + icon) --- */
+.field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.field-row .form-input { flex: 1; }
+
+/* --- Field Actions (buttons below input) --- */
+.field-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+.field-action {
+    font-size: 13px;
+    padding: 6px 14px;
+}
+
+/* --- Password Toggle --- */
+.password-wrapper {
+    position: relative;
+}
+.password-wrapper .form-input {
+    padding-right: 42px;
+}
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #87867f;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    min-height: auto;
+}
+.password-toggle:hover { color: #4d4c48; }
 
 /* --- Validation --- */
 .validation-message { color: #b53333; font-size: 13px; margin-top: 4px; }

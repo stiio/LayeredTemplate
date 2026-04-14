@@ -6,17 +6,48 @@
 <StatusMessage/>
 
 <div class="card">
-    <EditForm Model="Input" method="post" FormName="profile" OnValidSubmit="OnValidSubmitAsync">
-        <DataAnnotationsValidator />
+    <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" value="@username" disabled class="form-input" />
+    </div>
 
-        <div class="form-group">
-            <label for="username" class="form-label">Username</label>
-            <input type="text" id="username" value="@username" disabled placeholder="Choose your username." class="form-input" />
+    <div class="form-group">
+        <label class="form-label">Email</label>
+        <div class="field-row">
+            <input type="text" value="@(email ?? "Not set")" disabled class="form-input" />
+            <span class="@(isEmailConfirmed ? "status-verified" : "status-unverified")">
+                @(isEmailConfirmed ? "\u2713" : "\u2717")
+            </span>
         </div>
-        <div class="form-group">
-            <label for="@Input.PhoneNumber" class="form-label">Phone number</label>
-            <InputText @bind-Value="Input.PhoneNumber" name="Input.PhoneNumber" class="form-input" placeholder="Enter your phone number" />
+        <div class="field-actions">
+            <a href="Account/Manage/EditEmail" class="btn btn-default field-action">Edit</a>
+            @if (!isEmailConfirmed)
+            {
+                <form method="post" @formname="send-verification" @onsubmit="OnSendEmailVerificationAsync" style="display:inline;">
+                    <AntiforgeryToken />
+                    <button type="submit" class="btn btn-default field-action">Confirm Email</button>
+                </form>
+            }
         </div>
-        <button type="submit" class="btn-primary btn-block">Save</button>
-    </EditForm>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Phone</label>
+        <div class="field-row">
+            <input type="text" value="@(phoneNumber ?? "Not set")" disabled class="form-input" />
+            <span class="@(isPhoneConfirmed ? "status-verified" : "status-unverified")">
+                @(isPhoneConfirmed ? "\u2713" : "\u2717")
+            </span>
+        </div>
+        <div class="field-actions">
+            <a href="Account/Manage/EditPhone" class="btn btn-default field-action">Edit</a>
+            @if (!string.IsNullOrEmpty(phoneNumber) && !isPhoneConfirmed)
+            {
+                <form method="post" @formname="confirm-phone" @onsubmit="OnSendPhoneVerificationAsync" style="display:inline;">
+                    <AntiforgeryToken />
+                    <button type="submit" class="btn btn-default field-action">Confirm Phone</button>
+                </form>
+            }
+        </div>
+    </div>
 </div>

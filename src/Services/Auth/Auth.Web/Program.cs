@@ -102,6 +102,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
         .AddDefaultTokenProviders();
 
     services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+    services.AddSingleton<ISmsSender, NoOpSmsSender>();
 
     services.AddOpenIddict()
         .AddCore(options =>
