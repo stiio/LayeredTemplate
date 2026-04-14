@@ -64,7 +64,7 @@ HTTP Request
 
 ### Корень `/`
 
-- `Directory.Build.props` — общие настройки: net10.0, nullable, StyleCop, RootNamespace.
+- `Directory.Build.props` — общие настройки: net10.0, nullable, RootNamespace.
 - `.gitlab-ci.yml` — пайплайн GitLab CI.
 
 ## Ключевые паттерны
