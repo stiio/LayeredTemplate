@@ -9,8 +9,6 @@ namespace LayeredTemplate.Auth.Web.Components.Account.Pages.Manage;
 public partial class EditPhone : ComponentBase
 {
     private string? message;
-    private bool codeSent;
-    private string? pendingPhone;
 
     [Inject]
     private UserManager<ApplicationUser> UserManager { get; set; } = default!;
@@ -24,20 +22,24 @@ public partial class EditPhone : ComponentBase
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
+    /// <summary>Bound to the "send-code" form (step 1: enter phone number).</summary>
     [SupplyParameterFromForm(FormName = "send-code")]
     private PhoneInputModel PhoneInput { get; set; } = default!;
 
+    /// <summary>Bound to the "verify-code" form (step 2: enter verification code + hidden phone).</summary>
     [SupplyParameterFromForm(FormName = "verify-code")]
     private CodeInputModel CodeInput { get; set; } = default!;
 
-    [SupplyParameterFromForm(Name = "ResendPhone")]
-    private string? ResendPhone { get; set; }
-
+    /// <summary>Phone number passed via query string after code is sent. Drives step 2 UI.</summary>
     [SupplyParameterFromQuery]
     private string? Phone { get; set; }
 
+    /// <summary>Flag from query string indicating we're on step 2 (code entry).</summary>
     [SupplyParameterFromQuery]
     private bool CodeSent { get; set; }
+
+    /// <summary>True when we're on step 2 (code was sent, waiting for verification).</summary>
+    private bool IsVerifyStep => this.CodeSent && !string.IsNullOrEmpty(this.Phone);
 
     protected override async Task OnInitializedAsync()
     {
@@ -51,12 +53,7 @@ public partial class EditPhone : ComponentBase
             return;
         }
 
-        if (this.CodeSent && !string.IsNullOrEmpty(this.Phone))
-        {
-            this.codeSent = true;
-            this.pendingPhone = this.Phone;
-        }
-        else
+        if (!this.IsVerifyStep)
         {
             var currentPhone = await this.UserManager.GetPhoneNumberAsync(user);
             this.PhoneInput.PhoneNumber ??= currentPhone;
@@ -73,12 +70,7 @@ public partial class EditPhone : ComponentBase
         }
 
         var phone = this.PhoneInput.PhoneNumber!;
-
-        if (!user.PhoneNumberConfirmed)
-        {
-            var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, phone);
-            await this.SmsSender.SendAsync(phone, $"Your verification code is: {code}");
-        }
+        await this.SendVerificationCodeAsync(user, phone);
 
         this.RedirectManager.RedirectTo(
             "Account/Manage/EditPhone",
@@ -102,8 +94,6 @@ public partial class EditPhone : ComponentBase
         if (!result.Succeeded)
         {
             this.message = "Error: Invalid verification code.";
-            this.codeSent = true;
-            this.pendingPhone = this.CodeInput.PhoneNumber;
             return;
         }
 
@@ -116,20 +106,25 @@ public partial class EditPhone : ComponentBase
     private async Task OnResendCodeAsync()
     {
         var user = await this.UserManager.GetUserAsync(this.HttpContext.User);
-        if (user is null || string.IsNullOrEmpty(this.ResendPhone))
+        if (user is null || string.IsNullOrEmpty(this.Phone))
         {
             return;
         }
 
-        if (!user.PhoneNumberConfirmed)
-        {
-            var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, this.ResendPhone);
-            await this.SmsSender.SendAsync(this.ResendPhone, $"Your verification code is: {code}");
-        }
+        await this.SendVerificationCodeAsync(user, this.Phone);
 
         this.RedirectManager.RedirectTo(
             "Account/Manage/EditPhone",
-            new() { ["phone"] = this.ResendPhone, ["codeSent"] = true });
+            new() { ["phone"] = this.Phone, ["codeSent"] = true });
+    }
+
+    private async Task SendVerificationCodeAsync(ApplicationUser user, string phone)
+    {
+        if (!user.PhoneNumberConfirmed)
+        {
+            var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, phone);
+            await this.SmsSender.SendAsync(phone, $"Your verification code is: {code}");
+        }
     }
 
     private sealed class PhoneInputModel
@@ -142,6 +137,7 @@ public partial class EditPhone : ComponentBase
 
     private sealed class CodeInputModel
     {
+        /// <summary>Passed via hidden input to preserve phone across form submit.</summary>
         public string? PhoneNumber { get; set; }
 
         [Required]
