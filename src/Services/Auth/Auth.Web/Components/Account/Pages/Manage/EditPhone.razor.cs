@@ -73,8 +73,12 @@ public partial class EditPhone : ComponentBase
         }
 
         var phone = this.PhoneInput.PhoneNumber!;
-        var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, phone);
-        await this.SmsSender.SendAsync(phone, $"Your verification code is: {code}");
+
+        if (!user.PhoneNumberConfirmed)
+        {
+            var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, phone);
+            await this.SmsSender.SendAsync(phone, $"Your verification code is: {code}");
+        }
 
         this.RedirectManager.RedirectTo(
             "Account/Manage/EditPhone",
@@ -117,8 +121,11 @@ public partial class EditPhone : ComponentBase
             return;
         }
 
-        var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, this.ResendPhone);
-        await this.SmsSender.SendAsync(this.ResendPhone, $"Your verification code is: {code}");
+        if (!user.PhoneNumberConfirmed)
+        {
+            var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, this.ResendPhone);
+            await this.SmsSender.SendAsync(this.ResendPhone, $"Your verification code is: {code}");
+        }
 
         this.RedirectManager.RedirectTo(
             "Account/Manage/EditPhone",

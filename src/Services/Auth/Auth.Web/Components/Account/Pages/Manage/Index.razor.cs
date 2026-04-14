@@ -78,8 +78,11 @@ public partial class Index : ComponentBase
             return;
         }
 
-        var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, this.phoneNumber);
-        await this.SmsSender.SendAsync(this.phoneNumber, $"Your verification code is: {code}");
+        if (!user.PhoneNumberConfirmed)
+        {
+            var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, this.phoneNumber);
+            await this.SmsSender.SendAsync(this.phoneNumber, $"Your verification code is: {code}");
+        }
 
         this.RedirectManager.RedirectTo(
             "Account/Manage/EditPhone",
