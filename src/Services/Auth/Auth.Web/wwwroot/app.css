@@ -162,8 +162,9 @@ input[type="checkbox"] {
 .alert-info    { background: #f0f4f8; border: 1px solid #c0d4e8; color: #3d6b8e; }
 
 /* --- Status Icons --- */
-.status-verified { color: #4a7c2e; font-weight: bold; font-size: 18px; flex-shrink: 0; }
-.status-unverified { color: #b53333; font-weight: bold; font-size: 18px; flex-shrink: 0; }
+.status-verified { color: #4a7c2e; font-weight: bold; font-size: 18px; flex-shrink: 0; width: 20px; text-align: center; }
+.status-unverified { color: #b53333; font-weight: bold; font-size: 18px; flex-shrink: 0; width: 20px; text-align: center; }
+.status-icon-spacer { display: inline-block; width: 20px; flex-shrink: 0; }
 
 /* --- Field Row (input + icon) --- */
 .field-row {

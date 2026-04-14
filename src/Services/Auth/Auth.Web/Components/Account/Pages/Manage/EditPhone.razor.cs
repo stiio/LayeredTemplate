@@ -30,6 +30,9 @@ public partial class EditPhone : ComponentBase
     [SupplyParameterFromForm(FormName = "verify-code")]
     private CodeInputModel CodeInput { get; set; } = default!;
 
+    [SupplyParameterFromForm(Name = "ResendPhone")]
+    private string? ResendPhone { get; set; }
+
     [SupplyParameterFromQuery]
     private string? Phone { get; set; }
 
@@ -104,6 +107,22 @@ public partial class EditPhone : ComponentBase
             "Account/Manage",
             "Your phone number has been updated.",
             this.HttpContext);
+    }
+
+    private async Task OnResendCodeAsync()
+    {
+        var user = await this.UserManager.GetUserAsync(this.HttpContext.User);
+        if (user is null || string.IsNullOrEmpty(this.ResendPhone))
+        {
+            return;
+        }
+
+        var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, this.ResendPhone);
+        await this.SmsSender.SendAsync(this.ResendPhone, $"Your verification code is: {code}");
+
+        this.RedirectManager.RedirectTo(
+            "Account/Manage/EditPhone",
+            new() { ["phone"] = this.ResendPhone, ["codeSent"] = true });
     }
 
     private sealed class PhoneInputModel
