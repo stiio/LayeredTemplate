@@ -123,11 +123,11 @@ input[type="password"].form-input, input[type="tel"].form-input {
     border-color: #3898ec;
     box-shadow: 0 0 0 3px rgba(56, 152, 236, 0.15);
 }
-.form-input:disabled, .form-input[disabled] {
-    background: #edece4;
-    color: #87867f;
+.form-input:disabled, .form-input[disabled], input:disabled.form-input {
+    background: #eeedea;
+    color: #8a897f;
     cursor: not-allowed;
-    border-color: #e0ded6;
+    border-color: #dddcd6;
 }
 .form-input::placeholder { color: #b0aea5; }
 
