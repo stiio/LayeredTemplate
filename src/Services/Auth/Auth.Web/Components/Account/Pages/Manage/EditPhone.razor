@@ -14,7 +14,7 @@
             <div class="form-group">
                 <label class="form-label" for="@PhoneInput.PhoneNumber">Phone number</label>
                 <InputText @bind-Value="PhoneInput.PhoneNumber" name="PhoneInput.PhoneNumber" class="form-input"
-                           placeholder="+1234567890" />
+                           placeholder="+1234567890" data-phone-prefix="" />
                 <ValidationMessage For="() => PhoneInput.PhoneNumber" />
             </div>
             <button type="submit" class="btn-primary btn-block">Send code</button>
@@ -43,32 +43,9 @@
         <div style="margin-top: 12px; text-align: center;">
             <form method="post" @formname="resend-code" @onsubmit="OnResendCodeAsync" style="display:inline;">
                 <AntiforgeryToken />
-                <button type="submit" id="resend-btn" class="btn-link">Resend code</button>
+                <button type="submit" class="btn-link" data-resend-cooldown="60">Resend code</button>
             </form>
         </div>
-
-        <script>
-            (function() {
-                var btn = document.getElementById('resend-btn');
-                if (!btn) return;
-                var seconds = 60;
-                var originalText = btn.textContent;
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
-                btn.style.cursor = 'not-allowed';
-                var timer = setInterval(function() {
-                    seconds--;
-                    btn.textContent = 'Resend code (' + seconds + 's)';
-                    if (seconds <= 0) {
-                        clearInterval(timer);
-                        btn.textContent = originalText;
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
-                        btn.style.cursor = 'pointer';
-                    }
-                }, 1000);
-            })();
-        </script>
     }
 
     <hr />
