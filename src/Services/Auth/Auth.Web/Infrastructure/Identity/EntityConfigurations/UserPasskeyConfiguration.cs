@@ -8,9 +8,17 @@ public class UserPasskeyConfiguration : IEntityTypeConfiguration<IdentityUserPas
 {
     public void Configure(EntityTypeBuilder<IdentityUserPasskey<string>> builder)
     {
-        builder.ToTable("user_passkeys", t => t.ExcludeFromMigrations());
+        builder.ToTable("user_passkeys");
+
+        builder.HasKey(x => x.CredentialId);
+
+        builder.Property(x => x.CredentialId)
+            .HasMaxLength(1024);
 
         builder.Property(x => x.UserId)
-            .HasColumnType("uuid");
+            .HasColumnType("uuid")
+            .HasConversion<Guid>();
+
+        builder.OwnsOne(p => p.Data).ToJson();
     }
 }

@@ -8,10 +8,11 @@ public class RoleConfiguration : IEntityTypeConfiguration<IdentityRole>
 {
     public void Configure(EntityTypeBuilder<IdentityRole> builder)
     {
-        builder.ToTable("roles", t => t.ExcludeFromMigrations());
+        builder.ToTable("roles");
 
         builder.Property(x => x.Id)
-            .HasColumnType("uuid");
+            .HasColumnType("uuid")
+            .HasConversion<Guid>();
 
         builder.Property(x => x.Name)
             .HasMaxLength(32);
@@ -20,6 +21,6 @@ public class RoleConfiguration : IEntityTypeConfiguration<IdentityRole>
             .HasMaxLength(32);
 
         builder.Property(x => x.ConcurrencyStamp)
-            .HasMaxLength(32);
+            .HasMaxLength(36);
     }
 }

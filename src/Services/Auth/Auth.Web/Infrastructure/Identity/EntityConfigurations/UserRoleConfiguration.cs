@@ -8,12 +8,14 @@ public class UserRoleConfiguration : IEntityTypeConfiguration<IdentityUserRole<s
 {
     public void Configure(EntityTypeBuilder<IdentityUserRole<string>> builder)
     {
-        builder.ToTable("user_roles", t => t.ExcludeFromMigrations());
+        builder.ToTable("user_roles");
 
         builder.Property(x => x.RoleId)
-            .HasColumnType("uuid");
+            .HasColumnType("uuid")
+            .HasConversion<Guid>();
 
         builder.Property(x => x.UserId)
-            .HasColumnType("uuid");
+            .HasColumnType("uuid")
+            .HasConversion<Guid>();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,11 +11,15 @@ public class UserConfiguration : IEntityTypeConfiguration<ApplicationUser>
     {
         builder.ToTable("users");
 
+        builder.HasKey(x => x.Id);
+
         builder.Property(x => x.Id)
-            .HasColumnType("uuid");
+            .HasColumnType("uuid")
+            .HasConversion<Guid>();
 
         builder.Property(x => x.ConcurrencyStamp)
-            .HasMaxLength(32);
+            .HasMaxLength(36)
+            .IsConcurrencyToken();
 
         builder.Property(x => x.SecurityStamp)
             .HasMaxLength(32);
@@ -36,5 +41,28 @@ public class UserConfiguration : IEntityTypeConfiguration<ApplicationUser>
 
         builder.Property(x => x.PasswordHash)
             .HasMaxLength(256);
+
+        builder.HasIndex(u => u.NormalizedUserName).HasDatabaseName("UserNameIndex").IsUnique();
+        builder.HasIndex(u => u.NormalizedEmail).HasDatabaseName("EmailIndex").IsUnique();
+
+        builder.HasMany<IdentityUserClaim<string>>()
+            .WithOne()
+            .HasForeignKey(uc => uc.UserId)
+            .IsRequired();
+
+        builder.HasMany<IdentityUserLogin<string>>()
+            .WithOne()
+            .HasForeignKey(ul => ul.UserId)
+            .IsRequired();
+
+        builder.HasMany<IdentityUserToken<string>>()
+            .WithOne()
+            .HasForeignKey(ut => ut.UserId)
+            .IsRequired();
+
+        builder.HasMany<IdentityUserPasskey<string>>()
+            .WithOne()
+            .HasForeignKey(up => up.UserId)
+            .IsRequired();
     }
 }

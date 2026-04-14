@@ -10,8 +10,11 @@ public class UserTokenConfiguration : IEntityTypeConfiguration<IdentityUserToken
     {
         builder.ToTable("user_tokens");
 
+        builder.HasKey(t => new { t.UserId, t.LoginProvider, t.Name });
+
         builder.Property(x => x.UserId)
-            .HasColumnType("uuid");
+            .HasColumnType("uuid")
+            .HasConversion<Guid>();
 
         builder.Property(x => x.LoginProvider)
             .HasMaxLength(128);

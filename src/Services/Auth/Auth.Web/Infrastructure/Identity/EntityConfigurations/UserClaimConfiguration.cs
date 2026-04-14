@@ -4,15 +4,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.EntityConfigurations;
 
-public class RoleClaimConfiguration : IEntityTypeConfiguration<IdentityRoleClaim<string>>
+public class UserClaimConfiguration : IEntityTypeConfiguration<IdentityUserClaim<string>>
 {
-    public void Configure(EntityTypeBuilder<IdentityRoleClaim<string>> builder)
+    public void Configure(EntityTypeBuilder<IdentityUserClaim<string>> builder)
     {
-        builder.ToTable("role_claims");
+        builder.ToTable("user_claims");
 
-        builder.Property(x => x.RoleId)
-            .HasColumnType("uuid")
-            .HasConversion<Guid>();
+        builder.HasKey(x => x.Id);
 
         builder.Property(x => x.ClaimType)
             .HasMaxLength(128);

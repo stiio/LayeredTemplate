@@ -11,6 +11,7 @@ using LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 using LayeredTemplate.Plugins.Options;
 using LayeredTemplate.Plugins.Options.Constants;
 using LayeredTemplate.Plugins.StartupRunner;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -81,6 +82,10 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.RegisterDbContext(configuration[ConnectionStrings.AuthDbConnection]!);
     services.AddIdentityServices();
     services.AddOpenIddictApp(configuration, env);
+
+    services.AddDataProtection()
+        .SetApplicationName("LayeredTemplate.Auth")
+        .PersistKeysToDbContext<AuthDbContext>();
 
     services.AddHttpClient<ReCaptchaService>();
 

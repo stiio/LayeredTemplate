@@ -10,14 +10,17 @@ public class UserLoginConfiguration : IEntityTypeConfiguration<IdentityUserLogin
     {
         builder.ToTable("user_logins");
 
+        builder.HasKey(l => new { l.LoginProvider, l.ProviderKey });
+
         builder.Property(x => x.UserId)
-            .HasColumnType("uuid");
+            .HasColumnType("uuid")
+            .HasConversion<Guid>();
 
         builder.Property(x => x.LoginProvider)
             .HasMaxLength(128);
 
         builder.Property(x => x.ProviderKey)
-            .HasMaxLength(256);
+            .HasMaxLength(128);
 
         builder.Property(x => x.ProviderDisplayName)
             .HasMaxLength(128);

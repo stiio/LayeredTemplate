@@ -8,6 +8,7 @@ using LayeredTemplate.App.Infrastructure.Services.Users;
 using LayeredTemplate.Plugins.Options;
 using LayeredTemplate.Plugins.Options.Constants;
 using LayeredTemplate.Plugins.StartupRunner;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,7 +25,9 @@ public static class ConfigureServices
 
         services.RegisterDbContext(configuration[ConnectionStrings.WriteDbConnection]!);
 
-        services.AddDataProtection().PersistKeysToAppDbContext();
+        services.AddDataProtection()
+            .SetApplicationName("LayeredTemplate.App")
+            .PersistKeysToAppDbContext();
 
         services.ConfigureAuthentication(configuration);
         services.ConfigureAuthorization();
