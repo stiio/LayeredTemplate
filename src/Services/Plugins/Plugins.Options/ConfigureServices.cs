@@ -10,5 +10,6 @@ public static class ConfigureServices
     {
         services.Configure<SmtpSettings>(configuration.GetSection(nameof(SmtpSettings)));
         services.Configure<AppSettings>(configuration.GetSection(nameof(AppSettings)));
+        services.Configure<ReCaptchaSettings>(configuration.GetSection(nameof(ReCaptchaSettings)));
     }
 }

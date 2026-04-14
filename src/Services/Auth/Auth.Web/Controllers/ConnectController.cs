@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using LayeredTemplate.Auth.Web.Infrastructure.Data;
+using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;

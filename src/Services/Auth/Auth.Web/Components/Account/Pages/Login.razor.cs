@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using LayeredTemplate.Auth.Web.Infrastructure.Data;
+using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components;

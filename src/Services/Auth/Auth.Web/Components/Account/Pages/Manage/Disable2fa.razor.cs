@@ -1,5 +1,4 @@
-using LayeredTemplate.Auth.Web.Infrastructure.Data;
-
+using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 

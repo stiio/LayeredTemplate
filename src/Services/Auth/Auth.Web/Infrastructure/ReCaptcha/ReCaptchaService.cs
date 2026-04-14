@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LayeredTemplate.Plugins.Options.Models;
 using Microsoft.Extensions.Options;
 
 namespace LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;

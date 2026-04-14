@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.5"/>
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.5"/>
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1"/>
@@ -35,6 +36,10 @@
       <ProjectReference Include="..\..\Plugins\Plugins.Http.Extensions\Plugins.Http.Extensions.csproj" />
       <ProjectReference Include="..\..\Plugins\Plugins.Options\Plugins.Options.csproj" />
       <ProjectReference Include="..\..\Plugins\Plugins.StartupRunner\Plugins.StartupRunner.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Infrastructure\Identity\Migrations\" />
     </ItemGroup>
 
 </Project>

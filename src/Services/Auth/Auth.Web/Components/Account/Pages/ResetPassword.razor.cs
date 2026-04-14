@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text;
-using LayeredTemplate.Auth.Web.Infrastructure.Data;
+using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
@@ -41,6 +41,7 @@ public partial class ResetPassword : ComponentBase
     private async Task OnValidSubmitAsync()
     {
         var user = await this.UserManager.FindByEmailAsync(this.Input.Email);
+
         if (user is null)
         {
             // Don't reveal that the user does not exist

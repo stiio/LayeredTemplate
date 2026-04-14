@@ -2,15 +2,18 @@ using HealthChecks.UI.Client;
 using LayeredTemplate.Auth.Web.Components;
 using LayeredTemplate.Auth.Web.Components.Account;
 using LayeredTemplate.Auth.Web.Extensions;
-using LayeredTemplate.Auth.Web.Infrastructure.Data;
 using LayeredTemplate.Auth.Web.Infrastructure.Email;
-using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
+using LayeredTemplate.Auth.Web.Infrastructure.Identity.Contexts;
+using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
 using LayeredTemplate.Auth.Web.Infrastructure.Sms;
+using LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
+using LayeredTemplate.Plugins.Options;
+using LayeredTemplate.Plugins.Options.Constants;
 using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Exceptions;
 using Serilog.Exceptions.Core;
@@ -67,17 +70,25 @@ void ConfigureConfiguration(ConfigurationManager configuration, IWebHostEnvironm
 void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
 {
     services.AddPluginStartupRunner();
+    services.AddPluginOptions(configuration);
+
     services.AddStartupTask<RunMigrationsTask>();
     services.AddStartupTask<SeedOidcClientsTask>();
 
     services.AddRazorComponents();
     services.AddControllersWithViews();
 
-    services.Configure<ReCaptchaSettings>(configuration.GetSection("ReCaptcha"));
+    services.RegisterDbContext(configuration[ConnectionStrings.AuthDbConnection]!);
+    services.AddIdentityServices();
+    services.AddOpenIddictApp(configuration, env);
+
     services.AddHttpClient<ReCaptchaService>();
 
-    services.AddCascadingAuthenticationState();
     services.AddScoped<IdentityRedirectManager>();
+    services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+    services.AddSingleton<ISmsSender, NoOpSmsSender>();
+
+    services.AddCascadingAuthenticationState();
 
     services.AddAuthentication(options =>
         {
@@ -88,55 +99,18 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     services.AddHealthChecks();
 
-    var connectionString = configuration.GetConnectionString("DefaultConnection") ??
-                           throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-    services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(connectionString));
-    services.AddDatabaseDeveloperPageExceptionFilter();
-
-    services.AddIdentityCore<ApplicationUser>(options =>
-        {
-            options.SignIn.RequireConfirmedAccount = true;
-            options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
-        })
-        .AddEntityFrameworkStores<ApplicationDbContext>()
-        .AddSignInManager()
-        .AddDefaultTokenProviders();
-
-    services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-    services.AddSingleton<ISmsSender, NoOpSmsSender>();
-
-    services.AddOpenIddict()
-        .AddCore(options =>
-        {
-            options.UseEntityFrameworkCore()
-                .UseDbContext<ApplicationDbContext>();
-        })
-        .AddServer(options =>
-        {
-            options.SetAuthorizationEndpointUris("/connect/authorize")
-                .SetTokenEndpointUris("/connect/token")
-                .SetUserInfoEndpointUris("/connect/userinfo")
-                .SetEndSessionEndpointUris("/connect/logout");
-
-            options.AllowAuthorizationCodeFlow()
-                .RequireProofKeyForCodeExchange();
-
-            options.AddDevelopmentEncryptionCertificate()
-                .AddDevelopmentSigningCertificate();
-
-            options.RegisterScopes("openid", "profile", "email");
-
-            options.UseAspNetCore()
-                .EnableAuthorizationEndpointPassthrough()
-                .EnableTokenEndpointPassthrough()
-                .EnableUserInfoEndpointPassthrough()
-                .EnableEndSessionEndpointPassthrough();
-        });
+    services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.All;
+        options.ForwardLimit = 2;
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
 }
 
 void ConfigureMiddleware(WebApplication app, IWebHostEnvironment env)
 {
+    app.UseForwardedHeaders();
     app.UseRequestLogging();
 
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
