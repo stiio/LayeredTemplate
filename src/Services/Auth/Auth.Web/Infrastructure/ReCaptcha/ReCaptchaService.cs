@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 
-namespace LayeredTemplate.Auth.Web.Services;
+namespace LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
 
 public class ReCaptchaService
 {

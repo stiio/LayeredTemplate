@@ -2,7 +2,7 @@
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
-namespace LayeredTemplate.Auth.Web.StartupTasks;
+namespace LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 
 public class SeedOidcClientsTask : IStartupTask
 {

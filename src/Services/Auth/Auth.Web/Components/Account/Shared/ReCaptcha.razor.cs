@@ -1,4 +1,4 @@
-using LayeredTemplate.Auth.Web.Services;
+using LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Options;
 

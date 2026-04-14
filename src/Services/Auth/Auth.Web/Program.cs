@@ -1,10 +1,12 @@
 using HealthChecks.UI.Client;
 using LayeredTemplate.Auth.Web.Components;
 using LayeredTemplate.Auth.Web.Components.Account;
-using LayeredTemplate.Auth.Web.Data;
 using LayeredTemplate.Auth.Web.Extensions;
-using LayeredTemplate.Auth.Web.Services;
-using LayeredTemplate.Auth.Web.StartupTasks;
+using LayeredTemplate.Auth.Web.Infrastructure.Data;
+using LayeredTemplate.Auth.Web.Infrastructure.Email;
+using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
+using LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
+using LayeredTemplate.Auth.Web.Infrastructure.Sms;
 using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;

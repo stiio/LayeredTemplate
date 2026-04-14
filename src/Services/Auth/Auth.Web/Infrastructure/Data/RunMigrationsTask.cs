@@ -1,8 +1,7 @@
-﻿using LayeredTemplate.Auth.Web.Data;
-using LayeredTemplate.Plugins.StartupRunner.Services;
+﻿using LayeredTemplate.Plugins.StartupRunner.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace LayeredTemplate.Auth.Web.StartupTasks;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Data;
 
 public class RunMigrationsTask : IStartupTask
 {

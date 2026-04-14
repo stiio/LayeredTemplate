@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace LayeredTemplate.Auth.Web.Data.Migrations
+namespace LayeredTemplate.Auth.Web.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
     public partial class Init : Migration

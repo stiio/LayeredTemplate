@@ -1,8 +1,8 @@
-using LayeredTemplate.Auth.Web.Data;
+using LayeredTemplate.Auth.Web.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
-namespace LayeredTemplate.Auth.Web.Components.Account;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Email;
 
 // Remove the "else if (EmailSender is IdentityNoOpEmailSender)" block from RegisterConfirmation.razor after updating with a real implementation.
 internal sealed class IdentityNoOpEmailSender : IEmailSender<ApplicationUser>

@@ -1,4 +1,4 @@
-namespace LayeredTemplate.Auth.Web.Services;
+namespace LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
 
 public class ReCaptchaSettings
 {

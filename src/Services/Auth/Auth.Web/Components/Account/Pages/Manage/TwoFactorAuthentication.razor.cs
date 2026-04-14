@@ -1,4 +1,4 @@
-using LayeredTemplate.Auth.Web.Data;
+using LayeredTemplate.Auth.Web.Infrastructure.Data;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http.Features;
