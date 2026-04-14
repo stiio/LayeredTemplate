@@ -38,7 +38,7 @@ public partial class ResetAuthenticator : ComponentBase
         await this.SignInManager.RefreshSignInAsync(user);
 
         this.RedirectManager.RedirectToWithStatus(
-            "Account/Manage/EnableAuthenticator",
+            "account/manage/enable_authenticator",
             "Your authenticator app key has been reset, you will need to configure your authenticator app using the new key.",
             this.HttpContext);
     }

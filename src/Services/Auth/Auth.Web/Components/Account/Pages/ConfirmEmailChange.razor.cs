@@ -36,7 +36,7 @@ public partial class ConfirmEmailChange : ComponentBase
         if (this.UserId is null || this.Email is null || this.Code is null)
         {
             this.RedirectManager.RedirectToWithStatus(
-                "Account/Login", "Error: Invalid email change confirmation link.", this.HttpContext);
+                "account/login", "Error: Invalid email change confirmation link.", this.HttpContext);
             return;
         }
 

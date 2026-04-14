@@ -54,7 +54,7 @@ public partial class LoginWithRecoveryCode : ComponentBase
         else if (result.IsLockedOut)
         {
             this.Logger.LogWarning("User account locked out.");
-            this.RedirectManager.RedirectTo("Account/Lockout");
+            this.RedirectManager.RedirectTo("account/lockout");
         }
         else
         {

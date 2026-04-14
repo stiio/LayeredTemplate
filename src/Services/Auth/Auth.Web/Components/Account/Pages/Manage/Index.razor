@@ -1,4 +1,4 @@
-@page "/Account/Manage"
+@page "/account/manage"
 
 <PageTitle>Profile</PageTitle>
 
@@ -23,7 +23,7 @@
             </span>
         </div>
         <div class="field-actions">
-            <a href="Account/Manage/EditEmail" class="btn btn-default field-action">Edit</a>
+            <a href="account/manage/edit_email" class="btn btn-default field-action">Edit</a>
             @if (!isEmailConfirmed)
             {
                 <form method="post" @formname="send-verification" @onsubmit="OnSendEmailVerificationAsync" style="display:inline;">
@@ -43,7 +43,7 @@
             </span>
         </div>
         <div class="field-actions">
-            <a href="Account/Manage/EditPhone" class="btn btn-default field-action">Edit</a>
+            <a href="account/manage/edit_phone" class="btn btn-default field-action">Edit</a>
             @if (!string.IsNullOrEmpty(phoneNumber) && !isPhoneConfirmed)
             {
                 <form method="post" @formname="confirm-phone" @onsubmit="OnSendPhoneVerificationAsync" style="display:inline;">

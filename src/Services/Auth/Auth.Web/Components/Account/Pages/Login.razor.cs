@@ -50,18 +50,18 @@ public partial class Login : ComponentBase
         if (result.Succeeded)
         {
             this.Logger.LogInformation("User logged in.");
-            this.RedirectManager.RedirectTo(this.ReturnUrl ?? "Account/Manage");
+            this.RedirectManager.RedirectTo(this.ReturnUrl ?? "account/manage");
         }
         else if (result.RequiresTwoFactor)
         {
             this.RedirectManager.RedirectTo(
-                "Account/LoginWith2fa",
+                "account/login_with_2fa",
                 new() { ["returnUrl"] = this.ReturnUrl, ["rememberMe"] = this.Input.RememberMe });
         }
         else if (result.IsLockedOut)
         {
             this.Logger.LogWarning("User account locked out.");
-            this.RedirectManager.RedirectTo("Account/Lockout");
+            this.RedirectManager.RedirectTo("account/lockout");
         }
         else
         {

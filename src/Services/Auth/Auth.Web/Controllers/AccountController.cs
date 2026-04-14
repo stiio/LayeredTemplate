@@ -6,19 +6,19 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.Auth.Web.Controllers;
 
-[Route("[controller]")]
+[Route("account")]
 public class AccountController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager) : Controller
 {
-    [HttpPost("Logout")]
+    [HttpPost("logout")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout(string? returnUrl = null)
     {
         await signInManager.SignOutAsync();
-        return this.LocalRedirect(returnUrl ?? "~/Account/Login");
+        return this.LocalRedirect(returnUrl ?? "~/account/login");
     }
 
     [Authorize]
-    [HttpPost("Manage/DownloadPersonalData")]
+    [HttpPost("manage/download_personal_data")]
     public async Task<IActionResult> DownloadPersonalData()
     {
         var user = await userManager.GetUserAsync(this.User);

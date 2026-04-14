@@ -82,7 +82,7 @@ public partial class Register : ComponentBase
         var code = await this.UserManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
         var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
-            this.NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
+            this.NavigationManager.ToAbsoluteUri("account/confirm_email").AbsoluteUri,
             new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = this.ReturnUrl });
 
         await this.EmailSender.SendConfirmationLinkAsync(user, this.Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
@@ -90,7 +90,7 @@ public partial class Register : ComponentBase
         if (this.UserManager.Options.SignIn.RequireConfirmedAccount)
         {
             this.RedirectManager.RedirectTo(
-                "Account/RegisterConfirmation",
+                "account/register_confirmation",
                 new() { ["email"] = this.Input.Email, ["returnUrl"] = this.ReturnUrl });
         }
         else

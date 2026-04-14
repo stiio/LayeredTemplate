@@ -68,7 +68,7 @@ public partial class Email : ComponentBase
         var code = await this.UserManager.GenerateChangeEmailTokenAsync(this.user, this.Input.NewEmail);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
         var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
-            this.NavigationManager.ToAbsoluteUri("Account/ConfirmEmailChange").AbsoluteUri,
+            this.NavigationManager.ToAbsoluteUri("account/confirm_email_change").AbsoluteUri,
             new Dictionary<string, object?> { ["userId"] = userId, ["email"] = this.Input.NewEmail, ["code"] = code });
 
         await this.EmailSender.SendConfirmationLinkAsync(this.user, this.Input.NewEmail, HtmlEncoder.Default.Encode(callbackUrl));
@@ -93,7 +93,7 @@ public partial class Email : ComponentBase
         var code = await this.UserManager.GenerateEmailConfirmationTokenAsync(this.user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
         var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
-            this.NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
+            this.NavigationManager.ToAbsoluteUri("account/confirm_email").AbsoluteUri,
             new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
 
         await this.EmailSender.SendConfirmationLinkAsync(this.user, this.email, HtmlEncoder.Default.Encode(callbackUrl));

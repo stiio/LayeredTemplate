@@ -52,7 +52,7 @@ public partial class Disable2fa : ComponentBase
         var userId = await this.UserManager.GetUserIdAsync(this.user);
         this.Logger.LogInformation("User with ID '{UserId}' has disabled 2fa.", userId);
         this.RedirectManager.RedirectToWithStatus(
-            "Account/Manage/TwoFactorAuthentication",
+            "account/manage/two_factor_authentication",
             "2fa has been disabled. You can reenable 2fa when you setup an authenticator app",
             this.HttpContext);
     }

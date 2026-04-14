@@ -62,7 +62,7 @@ public partial class Index : ComponentBase
         var code = await this.UserManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
         var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
-            this.NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
+            this.NavigationManager.ToAbsoluteUri("account/confirm_email").AbsoluteUri,
             new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
 
         await this.EmailSender.SendConfirmationLinkAsync(user, this.email, HtmlEncoder.Default.Encode(callbackUrl));
@@ -85,7 +85,7 @@ public partial class Index : ComponentBase
         }
 
         this.RedirectManager.RedirectTo(
-            "Account/Manage/EditPhone",
+            "account/manage/edit_phone",
             new() { ["phone"] = this.phoneNumber, ["codeSent"] = true });
     }
 }

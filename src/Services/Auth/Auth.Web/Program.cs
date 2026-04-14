@@ -118,10 +118,10 @@ void ConfigureMiddleware(WebApplication app, IWebHostEnvironment env)
     app.UseForwardedHeaders();
     app.UseRequestLogging();
 
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseExceptionHandler("/error", createScopeForErrors: true);
     app.UseHsts();
 
-    app.UseStatusCodePagesWithReExecute("/not-found");
+    app.UseStatusCodePagesWithReExecute("/not_found");
     app.UseHttpsRedirection();
 
     app.UseAuthentication();

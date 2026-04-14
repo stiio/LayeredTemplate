@@ -1,4 +1,4 @@
-@page "/Account/Register"
+@page "/account/register"
 
 <PageTitle>Register</PageTitle>
 
@@ -44,6 +44,6 @@
     <hr />
 
     <div style="text-align: center;">
-        <p><a href="@(NavigationManager.GetUriWithQueryParameters("Account/Login", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Already have an account? Log in</a></p>
+        <p><a href="@(NavigationManager.GetUriWithQueryParameters("account/login", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Already have an account? Log in</a></p>
     </div>
 </div>

@@ -73,7 +73,7 @@ public partial class EditPhone : ComponentBase
         await this.SendVerificationCodeAsync(user, phone);
 
         this.RedirectManager.RedirectTo(
-            "Account/Manage/EditPhone",
+            "account/manage/edit_phone",
             new() { ["phone"] = phone, ["codeSent"] = true });
     }
 
@@ -98,7 +98,7 @@ public partial class EditPhone : ComponentBase
         }
 
         this.RedirectManager.RedirectToWithStatus(
-            "Account/Manage",
+            "account/manage",
             "Your phone number has been updated.",
             this.HttpContext);
     }
@@ -114,7 +114,7 @@ public partial class EditPhone : ComponentBase
         await this.SendVerificationCodeAsync(user, this.Phone);
 
         this.RedirectManager.RedirectTo(
-            "Account/Manage/EditPhone",
+            "account/manage/edit_phone",
             new() { ["phone"] = this.Phone, ["codeSent"] = true });
     }
 

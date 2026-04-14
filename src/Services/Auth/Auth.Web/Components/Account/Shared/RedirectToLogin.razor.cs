@@ -10,7 +10,7 @@ public partial class RedirectToLogin : ComponentBase
     protected override void OnInitialized()
     {
         this.NavigationManager.NavigateTo(
-            $"Account/Login?returnUrl={Uri.EscapeDataString(this.NavigationManager.Uri)}",
+            $"account/login?returnUrl={Uri.EscapeDataString(this.NavigationManager.Uri)}",
             forceLoad: true);
     }
 }

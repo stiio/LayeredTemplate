@@ -54,7 +54,7 @@ public partial class RegisterConfirmation : ComponentBase
             var code = await this.UserManager.GenerateEmailConfirmationTokenAsync(user);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
             this.emailConfirmationLink = this.NavigationManager.GetUriWithQueryParameters(
-                this.NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
+                this.NavigationManager.ToAbsoluteUri("account/confirm_email").AbsoluteUri,
                 new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = this.ReturnUrl });
         }
     }

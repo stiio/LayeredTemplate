@@ -92,7 +92,7 @@ public partial class EnableAuthenticator : ComponentBase
         }
         else
         {
-            this.RedirectManager.RedirectToWithStatus("Account/Manage/TwoFactorAuthentication", this.message, this.HttpContext);
+            this.RedirectManager.RedirectToWithStatus("account/manage/two_factor_authentication", this.message, this.HttpContext);
         }
     }
 

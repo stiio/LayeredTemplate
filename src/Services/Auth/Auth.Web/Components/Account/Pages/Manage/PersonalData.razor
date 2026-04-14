@@ -1,4 +1,4 @@
-@page "/Account/Manage/PersonalData"
+@page "/account/manage/personal_data"
 
 <PageTitle>Personal Data</PageTitle>
 
@@ -10,11 +10,11 @@
     <p>
         <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
     </p>
-    <form action="Account/Manage/DownloadPersonalData" method="post">
+    <form action="account/manage/download_personal_data" method="post">
         <AntiforgeryToken/>
         <button type="submit" class="btn-primary">Download</button>
     </form>
     <div style="margin-top: 12px;">
-        <a href="Account/Manage/DeletePersonalData" class="btn btn-default">Delete</a>
+        <a href="account/manage/delete_personal_data" class="btn btn-default">Delete</a>
     </div>
 </div>

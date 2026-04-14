@@ -36,7 +36,7 @@ public partial class ForgotPassword : ComponentBase
         if (user is null || !(await this.UserManager.IsEmailConfirmedAsync(user)))
         {
             // Don't reveal that the user does not exist or is not confirmed
-            this.RedirectManager.RedirectTo("Account/ForgotPasswordConfirmation");
+            this.RedirectManager.RedirectTo("account/forgot_password_confirmation");
             return;
         }
 
@@ -45,12 +45,12 @@ public partial class ForgotPassword : ComponentBase
         var code = await this.UserManager.GeneratePasswordResetTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
         var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
-            this.NavigationManager.ToAbsoluteUri("Account/ResetPassword").AbsoluteUri,
+            this.NavigationManager.ToAbsoluteUri("account/reset_password").AbsoluteUri,
             new Dictionary<string, object?> { ["code"] = code });
 
         await this.EmailSender.SendPasswordResetLinkAsync(user, this.Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
 
-        this.RedirectManager.RedirectTo("Account/ForgotPasswordConfirmation");
+        this.RedirectManager.RedirectTo("account/forgot_password_confirmation");
     }
 
     private sealed class InputModel

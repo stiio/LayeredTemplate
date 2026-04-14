@@ -31,7 +31,7 @@ public partial class ResetPassword : ComponentBase
 
         if (this.Code is null)
         {
-            this.RedirectManager.RedirectTo("Account/InvalidPasswordReset");
+            this.RedirectManager.RedirectTo("account/invalid_password_reset");
             return;
         }
 
@@ -45,14 +45,14 @@ public partial class ResetPassword : ComponentBase
         if (user is null)
         {
             // Don't reveal that the user does not exist
-            this.RedirectManager.RedirectTo("Account/ResetPasswordConfirmation");
+            this.RedirectManager.RedirectTo("account/reset_password_confirmation");
             return;
         }
 
         var result = await this.UserManager.ResetPasswordAsync(user, this.Input.Code, this.Input.Password);
         if (result.Succeeded)
         {
-            this.RedirectManager.RedirectTo("Account/ResetPasswordConfirmation");
+            this.RedirectManager.RedirectTo("account/reset_password_confirmation");
             return;
         }
 

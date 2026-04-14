@@ -43,7 +43,7 @@ public partial class ChangePassword : ComponentBase
         this.hasPassword = await this.UserManager.HasPasswordAsync(this.user);
         if (!this.hasPassword)
         {
-            this.RedirectManager.RedirectTo("Account/Manage/SetPassword");
+            this.RedirectManager.RedirectTo("account/manage/set_password");
         }
     }
 

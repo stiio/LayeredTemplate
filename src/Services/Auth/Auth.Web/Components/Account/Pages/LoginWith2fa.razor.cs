@@ -55,7 +55,7 @@ public partial class LoginWith2fa : ComponentBase
         else if (result.IsLockedOut)
         {
             this.Logger.LogWarning("User with ID '{UserId}' account locked out.", userId);
-            this.RedirectManager.RedirectTo("Account/Lockout");
+            this.RedirectManager.RedirectTo("account/lockout");
         }
         else
         {
