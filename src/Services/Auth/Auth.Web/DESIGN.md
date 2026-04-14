@@ -145,9 +145,16 @@ What makes Claude's design truly distinctive is its warm neutral palette. Every 
 ### Inputs & Forms
 - Text: Anthropic Near Black (`#141413`)
 - Padding: 1.6px 12px (very compact vertical)
-- Border: standard warm borders
+- Border: standard warm borders (`1px solid #e8e6dc`)
 - Focus: ring with Focus Blue (`#3898ec`) border-color — the only cool color moment
 - Radius: generously rounded (12px)
+
+**Disabled State:**
+- Background: Warm Linen (`#eeedea`) — slightly darker than the Ivory card surface, but lighter than Sand, so the field reads as "present but inactive"
+- Text: Muted Stone (`#8a897f`) — warm gray that recedes without disappearing
+- Border: Muted Border (`#dddcd6`) — softer than the active border, reinforcing the inactive state
+- Cursor: `not-allowed`
+- No opacity reduction — the warm background shift is sufficient to communicate the disabled state without making the content hard to read
 
 ### Navigation
 - Sticky top nav with warm background
