@@ -39,12 +39,23 @@ public partial class ResetPassword : ComponentBase
             return;
         }
 
-        this.Input.Code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(this.Input.Code));
-
-        if (!string.IsNullOrEmpty(this.Email))
+        if (string.IsNullOrEmpty(this.Email))
         {
+            this.RedirectManager.RedirectTo("account/invalid_password_reset");
+            return;
+        }
+
+        try
+        {
+            this.Input.Code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(this.Code));
             this.Input.Email = WebUtility.UrlDecode(this.Email);
         }
+        catch (Exception e)
+        {
+            this.RedirectManager.RedirectTo("account/invalid_password_reset");
+            return;
+        }
+
     }
 
     private async Task OnValidSubmitAsync()
