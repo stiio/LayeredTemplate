@@ -2,5 +2,5 @@
 
 public static class ConnectionStrings
 {
-    public const string AuthDbConnection = "AuthDbConnection";
+    public const string AuthDbConnection = "ConnectionStrings:AuthDbConnection";
 }

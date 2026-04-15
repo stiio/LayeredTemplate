@@ -1,0 +1,42 @@
+@page "/account/manage/connected_accounts"
+
+<PageTitle>Connected accounts</PageTitle>
+
+<h3>Connected accounts</h3>
+<StatusMessage Message="@message"/>
+
+<div class="card">
+    @if (providerStates is not null)
+    {
+        @foreach (var provider in providerStates)
+        {
+            <div class="provider-row">
+                <div class="provider-info">
+                    <strong>@provider.Name</strong>
+                    <span class="@(provider.IsConnected ? "status-verified" : "status-unverified")" style="margin-left: 6px;">
+                        @(provider.IsConnected ? "\u2713" : "\u2717")
+                    </span>
+                </div>
+                <div>
+                    @if (provider.IsConnected)
+                    {
+                        <form method="post" @formname="@($"remove-{provider.Name}")" @onsubmit="OnRemoveLoginAsync" style="display:inline;">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="LoginProvider" value="@provider.Name" />
+                            <input type="hidden" name="ProviderKey" value="@provider.ProviderKey" />
+                            <button type="submit" class="btn-default" style="font-size: 13px; padding: 6px 14px;">Disconnect</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form action="account/manage/link_external_login" method="post" style="display:inline;">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="provider" value="@provider.Name" />
+                            <button type="submit" class="btn-primary" style="font-size: 13px; padding: 6px 14px;">Connect</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>

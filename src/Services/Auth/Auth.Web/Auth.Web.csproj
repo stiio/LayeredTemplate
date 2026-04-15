@@ -41,8 +41,6 @@
 
     <ItemGroup>
       <Folder Include="Infrastructure\Identity\Migrations\" />
-      <Folder Include="Options\Constants\" />
-      <Folder Include="Options\Models\" />
     </ItemGroup>
 
 </Project>

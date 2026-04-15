@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +24,21 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
     {
         var redirectUrl = $"/account/external_login_callback?returnUrl={Uri.EscapeDataString(returnUrl ?? "/account/manage")}";
         var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+        return this.Challenge(properties, provider);
+    }
+
+    [Authorize]
+    [HttpPost("manage/link_external_login")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> LinkExternalLogin(string provider)
+    {
+        await this.HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+        var redirectUrl = "/account/manage/connected_accounts?handler=link_callback";
+        var properties = signInManager.ConfigureExternalAuthenticationProperties(
+            provider,
+            redirectUrl,
+            userManager.GetUserId(this.User));
         return this.Challenge(properties, provider);
     }
 

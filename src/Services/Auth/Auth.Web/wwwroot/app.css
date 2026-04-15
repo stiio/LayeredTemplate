@@ -174,6 +174,17 @@ input[type="checkbox"] {
 .status-unverified { color: #b53333; font-weight: bold; font-size: 18px; flex-shrink: 0; width: 20px; text-align: center; }
 .status-icon-spacer { display: inline-block; width: 20px; flex-shrink: 0; }
 
+/* --- Provider Row (connected accounts) --- */
+.provider-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0eee6;
+}
+.provider-row:last-child { border-bottom: none; }
+.provider-info { display: flex; align-items: center; }
+
 /* --- Field Row (input + icon) --- */
 .field-row {
     display: flex;
