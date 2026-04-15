@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components;
@@ -7,6 +8,8 @@ namespace LayeredTemplate.Auth.Web.Components.Account.Pages.Manage;
 
 public partial class ConnectedAccounts : ComponentBase
 {
+    private const string EmailTokenName = "email";
+
     private string? message;
     private List<ProviderState>? providerStates;
 
@@ -43,7 +46,6 @@ public partial class ConnectedAccounts : ComponentBase
             return;
         }
 
-        // Handle link callback from external provider
         if (this.Handler == "link_callback")
         {
             await this.HandleLinkCallbackAsync(user);
@@ -55,17 +57,25 @@ public partial class ConnectedAccounts : ComponentBase
             .Where(s => !string.IsNullOrEmpty(s.DisplayName))
             .ToList();
 
-        this.providerStates = externalSchemes.Select(scheme =>
+        this.providerStates = new List<ProviderState>();
+        foreach (var scheme in externalSchemes)
         {
             var login = currentLogins.FirstOrDefault(l => l.LoginProvider == scheme.Name);
-            return new ProviderState
+            string? email = null;
+            if (login is not null)
+            {
+                email = await this.UserManager.GetAuthenticationTokenAsync(user, scheme.Name, EmailTokenName);
+            }
+
+            this.providerStates.Add(new ProviderState
             {
                 Name = scheme.Name,
                 DisplayName = scheme.DisplayName ?? scheme.Name,
                 IsConnected = login is not null,
                 ProviderKey = login?.ProviderKey,
-            };
-        }).ToList();
+                Email = email,
+            });
+        }
     }
 
     private async Task HandleLinkCallbackAsync(ApplicationUser user)
@@ -84,7 +94,13 @@ public partial class ConnectedAccounts : ComponentBase
             return;
         }
 
-        // Clear the external cookie
+        // Save provider email
+        var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+        if (!string.IsNullOrEmpty(email))
+        {
+            await this.UserManager.SetAuthenticationTokenAsync(user, info.LoginProvider, EmailTokenName, email);
+        }
+
         await this.HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         this.message = $"{info.LoginProvider} has been connected.";
     }
@@ -96,6 +112,9 @@ public partial class ConnectedAccounts : ComponentBase
         {
             return;
         }
+
+        // Remove saved email token
+        await this.UserManager.RemoveAuthenticationTokenAsync(user, this.RemoveLoginProvider, EmailTokenName);
 
         var result = await this.UserManager.RemoveLoginAsync(user, this.RemoveLoginProvider, this.RemoveProviderKey);
         if (!result.Succeeded)
@@ -117,5 +136,7 @@ public partial class ConnectedAccounts : ComponentBase
         public bool IsConnected { get; set; }
 
         public string? ProviderKey { get; set; }
+
+        public string? Email { get; set; }
     }
 }

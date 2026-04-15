@@ -91,6 +91,12 @@ public partial class ExternalLoginCallback : ComponentBase
             return;
         }
 
+        // Save provider email for display in connected accounts
+        if (!string.IsNullOrEmpty(email))
+        {
+            await this.UserManager.SetAuthenticationTokenAsync(user, info.LoginProvider, "email", email);
+        }
+
         await this.SignInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
         this.Logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
 

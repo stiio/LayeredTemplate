@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Text;
 using System.Text.Encodings.Web;
 using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
@@ -21,6 +22,9 @@ public partial class ForgotPassword : ComponentBase
 
     [Inject]
     private IdentityRedirectManager RedirectManager { get; set; } = default!;
+
+    [Inject]
+    private ILogger<ForgotPassword> Logger { get; set; } = default!;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
@@ -46,9 +50,10 @@ public partial class ForgotPassword : ComponentBase
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
         var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
             this.NavigationManager.ToAbsoluteUri("account/reset_password").AbsoluteUri,
-            new Dictionary<string, object?> { ["code"] = code });
+            new Dictionary<string, object?> { ["code"] = code, ["email"]  = WebUtility.UrlEncode(user.Email) });
 
         await this.EmailSender.SendPasswordResetLinkAsync(user, this.Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
+        this.Logger.LogInformation("Callback url: {callbackUrl}", callbackUrl);
 
         this.RedirectManager.RedirectTo("account/forgot_password_confirmation");
     }

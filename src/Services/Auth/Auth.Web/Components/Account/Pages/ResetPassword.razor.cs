@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Text;
 using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Components;
@@ -23,6 +24,9 @@ public partial class ResetPassword : ComponentBase
     [SupplyParameterFromQuery]
     private string? Code { get; set; }
 
+    [SupplyParameterFromQuery]
+    private string? Email { get; set; }
+
     private string? Message => this.identityErrors is null ? null : $"Error: {string.Join(", ", this.identityErrors.Select(error => error.Description))}";
 
     protected override void OnInitialized()
@@ -35,7 +39,12 @@ public partial class ResetPassword : ComponentBase
             return;
         }
 
-        this.Input.Code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(this.Code));
+        this.Input.Code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(this.Input.Code));
+
+        if (!string.IsNullOrEmpty(this.Email))
+        {
+            this.Input.Email = WebUtility.UrlDecode(this.Email);
+        }
     }
 
     private async Task OnValidSubmitAsync()

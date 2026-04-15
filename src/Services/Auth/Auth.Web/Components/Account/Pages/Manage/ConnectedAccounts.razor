@@ -16,6 +16,10 @@
                     <span class="@(provider.IsConnected ? "status-verified" : "status-unverified")" style="margin-left: 6px;">
                         @(provider.IsConnected ? "\u2713" : "\u2717")
                     </span>
+                    @if (!string.IsNullOrEmpty(provider.Email))
+                    {
+                        <span style="margin-left: 8px; color: #87867f; font-size: 13px;">@provider.Email</span>
+                    }
                 </div>
                 <div>
                     @if (provider.IsConnected)
