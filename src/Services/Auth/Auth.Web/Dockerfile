@@ -24,7 +24,7 @@ RUN dotnet build "./Auth.Web.csproj" -c Release -o /app/build
 
 # =============== Publish ===============
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
+
 RUN dotnet publish "Auth.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # =============== Final ===============

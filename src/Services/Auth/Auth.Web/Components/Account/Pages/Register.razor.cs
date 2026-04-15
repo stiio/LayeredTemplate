@@ -127,6 +127,7 @@ public partial class Register : ComponentBase
     {
         [Required]
         [EmailAddress]
+        [MaxLength(128)]
         [Display(Name = "Email")]
         public string Email { get; set; } = string.Empty;
 

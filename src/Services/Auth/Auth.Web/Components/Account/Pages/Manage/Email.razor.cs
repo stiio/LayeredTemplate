@@ -105,6 +105,7 @@ public partial class Email : ComponentBase
     {
         [Required]
         [EmailAddress]
+        [MaxLength(128)]
         [Display(Name = "New email")]
         public string? NewEmail { get; set; }
     }

@@ -1,4 +1,4 @@
-namespace LayeredTemplate.Plugins.Options.Models;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Options.Models;
 
 public class ReCaptchaSettings
 {

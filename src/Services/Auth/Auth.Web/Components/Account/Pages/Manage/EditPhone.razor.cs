@@ -131,6 +131,7 @@ public partial class EditPhone : ComponentBase
     {
         [Required]
         [Phone]
+        [MaxLength(20)]
         [Display(Name = "Phone number")]
         public string? PhoneNumber { get; set; }
     }
@@ -138,6 +139,7 @@ public partial class EditPhone : ComponentBase
     private sealed class CodeInputModel
     {
         /// <summary>Passed via hidden input to preserve phone across form submit.</summary>
+        [MaxLength(20)]
         public string? PhoneNumber { get; set; }
 
         [Required]

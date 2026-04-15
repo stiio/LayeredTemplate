@@ -5,11 +5,11 @@ using LayeredTemplate.Auth.Web.Extensions;
 using LayeredTemplate.Auth.Web.Infrastructure.Email;
 using LayeredTemplate.Auth.Web.Infrastructure.Identity.Contexts;
 using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.Options;
+using LayeredTemplate.Auth.Web.Infrastructure.Options.Constants;
 using LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
 using LayeredTemplate.Auth.Web.Infrastructure.Sms;
 using LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
-using LayeredTemplate.Plugins.Options;
-using LayeredTemplate.Plugins.Options.Constants;
 using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -71,7 +71,7 @@ void ConfigureConfiguration(ConfigurationManager configuration, IWebHostEnvironm
 void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
 {
     services.AddPluginStartupRunner();
-    services.AddPluginOptions(configuration);
+    services.AddAppSettings(configuration);
 
     services.AddStartupTask<RunMigrationsTask>();
     services.AddStartupTask<SeedOidcClientsTask>();
