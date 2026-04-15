@@ -28,10 +28,12 @@ public class SeedOidcClientsTask : IStartupTask
                     RedirectUris =
                     {
                         new Uri("https://localhost:3062/callback.html"),
+                        new Uri("http://localhost:3061/callback.html"),
                     },
                     PostLogoutRedirectUris =
                     {
                         new Uri("https://localhost:3062/index.html"),
+                        new Uri("http://localhost:3061/index.html"),
                     },
                     Permissions =
                     {
@@ -43,7 +45,6 @@ public class SeedOidcClientsTask : IStartupTask
                         Permissions.Prefixes.Scope + "openid",
                         Permissions.Prefixes.Scope + "profile",
                         Permissions.Prefixes.Scope + "email",
-                        Permissions.Prefixes.Scope + "roles",
                     },
                     Requirements =
                     {

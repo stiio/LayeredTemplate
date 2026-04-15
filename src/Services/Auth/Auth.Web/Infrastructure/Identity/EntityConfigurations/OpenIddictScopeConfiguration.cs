@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OpenIddict.EntityFrameworkCore.Models;
 
@@ -10,22 +10,11 @@ public class OpenIddictScopeConfiguration : IEntityTypeConfiguration<OpenIddictE
     {
         builder.ToTable("openiddict_scopes");
 
-        builder.HasKey(x => x.Id);
-
-        builder.Property(x => x.Id)
-            .HasColumnType("uuid")
-            .HasConversion<Guid>();
-
-        builder.Property(x => x.Descriptions)
-            .HasColumnType("jsonb");
-
-        builder.Property(x => x.DisplayNames)
-            .HasColumnType("jsonb");
-
-        builder.Property(x => x.Properties)
-            .HasColumnType("jsonb");
-
-        builder.Property(x => x.Resources)
-            .HasColumnType("jsonb");
+        builder.Property(x => x.Id).HasColumnType("uuid").HasConversion<Guid>();
+        builder.Property(x => x.Descriptions).HasColumnType("text");
+        builder.Property(x => x.DisplayNames).HasColumnType("text");
+        builder.Property(x => x.Properties).HasColumnType("text");
+        builder.Property(x => x.Resources).HasColumnType("text");
+        builder.Property(x => x.Description).HasColumnType("text");
     }
 }

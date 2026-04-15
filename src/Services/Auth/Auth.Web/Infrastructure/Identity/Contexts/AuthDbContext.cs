@@ -22,7 +22,9 @@ public class AuthDbContext(DbContextOptions<AuthDbContext> options)
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         base.ConfigureConventions(configurationBuilder);
-        configurationBuilder.Properties<string>()
+
+        configurationBuilder
+            .Properties<string>()
             .HaveMaxLength(256);
 
         configurationBuilder.Properties<Enum>()

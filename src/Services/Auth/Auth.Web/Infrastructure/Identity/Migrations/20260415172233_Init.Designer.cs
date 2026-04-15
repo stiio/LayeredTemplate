@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 {
     [DbContext(typeof(AuthDbContext))]
-    [Migration("20260415163644_Init")]
+    [Migration("20260415172233_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -357,7 +357,7 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("ClientSecret")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("text")
                         .HasColumnName("client_secret");
 
                     b.Property<string>("ClientType")
@@ -383,42 +383,42 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("DisplayNames")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("text")
                         .HasColumnName("display_names");
 
                     b.Property<string>("JsonWebKeySet")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("json_web_key_set");
 
                     b.Property<string>("Permissions")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("permissions");
 
                     b.Property<string>("PostLogoutRedirectUris")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("post_logout_redirect_uris");
 
                     b.Property<string>("Properties")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("properties");
 
                     b.Property<string>("RedirectUris")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("redirect_uris");
 
                     b.Property<string>("Requirements")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("requirements");
 
                     b.Property<string>("Settings")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("settings");
 
                     b.HasKey("Id")
@@ -456,12 +456,12 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("Properties")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("properties");
 
                     b.Property<string>("Scopes")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("scopes");
 
                     b.Property<string>("Status")
@@ -504,12 +504,12 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("Description")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("text")
                         .HasColumnName("description");
 
                     b.Property<string>("Descriptions")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("descriptions");
 
                     b.Property<string>("DisplayName")
@@ -519,7 +519,7 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("DisplayNames")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("display_names");
 
                     b.Property<string>("Name")
@@ -529,12 +529,12 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("Properties")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("properties");
 
                     b.Property<string>("Resources")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("resources");
 
                     b.HasKey("Id")
@@ -586,7 +586,7 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("Properties")
                         .HasMaxLength(256)
-                        .HasColumnType("jsonb")
+                        .HasColumnType("text")
                         .HasColumnName("properties");
 
                     b.Property<DateTime?>("RedemptionDate")

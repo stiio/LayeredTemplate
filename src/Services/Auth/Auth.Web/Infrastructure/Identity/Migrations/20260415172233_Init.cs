@@ -38,19 +38,19 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
                     id = table.Column<Guid>(type: "uuid", maxLength: 256, nullable: false),
                     application_type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     client_id = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    client_secret = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    client_secret = table.Column<string>(type: "text", maxLength: 256, nullable: true),
                     client_type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     concurrency_token = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     consent_type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     display_name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    display_names = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    json_web_key_set = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
-                    permissions = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
-                    post_logout_redirect_uris = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
-                    properties = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
-                    redirect_uris = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
-                    requirements = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
-                    settings = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true)
+                    display_names = table.Column<string>(type: "text", maxLength: 256, nullable: true),
+                    json_web_key_set = table.Column<string>(type: "text", maxLength: 256, nullable: true),
+                    permissions = table.Column<string>(type: "text", maxLength: 256, nullable: true),
+                    post_logout_redirect_uris = table.Column<string>(type: "text", maxLength: 256, nullable: true),
+                    properties = table.Column<string>(type: "text", maxLength: 256, nullable: true),
+                    redirect_uris = table.Column<string>(type: "text", maxLength: 256, nullable: true),
+                    requirements = table.Column<string>(type: "text", maxLength: 256, nullable: true),
+                    settings = table.Column<string>(type: "text", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -64,13 +64,13 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
                 {
                     id = table.Column<Guid>(type: "uuid", maxLength: 256, nullable: false),
                     concurrency_token = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    description = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    descriptions = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
+                    description = table.Column<string>(type: "text", maxLength: 256, nullable: true),
+                    descriptions = table.Column<string>(type: "text", maxLength: 256, nullable: true),
                     display_name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    display_names = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
+                    display_names = table.Column<string>(type: "text", maxLength: 256, nullable: true),
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    properties = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
-                    resources = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true)
+                    properties = table.Column<string>(type: "text", maxLength: 256, nullable: true),
+                    resources = table.Column<string>(type: "text", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -127,8 +127,8 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
                     application_id = table.Column<Guid>(type: "uuid", maxLength: 256, nullable: true),
                     concurrency_token = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     creation_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    properties = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
-                    scopes = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
+                    properties = table.Column<string>(type: "text", maxLength: 256, nullable: true),
+                    scopes = table.Column<string>(type: "text", maxLength: 256, nullable: true),
                     status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     subject = table.Column<string>(type: "character varying(400)", maxLength: 400, nullable: true),
                     type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true)
@@ -294,7 +294,7 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
                     creation_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     expiration_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     payload = table.Column<string>(type: "text", maxLength: 256, nullable: true),
-                    properties = table.Column<string>(type: "jsonb", maxLength: 256, nullable: true),
+                    properties = table.Column<string>(type: "text", maxLength: 256, nullable: true),
                     redemption_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     reference_id = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),

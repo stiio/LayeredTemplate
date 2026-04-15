@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OpenIddict.EntityFrameworkCore.Models;
 
@@ -10,22 +10,8 @@ public class OpenIddictAuthorizationConfiguration : IEntityTypeConfiguration<Ope
     {
         builder.ToTable("openiddict_authorization");
 
-        builder.HasKey(x => x.Id);
-
-        builder.Property(x => x.Id)
-            .HasColumnType("uuid")
-            .HasConversion<Guid>();
-
-        /*
-        builder.Property("application_id")
-            .HasColumnType("uuid")
-            .HasConversion<Guid>();
-        */
-
-        builder.Property(x => x.Properties)
-            .HasColumnType("jsonb");
-
-        builder.Property(x => x.Scopes)
-            .HasColumnType("jsonb");
+        builder.Property(x => x.Id).HasColumnType("uuid").HasConversion<Guid>();
+        builder.Property(x => x.Properties).HasColumnType("text");
+        builder.Property(x => x.Scopes).HasColumnType("text");
     }
 }

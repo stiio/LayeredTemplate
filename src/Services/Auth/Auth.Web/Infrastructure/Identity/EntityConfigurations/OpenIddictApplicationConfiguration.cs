@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OpenIddict.EntityFrameworkCore.Models;
 
@@ -10,29 +10,15 @@ public class OpenIddictApplicationConfiguration : IEntityTypeConfiguration<OpenI
     {
         builder.ToTable("openiddict_application");
 
-        builder.Property(x => x.Id)
-            .HasColumnType("uuid")
-            .HasConversion<Guid>();
-
-        builder.Property(x => x.Permissions)
-            .HasColumnType("jsonb");
-
-        builder.Property(x => x.RedirectUris)
-            .HasColumnType("jsonb");
-
-        builder.Property(x => x.Properties)
-            .HasColumnType("jsonb");
-
-        builder.Property(x => x.PostLogoutRedirectUris)
-            .HasColumnType("jsonb");
-
-        builder.Property(x => x.Requirements)
-            .HasColumnType("jsonb");
-
-        builder.Property(x => x.Settings)
-            .HasColumnType("jsonb");
-
-        builder.Property(x => x.JsonWebKeySet)
-            .HasColumnType("jsonb");
+        builder.Property(x => x.Id).HasColumnType("uuid").HasConversion<Guid>();
+        builder.Property(x => x.Permissions).HasColumnType("text");
+        builder.Property(x => x.RedirectUris).HasColumnType("text");
+        builder.Property(x => x.PostLogoutRedirectUris).HasColumnType("text");
+        builder.Property(x => x.Properties).HasColumnType("text");
+        builder.Property(x => x.Requirements).HasColumnType("text");
+        builder.Property(x => x.Settings).HasColumnType("text");
+        builder.Property(x => x.JsonWebKeySet).HasColumnType("text");
+        builder.Property(x => x.DisplayNames).HasColumnType("text");
+        builder.Property(x => x.ClientSecret).HasColumnType("text");
     }
 }
