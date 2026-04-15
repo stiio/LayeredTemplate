@@ -95,13 +95,28 @@ button, .btn {
 
 .btn-block { display: flex; width: 100%; }
 
-.btn-github {
-    background: #24292e;
+/* --- External Provider Buttons --- */
+.external-providers { display: flex; flex-direction: column; gap: 8px; }
+.btn-external {
     color: #ffffff;
+    font-weight: 500;
     gap: 8px;
+    /* Default fallback style */
+    background: #4d4c48;
 }
-.btn-github:hover { background: #1b1f23; color: #ffffff; }
-.btn-github svg { width: 18px; height: 18px; fill: currentColor; flex-shrink: 0; }
+.btn-external:hover { opacity: 0.9; color: #ffffff; }
+
+/* Per-provider colors */
+.btn-external-github { background: #24292e; }
+.btn-external-github:hover { background: #1b1f23; }
+.btn-external-yandex { background: #fc3f1d; }
+.btn-external-yandex:hover { background: #e0371a; }
+.btn-external-google { background: #4285f4; }
+.btn-external-google:hover { background: #3574d4; }
+.btn-external-microsoft { background: #2f2f2f; }
+.btn-external-microsoft:hover { background: #1a1a1a; }
+.btn-external-apple { background: #000000; }
+.btn-external-apple:hover { background: #1a1a1a; }
 
 .btn-link {
     background: none;

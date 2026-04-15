@@ -106,6 +106,15 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
             opts.ClientSecret = configuration["GitHub:ClientSecret"]!;
             opts.Scope.Add("user:email");
         })
+        .AddYandex(opts =>
+        {
+            opts.ClientId = configuration["Yandex:ClientId"]!;
+            opts.ClientSecret = configuration["Yandex:ClientSecret"]!;
+            opts.CallbackPath = "/signin-yandex";
+            // opts.Scope.Add("login:email");
+            // opts.Scope.Add("login:info");
+            // opts.Scope.Add("user:default_phone");
+        })
         .AddIdentityCookies();
 
     services.AddHealthChecks();

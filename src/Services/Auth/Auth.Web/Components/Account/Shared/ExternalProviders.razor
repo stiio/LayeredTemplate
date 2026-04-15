@@ -1,0 +1,16 @@
+@if (providers is not null && providers.Count > 0)
+{
+    <div class="external-providers">
+        @foreach (var provider in providers)
+        {
+            <form action="account/external_login" method="post">
+                <AntiforgeryToken />
+                <input type="hidden" name="provider" value="@provider.Name" />
+                <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+                <button type="submit" class="btn-external btn-external-@provider.Name.ToLower() btn-block">
+                    @ButtonText @provider.DisplayName
+                </button>
+            </form>
+        }
+    </div>
+}
