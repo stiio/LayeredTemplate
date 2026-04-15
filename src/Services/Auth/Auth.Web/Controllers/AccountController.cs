@@ -17,6 +17,15 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
         return this.LocalRedirect(returnUrl ?? "~/account/login");
     }
 
+    [HttpPost("external_login")]
+    [ValidateAntiForgeryToken]
+    public IActionResult ExternalLogin(string provider, string? returnUrl = null)
+    {
+        var redirectUrl = $"/account/external_login_callback?returnUrl={Uri.EscapeDataString(returnUrl ?? "/account/manage")}";
+        var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+        return this.Challenge(properties, provider);
+    }
+
     [Authorize]
     [HttpPost("manage/download_personal_data")]
     public async Task<IActionResult> DownloadPersonalData()

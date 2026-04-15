@@ -100,6 +100,12 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
             options.DefaultScheme = IdentityConstants.ApplicationScheme;
             options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
         })
+        .AddGitHub(opts =>
+        {
+            opts.ClientId = configuration["GitHub:ClientId"]!;
+            opts.ClientSecret = configuration["GitHub:ClientSecret"]!;
+            opts.Scope.Add("user:email");
+        })
         .AddIdentityCookies();
 
     services.AddHealthChecks();
@@ -115,6 +121,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
 void ConfigureMiddleware(WebApplication app, IWebHostEnvironment env)
 {
+    app.UseCors(x => x.SetIsOriginAllowed(origin => true));
     app.UseForwardedHeaders();
     app.UseRequestLogging();
 

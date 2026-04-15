@@ -27,11 +27,11 @@ public class SeedOidcClientsTask : IStartupTask
                     DisplayName = "Default Client",
                     RedirectUris =
                     {
-                        new Uri("https://localhost:7176/callback"),
+                        new Uri("https://localhost:3062/callback.html"),
                     },
                     PostLogoutRedirectUris =
                     {
-                        new Uri("https://localhost:7176/"),
+                        new Uri("https://localhost:3062/index.html"),
                     },
                     Permissions =
                     {

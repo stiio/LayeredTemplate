@@ -336,10 +336,10 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
                     b.Property<string>("ApplicationType")
@@ -385,37 +385,37 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("JsonWebKeySet")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("json_web_key_set");
 
                     b.Property<string>("Permissions")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("permissions");
 
                     b.Property<string>("PostLogoutRedirectUris")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("post_logout_redirect_uris");
 
                     b.Property<string>("Properties")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("properties");
 
                     b.Property<string>("RedirectUris")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("redirect_uris");
 
                     b.Property<string>("Requirements")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("requirements");
 
                     b.Property<string>("Settings")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("settings");
 
                     b.HasKey("Id")
@@ -430,15 +430,15 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreAuthorization", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("ApplicationId")
+                    b.Property<Guid?>("ApplicationId")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("uuid")
                         .HasColumnName("application_id");
 
                     b.Property<string>("ConcurrencyToken")
@@ -453,12 +453,12 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("Properties")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("properties");
 
                     b.Property<string>("Scopes")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("scopes");
 
                     b.Property<string>("Status")
@@ -487,10 +487,10 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreScope", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
                     b.Property<string>("ConcurrencyToken")
@@ -506,7 +506,7 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("Descriptions")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("descriptions");
 
                     b.Property<string>("DisplayName")
@@ -516,7 +516,7 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("DisplayNames")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("display_names");
 
                     b.Property<string>("Name")
@@ -526,12 +526,12 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("Properties")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("properties");
 
                     b.Property<string>("Resources")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("resources");
 
                     b.HasKey("Id")
@@ -546,20 +546,20 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreToken", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("ApplicationId")
+                    b.Property<Guid?>("ApplicationId")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("uuid")
                         .HasColumnName("application_id");
 
-                    b.Property<string>("AuthorizationId")
+                    b.Property<Guid?>("AuthorizationId")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("uuid")
                         .HasColumnName("authorization_id");
 
                     b.Property<string>("ConcurrencyToken")
@@ -578,12 +578,12 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
 
                     b.Property<string>("Payload")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("text")
                         .HasColumnName("payload");
 
                     b.Property<string>("Properties")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("properties");
 
                     b.Property<DateTime?>("RedemptionDate")

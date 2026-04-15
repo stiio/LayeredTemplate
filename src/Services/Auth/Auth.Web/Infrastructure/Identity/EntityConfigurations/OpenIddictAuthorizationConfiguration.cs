@@ -9,5 +9,23 @@ public class OpenIddictAuthorizationConfiguration : IEntityTypeConfiguration<Ope
     public void Configure(EntityTypeBuilder<OpenIddictEntityFrameworkCoreAuthorization> builder)
     {
         builder.ToTable("openiddict_authorization");
+
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Id)
+            .HasColumnType("uuid")
+            .HasConversion<Guid>();
+
+        /*
+        builder.Property("application_id")
+            .HasColumnType("uuid")
+            .HasConversion<Guid>();
+        */
+
+        builder.Property(x => x.Properties)
+            .HasColumnType("jsonb");
+
+        builder.Property(x => x.Scopes)
+            .HasColumnType("jsonb");
     }
 }

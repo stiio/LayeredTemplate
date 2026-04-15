@@ -95,6 +95,14 @@ button, .btn {
 
 .btn-block { display: flex; width: 100%; }
 
+.btn-github {
+    background: #24292e;
+    color: #ffffff;
+    gap: 8px;
+}
+.btn-github:hover { background: #1b1f23; color: #ffffff; }
+.btn-github svg { width: 18px; height: 18px; fill: currentColor; flex-shrink: 0; }
+
 .btn-link {
     background: none;
     border: none;

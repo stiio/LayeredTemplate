@@ -9,5 +9,23 @@ public class OpenIddictScopeConfiguration : IEntityTypeConfiguration<OpenIddictE
     public void Configure(EntityTypeBuilder<OpenIddictEntityFrameworkCoreScope> builder)
     {
         builder.ToTable("openiddict_scopes");
+
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Id)
+            .HasColumnType("uuid")
+            .HasConversion<Guid>();
+
+        builder.Property(x => x.Descriptions)
+            .HasColumnType("jsonb");
+
+        builder.Property(x => x.DisplayNames)
+            .HasColumnType("jsonb");
+
+        builder.Property(x => x.Properties)
+            .HasColumnType("jsonb");
+
+        builder.Property(x => x.Resources)
+            .HasColumnType("jsonb");
     }
 }
