@@ -1,5 +1,6 @@
 ﻿using LayeredTemplate.App.Application.Common.Models;
 using LayeredTemplate.App.Application.Common.Services;
+using LayeredTemplate.Plugins.Options.Constants;
 using Medallion.Threading;
 using Medallion.Threading.Postgres;
 using Microsoft.Extensions.Configuration;
@@ -12,7 +13,7 @@ internal class PostgresLockProvider : ILockProvider
 
     public PostgresLockProvider(IConfiguration configuration)
     {
-        this.connectionString = configuration.GetConnectionString("DefaultConnection")!;
+        this.connectionString = configuration[ConnectionStrings.WriteDbConnection]!;
     }
 
     public async Task<IDistributedSynchronizationHandle> AcquireLockAsync(LockKey lockKey, TimeSpan? timeout = default, CancellationToken cancellationToken = default)

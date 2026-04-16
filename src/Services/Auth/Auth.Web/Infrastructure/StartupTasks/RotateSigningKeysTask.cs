@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.Locks;
 using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 using LayeredTemplate.Plugins.StartupRunner.Services;
 using Microsoft.AspNetCore.DataProtection;
@@ -36,26 +37,34 @@ public class RotateSigningKeysTask : IStartupTask
     private readonly SigningKeyStore keyStore;
     private readonly IDataProtector protector;
     private readonly ILogger<RotateSigningKeysTask> logger;
+    private readonly ILockProvider lockProvider;
 
     public RotateSigningKeysTask(
         AuthDbContext dbContext,
         SigningKeyStore keyStore,
         IDataProtectionProvider dataProtectionProvider,
-        ILogger<RotateSigningKeysTask> logger)
+        ILogger<RotateSigningKeysTask> logger,
+        ILockProvider lockProvider)
     {
         this.dbContext = dbContext;
         this.keyStore = keyStore;
         this.protector = dataProtectionProvider.CreateProtector(DataProtectionPurpose);
         this.logger = logger;
+        this.lockProvider = lockProvider;
     }
 
     public int Order => 30;
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        // TODO: Add lock
-        await this.RotateKeyAsync(SigningPurpose, cancellationToken);
-        await this.RotateKeyAsync(EncryptionPurpose, cancellationToken);
+        await using (await this.lockProvider.AcquireLockAsync(
+                   "rotate-signing-keys",
+                   timeout: TimeSpan.FromSeconds(60),
+                   cancellationToken: cancellationToken))
+        {
+            await this.RotateKeyAsync(SigningPurpose, cancellationToken);
+            await this.RotateKeyAsync(EncryptionPurpose, cancellationToken);
+        }
 
         // Load all active keys into the singleton store for OpenIddict
         var allKeys = await this.dbContext.SigningCredentials

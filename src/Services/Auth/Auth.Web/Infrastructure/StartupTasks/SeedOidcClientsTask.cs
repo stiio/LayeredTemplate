@@ -1,4 +1,5 @@
-﻿using LayeredTemplate.Plugins.StartupRunner.Services;
+﻿using LayeredTemplate.Auth.Web.Infrastructure.Locks;
+using LayeredTemplate.Plugins.StartupRunner.Services;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -7,17 +8,23 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 public class SeedOidcClientsTask : IStartupTask
 {
     private readonly IOpenIddictApplicationManager manager;
+    private readonly ILockProvider lockProvider;
 
-    public SeedOidcClientsTask(IOpenIddictApplicationManager manager)
+    public SeedOidcClientsTask(IOpenIddictApplicationManager manager, ILockProvider lockProvider)
     {
         this.manager = manager;
+        this.lockProvider = lockProvider;
     }
 
     public int Order => 40;
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        // TODO: Add lock
+        await using var @lock = await this.lockProvider.AcquireLockAsync(
+            "setup-oidc-clients",
+            timeout: TimeSpan.FromSeconds(60),
+            cancellationToken: cancellationToken);
+
         if (await this.manager.FindByClientIdAsync("default_client", cancellationToken) is null)
         {
             await this.manager.CreateAsync(

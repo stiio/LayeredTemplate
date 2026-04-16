@@ -44,8 +44,6 @@ internal class RunMigrationsTask<TDbContext> : IStartupTask
             {
                 await this.context.Database.MigrateAsync(cancellationToken);
             }
-
-            await @lock.DisposeAsync();
         }
         else
         {

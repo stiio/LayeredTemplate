@@ -1,3 +1,4 @@
+using LayeredTemplate.Auth.Web.Infrastructure.Locks;
 using LayeredTemplate.Plugins.StartupRunner.Services;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 
@@ -26,19 +27,27 @@ public class RotateDataProtectionKeysTask : IStartupTask
 
     private readonly IKeyManager keyManager;
     private readonly ILogger<RotateDataProtectionKeysTask> logger;
+    private readonly ILockProvider lockProvider;
 
-    public RotateDataProtectionKeysTask(IKeyManager keyManager,
-        ILogger<RotateDataProtectionKeysTask> logger)
+    public RotateDataProtectionKeysTask(
+        IKeyManager keyManager,
+        ILogger<RotateDataProtectionKeysTask> logger,
+        ILockProvider lockProvider)
     {
         this.keyManager = keyManager;
         this.logger = logger;
+        this.lockProvider = lockProvider;
     }
 
     public int Order => 20;
 
-    public Task ExecuteAsync(CancellationToken cancellationToken = default)
+    public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        // TODO: Add lock
+        await using var @lock = await this.lockProvider.AcquireLockAsync(
+            "rotate-date-protection-keys",
+            timeout: TimeSpan.FromSeconds(60),
+            cancellationToken: cancellationToken);
+
         var now = DateTimeOffset.UtcNow;
 
         var allKeys = this.keyManager.GetAllKeys();
@@ -58,7 +67,7 @@ public class RotateDataProtectionKeysTask : IStartupTask
                     (int)age,
                     RotationIntervalDays);
 
-                return Task.CompletedTask;
+                return;
             }
         }
 
@@ -70,7 +79,5 @@ public class RotateDataProtectionKeysTask : IStartupTask
             "Created new Data Protection key {KeyId}, expires {Expiration}.",
             newKey.KeyId,
             newKey.ExpirationDate);
-
-        return Task.CompletedTask;
     }
 }

@@ -6,6 +6,7 @@ using LayeredTemplate.Auth.Web.Infrastructure.Data;
 using LayeredTemplate.Auth.Web.Infrastructure.DataProtection;
 using LayeredTemplate.Auth.Web.Infrastructure.Email;
 using LayeredTemplate.Auth.Web.Infrastructure.Identity;
+using LayeredTemplate.Auth.Web.Infrastructure.Locks;
 using LayeredTemplate.Auth.Web.Infrastructure.Logging;
 using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 using LayeredTemplate.Auth.Web.Infrastructure.Options;
@@ -92,7 +93,8 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     services.AddScoped<IdentityRedirectManager>();
     services.AddAppEmailServices(configuration, env);
-    services.AddAppSmsServices();
+    services.AddAppSmsServices(configuration, env);
+    services.AddPostgresLockProvider();
 
     services.AddCascadingAuthenticationState();
 
