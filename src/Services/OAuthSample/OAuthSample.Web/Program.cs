@@ -17,7 +17,7 @@ builder.Services.AddOidcAuthentication(options =>
     options.ProviderOptions.DefaultScopes.Add("profile");
     options.ProviderOptions.DefaultScopes.Add("email");
     options.ProviderOptions.DefaultScopes.Add("offline_access");
-    options.ProviderOptions.PostLogoutRedirectUri = "/";
+    options.ProviderOptions.PostLogoutRedirectUri = $"{builder.HostEnvironment.BaseAddress}authentication/logout-callback";
 });
 
 await builder.Build().RunAsync();

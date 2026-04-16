@@ -1,5 +1,6 @@
 @page "/dashboard"
 @attribute [Authorize]
+@using System.Text.Json
 @using Microsoft.AspNetCore.Authorization
 
 <PageTitle>Dashboard</PageTitle>
@@ -79,6 +80,9 @@
     [Inject]
     private HttpClient Http { get; set; } = default!;
 
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadTokens();
@@ -98,19 +102,12 @@
         errorMessage = null;
         try
         {
-            var tokenResult = await TokenProvider.RequestAccessToken(
-                new AccessTokenRequestOptions { ReturnUrl = Navigation.Uri });
+            // Force a silent sign-in which triggers the OIDC refresh_token flow
+            var result = await JS.InvokeAsync<JsonElement>(
+                "AuthenticationService.getAccessToken");
 
-            if (tokenResult.TryGetToken(out var token))
-            {
-                accessToken = token.Value;
-                errorMessage = null;
-                StateHasChanged();
-            }
-            else
-            {
-                errorMessage = "Failed to refresh token. You may need to re-login.";
-            }
+            accessToken = result.GetString();
+            StateHasChanged();
         }
         catch (Exception ex)
         {
