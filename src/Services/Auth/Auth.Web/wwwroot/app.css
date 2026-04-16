@@ -39,6 +39,20 @@ hr.divider, hr {
     margin: 20px 0;
 }
 
+.divider-text {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0;
+    color: #87867f;
+    font-size: 13px;
+}
+.divider-text::before, .divider-text::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid #e8e6dc;
+}
+
 code, kbd {
     font-family: 'Courier New', monospace;
     font-size: 0.9em;
