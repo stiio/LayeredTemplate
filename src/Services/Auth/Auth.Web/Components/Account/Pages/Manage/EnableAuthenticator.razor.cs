@@ -142,7 +142,7 @@ public partial class EnableAuthenticator : ComponentBase
         return string.Format(
             CultureInfo.InvariantCulture,
             AuthenticatorUriFormat,
-            this.UrlEncoder.Encode("Microsoft.AspNetCore.Identity.UI"),
+            this.UrlEncoder.Encode("LayeredTemplate"),
             this.UrlEncoder.Encode(email),
             unformattedKey);
     }

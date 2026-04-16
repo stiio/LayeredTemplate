@@ -25,16 +25,20 @@ public class UserConfiguration : IEntityTypeConfiguration<ApplicationUser>
             .HasMaxLength(32);
 
         builder.Property(x => x.UserName)
-            .HasMaxLength(128);
+            .HasMaxLength(128)
+            .IsRequired();
 
         builder.Property(x => x.NormalizedUserName)
-            .HasMaxLength(128);
+            .HasMaxLength(128)
+            .IsRequired();
 
         builder.Property(x => x.Email)
-            .HasMaxLength(128);
+            .HasMaxLength(128)
+            .IsRequired();
 
         builder.Property(x => x.NormalizedEmail)
-            .HasMaxLength(128);
+            .HasMaxLength(128)
+            .IsRequired();
 
         builder.Property(x => x.PhoneNumber)
             .HasMaxLength(20);

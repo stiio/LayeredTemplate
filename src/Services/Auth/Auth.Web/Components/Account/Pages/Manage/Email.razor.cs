@@ -13,7 +13,6 @@ public partial class Email : ComponentBase
     private string? message;
     private ApplicationUser? user;
     private string? email;
-    private bool isEmailConfirmed;
 
     [Inject]
     private UserManager<ApplicationUser> UserManager { get; set; } = default!;
@@ -45,8 +44,6 @@ public partial class Email : ComponentBase
         }
 
         this.email = await this.UserManager.GetEmailAsync(this.user);
-        this.isEmailConfirmed = await this.UserManager.IsEmailConfirmedAsync(this.user);
-
         this.Input.NewEmail ??= this.email;
     }
 
@@ -74,31 +71,6 @@ public partial class Email : ComponentBase
         await this.EmailSender.SendConfirmationLinkAsync(this.user, this.Input.NewEmail, HtmlEncoder.Default.Encode(callbackUrl));
 
         this.message = "Confirmation link to change email sent. Please check your email.";
-    }
-
-    private async Task OnSendEmailVerificationAsync()
-    {
-        if (this.email is null)
-        {
-            return;
-        }
-
-        if (this.user is null)
-        {
-            this.RedirectManager.RedirectToInvalidUser(this.UserManager, this.HttpContext);
-            return;
-        }
-
-        var userId = await this.UserManager.GetUserIdAsync(this.user);
-        var code = await this.UserManager.GenerateEmailConfirmationTokenAsync(this.user);
-        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
-            this.NavigationManager.ToAbsoluteUri("account/confirm_email").AbsoluteUri,
-            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
-
-        await this.EmailSender.SendConfirmationLinkAsync(this.user, this.email, HtmlEncoder.Default.Encode(callbackUrl));
-
-        this.message = "Verification email sent. Please check your email.";
     }
 
     private sealed class InputModel

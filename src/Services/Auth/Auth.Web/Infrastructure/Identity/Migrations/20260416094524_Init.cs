@@ -98,10 +98,10 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", maxLength: 256, nullable: false),
-                    user_name = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
-                    normalized_user_name = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
-                    email = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
-                    normalized_email = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    user_name = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    normalized_user_name = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    email = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    normalized_email = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     email_confirmed = table.Column<bool>(type: "boolean", nullable: false),
                     password_hash = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     security_stamp = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),

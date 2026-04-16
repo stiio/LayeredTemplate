@@ -120,11 +120,8 @@ public partial class EditPhone : ComponentBase
 
     private async Task SendVerificationCodeAsync(ApplicationUser user, string phone)
     {
-        if (!user.PhoneNumberConfirmed)
-        {
-            var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, phone);
-            await this.SmsSender.SendAsync(phone, $"Your verification code is: {code}");
-        }
+        var code = await this.UserManager.GenerateChangePhoneNumberTokenAsync(user, phone);
+        await this.SmsSender.SendAsync(phone, $"Your verification code is: {code}");
     }
 
     private sealed class PhoneInputModel

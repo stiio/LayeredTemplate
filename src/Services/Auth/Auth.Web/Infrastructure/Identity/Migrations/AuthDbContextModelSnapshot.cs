@@ -41,6 +41,7 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
                         .HasColumnName("concurrency_stamp");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("email");
@@ -58,11 +59,13 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
                         .HasColumnName("lockout_end");
 
                     b.Property<string>("NormalizedEmail")
+                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("normalized_email");
 
                     b.Property<string>("NormalizedUserName")
+                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("normalized_user_name");
@@ -91,6 +94,7 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Migrations
                         .HasColumnName("two_factor_enabled");
 
                     b.Property<string>("UserName")
+                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("user_name");

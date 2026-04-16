@@ -21,6 +21,9 @@ public partial class Register : ComponentBase
     private IUserStore<ApplicationUser> UserStore { get; set; } = default!;
 
     [Inject]
+    private IUserEmailStore<ApplicationUser> UserEmailStore { get; set; } = default!;
+
+    [Inject]
     private SignInManager<ApplicationUser> SignInManager { get; set; } = default!;
 
     [Inject]
@@ -63,11 +66,11 @@ public partial class Register : ComponentBase
             return;
         }
 
-        var user = this.CreateUser();
+        var user = new ApplicationUser();
 
+        this.UserManager.SetEmailAsync(user, this.Input.Email).Wait();
         await this.UserStore.SetUserNameAsync(user, this.Input.Email, CancellationToken.None);
-        var emailStore = this.GetEmailStore();
-        await emailStore.SetEmailAsync(user, this.Input.Email, CancellationToken.None);
+        await this.UserEmailStore.SetEmailAsync(user, this.Input.Email, CancellationToken.None);
         var result = await this.UserManager.CreateAsync(user, this.Input.Password);
 
         if (!result.Succeeded)
@@ -98,29 +101,6 @@ public partial class Register : ComponentBase
             await this.SignInManager.SignInAsync(user, isPersistent: false);
             this.RedirectManager.RedirectTo(this.ReturnUrl);
         }
-    }
-
-    private ApplicationUser CreateUser()
-    {
-        try
-        {
-            return Activator.CreateInstance<ApplicationUser>();
-        }
-        catch
-        {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                                                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
-        }
-    }
-
-    private IUserEmailStore<ApplicationUser> GetEmailStore()
-    {
-        if (!this.UserManager.SupportsUserEmail)
-        {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
-        }
-
-        return (IUserEmailStore<ApplicationUser>)this.UserStore;
     }
 
     private sealed class InputModel

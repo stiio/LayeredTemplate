@@ -41,7 +41,7 @@ public partial class ResendEmailConfirmation : ComponentBase
             return;
         }
 
-        if (!user.EmailConfirmed)
+        if (!(await this.UserManager.IsEmailConfirmedAsync(user)))
         {
             var userId = await this.UserManager.GetUserIdAsync(user);
             var code = await this.UserManager.GenerateEmailConfirmationTokenAsync(user);

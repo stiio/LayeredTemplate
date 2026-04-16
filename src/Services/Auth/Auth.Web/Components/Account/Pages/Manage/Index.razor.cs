@@ -58,15 +58,18 @@ public partial class Index : ComponentBase
             return;
         }
 
-        var userId = await this.UserManager.GetUserIdAsync(user);
-        var code = await this.UserManager.GenerateEmailConfirmationTokenAsync(user);
-        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
-            this.NavigationManager.ToAbsoluteUri("account/confirm_email").AbsoluteUri,
-            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
+        if (!(await this.UserManager.IsEmailConfirmedAsync(user)))
+        {
+            var userId = await this.UserManager.GetUserIdAsync(user);
+            var code = await this.UserManager.GenerateEmailConfirmationTokenAsync(user);
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
+                this.NavigationManager.ToAbsoluteUri("account/confirm_email").AbsoluteUri,
+                new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
 
-        await this.EmailSender.SendConfirmationLinkAsync(user, this.email, HtmlEncoder.Default.Encode(callbackUrl));
-
+            await this.EmailSender.SendConfirmationLinkAsync(user, this.email, HtmlEncoder.Default.Encode(callbackUrl));
+        }
+        
         this.RedirectManager.RedirectToCurrentPageWithStatus("Verification email sent. Please check your email.", this.HttpContext);
     }
 

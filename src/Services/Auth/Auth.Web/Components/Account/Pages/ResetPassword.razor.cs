@@ -50,10 +50,9 @@ public partial class ResetPassword : ComponentBase
             this.Input.Code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(this.Code));
             this.Input.Email = WebUtility.UrlDecode(this.Email);
         }
-        catch (Exception e)
+        catch
         {
             this.RedirectManager.RedirectTo("account/invalid_password_reset");
-            return;
         }
 
     }
