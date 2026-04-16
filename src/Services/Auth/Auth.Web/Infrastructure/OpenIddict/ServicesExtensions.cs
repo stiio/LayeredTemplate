@@ -1,4 +1,8 @@
-﻿using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
+using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
+using LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
+using LayeredTemplate.Plugins.StartupRunner;
+using Microsoft.Extensions.Options;
+using OpenIddict.Server;
 
 namespace LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 
@@ -9,6 +13,7 @@ public static class ServicesExtensions
         IConfiguration configuration,
         IWebHostEnvironment env)
     {
+        services.AddOpenIddictKetRotation();
         return services.AddOpenIddict()
             .AddCore(options =>
             {
@@ -25,8 +30,8 @@ public static class ServicesExtensions
                 options.AllowAuthorizationCodeFlow()
                     .RequireProofKeyForCodeExchange();
 
-                options.AddDevelopmentEncryptionCertificate()
-                    .AddDevelopmentSigningCertificate();
+                // options.AddDevelopmentEncryptionCertificate()
+                //     .AddDevelopmentSigningCertificate();
 
                 options.RegisterScopes("openid", "profile", "email");
 
@@ -36,5 +41,13 @@ public static class ServicesExtensions
                     .EnableUserInfoEndpointPassthrough()
                     .EnableEndSessionEndpointPassthrough();
             });
+    }
+
+    private static void AddOpenIddictKetRotation(this IServiceCollection services)
+    {
+        // Singleton store populated by RotateSigningKeysTask, consumed by PostConfigure
+        services.AddSingleton<SigningKeyStore>();
+        services.AddSingleton<IPostConfigureOptions<OpenIddictServerOptions>, ConfigureOpenIddictServerOptions>();
+        services.AddStartupTask<RotateSigningKeysTask>();
     }
 }

@@ -11,6 +11,8 @@ public class AuthDbContext(DbContextOptions<AuthDbContext> options)
 {
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
 
+    public DbSet<SigningCredential> SigningCredentials { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("auth");

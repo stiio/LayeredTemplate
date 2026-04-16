@@ -40,4 +40,8 @@
       <ProjectReference Include="..\..\Plugins\Plugins.StartupRunner\Plugins.StartupRunner.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Infrastructure\Data\Migrations\" />
+    </ItemGroup>
+
 </Project>

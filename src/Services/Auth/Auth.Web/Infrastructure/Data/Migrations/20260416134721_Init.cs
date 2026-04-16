@@ -93,6 +93,21 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "signing_credentials",
+                schema: "auth",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    key_data = table.Column<string>(type: "text", maxLength: 256, nullable: false),
+                    purpose = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_signing_credentials", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "users",
                 schema: "auth",
                 columns: table => new
@@ -426,6 +441,10 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "role_claims",
+                schema: "auth");
+
+            migrationBuilder.DropTable(
+                name: "signing_credentials",
                 schema: "auth");
 
             migrationBuilder.DropTable(

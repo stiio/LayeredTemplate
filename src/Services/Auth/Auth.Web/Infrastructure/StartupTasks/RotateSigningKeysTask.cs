@@ -1,0 +1,164 @@
+using System.Security.Cryptography;
+using System.Text.Json;
+using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
+using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
+using LayeredTemplate.Plugins.StartupRunner.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+
+namespace LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
+
+/// <summary>
+/// Rotates OpenIddict signing and encryption keys on application startup.
+///
+/// Key lifecycle (default 90-day rotation, 180-day max age):
+///   Day 0:   Key A created (active)
+///   Day 90:  Key A still valid, Key B created (active). Both in JWKS.
+///   Day 180: Key A removed. Key B active, Key C created.
+///
+/// Keys older than <see cref="MaxKeyAgeDays"/> are deleted.
+/// A new key is created if no key exists or all keys are older than <see cref="RotationIntervalDays"/>.
+/// After rotation, all active keys are loaded into <see cref="SigningKeyStore"/> for OpenIddict to consume.
+/// </summary>
+public class RotateSigningKeysTask(
+    AuthDbContext dbContext,
+    SigningKeyStore keyStore,
+    ILogger<RotateSigningKeysTask> logger) : IStartupTask
+{
+    private const int RotationIntervalDays = 90;
+    private const int MaxKeyAgeDays = 180;
+    private const string SigningPurpose = "signing";
+    private const string EncryptionPurpose = "encryption";
+
+    public int Order => 15;
+
+    public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        await this.RotateKeyAsync(SigningPurpose, cancellationToken);
+        await this.RotateKeyAsync(EncryptionPurpose, cancellationToken);
+
+        // Load all active keys into the singleton store for OpenIddict
+        var allKeys = await dbContext.SigningCredentials
+            .OrderByDescending(k => k.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        foreach (var key in allKeys.Where(k => k.Purpose == SigningPurpose))
+        {
+            keyStore.SigningKeys.Add(DeserializeKey(key.KeyData, key.Id.ToString()));
+        }
+
+        foreach (var key in allKeys.Where(k => k.Purpose == EncryptionPurpose))
+        {
+            keyStore.EncryptionKeys.Add(DeserializeKey(key.KeyData, key.Id.ToString()));
+        }
+
+        logger.LogInformation(
+            "Loaded {SigningCount} signing and {EncryptionCount} encryption key(s) into store.",
+            keyStore.SigningKeys.Count,
+            keyStore.EncryptionKeys.Count);
+    }
+
+    private async Task RotateKeyAsync(string purpose, CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow;
+        var cutoff = now.AddDays(-MaxKeyAgeDays);
+
+        // Delete expired keys
+        var expired = await dbContext.SigningCredentials
+            .Where(k => k.Purpose == purpose && k.CreatedAt < cutoff)
+            .ToListAsync(cancellationToken);
+
+        if (expired.Count > 0)
+        {
+            dbContext.SigningCredentials.RemoveRange(expired);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Removed {Count} expired {Purpose} key(s).", expired.Count, purpose);
+        }
+
+        // Check if rotation is needed
+        var newest = await dbContext.SigningCredentials
+            .Where(k => k.Purpose == purpose)
+            .OrderByDescending(k => k.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (newest is not null && (now - newest.CreatedAt).TotalDays < RotationIntervalDays)
+        {
+            logger.LogInformation(
+                "Current {Purpose} key is {Age} days old. No rotation needed.",
+                purpose,
+                (int)(now - newest.CreatedAt).TotalDays);
+            return;
+        }
+
+        // Generate new RSA key
+        using var rsa = RSA.Create(2048);
+        var parameters = rsa.ExportParameters(true);
+        var keyData = JsonSerializer.Serialize(RsaKeyData.FromParameters(parameters));
+
+        var credential = new SigningCredential
+        {
+            Id = Guid.CreateVersion7(),
+            KeyData = keyData,
+            Purpose = purpose,
+            CreatedAt = now,
+        };
+
+        dbContext.SigningCredentials.Add(credential);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Created new {Purpose} key {KeyId}.", purpose, credential.Id);
+    }
+
+    private static RsaSecurityKey DeserializeKey(string keyData, string keyId)
+    {
+        var data = JsonSerializer.Deserialize<RsaKeyData>(keyData)!;
+        var rsa = RSA.Create();
+        rsa.ImportParameters(data.ToRSAParameters());
+        return new RsaSecurityKey(rsa) { KeyId = keyId };
+    }
+
+    /// <summary>Serializable RSA key parameters.</summary>
+    internal sealed class RsaKeyData
+    {
+        public byte[] Modulus { get; set; } = default!;
+
+        public byte[] Exponent { get; set; } = default!;
+
+        public byte[] D { get; set; } = default!;
+
+        public byte[] P { get; set; } = default!;
+
+        public byte[] Q { get; set; } = default!;
+
+        public byte[] DP { get; set; } = default!;
+
+        public byte[] DQ { get; set; } = default!;
+
+        public byte[] InverseQ { get; set; } = default!;
+
+        public static RsaKeyData FromParameters(RSAParameters p) => new()
+        {
+            Modulus = p.Modulus!,
+            Exponent = p.Exponent!,
+            D = p.D!,
+            P = p.P!,
+            Q = p.Q!,
+            DP = p.DP!,
+            DQ = p.DQ!,
+            InverseQ = p.InverseQ!,
+        };
+
+        public RSAParameters ToRSAParameters() => new()
+        {
+            Modulus = this.Modulus,
+            Exponent = this.Exponent,
+            D = this.D,
+            P = this.P,
+            Q = this.Q,
+            DP = this.DP,
+            DQ = this.DQ,
+            InverseQ = this.InverseQ,
+        };
+    }
+}
