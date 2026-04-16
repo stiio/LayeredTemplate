@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
 using LayeredTemplate.Auth.Web.Infrastructure.Options.Models;
 using Microsoft.AspNetCore.DataProtection;
@@ -9,9 +9,11 @@ public static class ServicesExtensions
 {
     public static void AddAppDataProtection(this IServiceCollection services, IConfiguration configuration)
     {
+        // Disable runtime auto-generation — keys are created by RotateDataProtectionKeysTask at startup
+        // under a distributed lock. This prevents race conditions when multiple instances start simultaneously.
         var dataProtection = services.AddDataProtection()
+            .DisableAutomaticKeyGeneration()
             .SetApplicationName("LayeredTemplate.Auth")
-            .SetDefaultKeyLifetime(TimeSpan.FromDays(180))
             .PersistKeysToDbContext<AuthDbContext>();
 
         var dataProtectionSettings = configuration.GetSection(nameof(DataProtectionSettings)).Get<DataProtectionSettings>()!;
@@ -25,7 +27,7 @@ public static class ServicesExtensions
                          .Where(item => !string.IsNullOrEmpty(item.Base64)))
             {
                 var unprotectCertBytes = Convert.FromBase64String(unprotectCertificateItemData.Base64);
-                var unprotectCertificate = X509CertificateLoader.LoadPkcs12(certBytes, unprotectCertificateItemData.Password);
+                var unprotectCertificate = X509CertificateLoader.LoadPkcs12(unprotectCertBytes, unprotectCertificateItemData.Password);
                 dataProtection.UnprotectKeysWithAnyCertificate(unprotectCertificate);
             }
         }

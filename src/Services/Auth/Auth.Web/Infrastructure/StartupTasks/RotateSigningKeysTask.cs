@@ -21,17 +21,27 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 /// A new key is created if no key exists or all keys are older than <see cref="RotationIntervalDays"/>.
 /// After rotation, all active keys are loaded into <see cref="SigningKeyStore"/> for OpenIddict to consume.
 /// </summary>
-public class RotateSigningKeysTask(
-    AuthDbContext dbContext,
-    SigningKeyStore keyStore,
-    ILogger<RotateSigningKeysTask> logger) : IStartupTask
+public class RotateSigningKeysTask : IStartupTask
 {
+    private readonly AuthDbContext dbContext;
+    private readonly SigningKeyStore keyStore;
+    private readonly ILogger<RotateSigningKeysTask> logger;
+
+    public RotateSigningKeysTask(AuthDbContext dbContext,
+        SigningKeyStore keyStore,
+        ILogger<RotateSigningKeysTask> logger)
+    {
+        this.dbContext = dbContext;
+        this.keyStore = keyStore;
+        this.logger = logger;
+    }
+
     private const int RotationIntervalDays = 90;
     private const int MaxKeyAgeDays = 180;
     private const string SigningPurpose = "signing";
     private const string EncryptionPurpose = "encryption";
 
-    public int Order => 15;
+    public int Order => 30;
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
@@ -39,24 +49,24 @@ public class RotateSigningKeysTask(
         await this.RotateKeyAsync(EncryptionPurpose, cancellationToken);
 
         // Load all active keys into the singleton store for OpenIddict
-        var allKeys = await dbContext.SigningCredentials
+        var allKeys = await this.dbContext.SigningCredentials
             .OrderByDescending(k => k.CreatedAt)
             .ToListAsync(cancellationToken);
 
         foreach (var key in allKeys.Where(k => k.Purpose == SigningPurpose))
         {
-            keyStore.SigningKeys.Add(DeserializeKey(key.KeyData, key.Id.ToString()));
+            this.keyStore.SigningKeys.Add(DeserializeKey(key.KeyData, key.Id.ToString()));
         }
 
         foreach (var key in allKeys.Where(k => k.Purpose == EncryptionPurpose))
         {
-            keyStore.EncryptionKeys.Add(DeserializeKey(key.KeyData, key.Id.ToString()));
+            this.keyStore.EncryptionKeys.Add(DeserializeKey(key.KeyData, key.Id.ToString()));
         }
 
-        logger.LogInformation(
+        this.logger.LogInformation(
             "Loaded {SigningCount} signing and {EncryptionCount} encryption key(s) into store.",
-            keyStore.SigningKeys.Count,
-            keyStore.EncryptionKeys.Count);
+            this.keyStore.SigningKeys.Count,
+            this.keyStore.EncryptionKeys.Count);
     }
 
     private async Task RotateKeyAsync(string purpose, CancellationToken cancellationToken)
@@ -65,26 +75,26 @@ public class RotateSigningKeysTask(
         var cutoff = now.AddDays(-MaxKeyAgeDays);
 
         // Delete expired keys
-        var expired = await dbContext.SigningCredentials
+        var expired = await this.dbContext.SigningCredentials
             .Where(k => k.Purpose == purpose && k.CreatedAt < cutoff)
             .ToListAsync(cancellationToken);
 
         if (expired.Count > 0)
         {
-            dbContext.SigningCredentials.RemoveRange(expired);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Removed {Count} expired {Purpose} key(s).", expired.Count, purpose);
+            this.dbContext.SigningCredentials.RemoveRange(expired);
+            await this.dbContext.SaveChangesAsync(cancellationToken);
+            this.logger.LogInformation("Removed {Count} expired {Purpose} key(s).", expired.Count, purpose);
         }
 
         // Check if rotation is needed
-        var newest = await dbContext.SigningCredentials
+        var newest = await this.dbContext.SigningCredentials
             .Where(k => k.Purpose == purpose)
             .OrderByDescending(k => k.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (newest is not null && (now - newest.CreatedAt).TotalDays < RotationIntervalDays)
         {
-            logger.LogInformation(
+            this.logger.LogInformation(
                 "Current {Purpose} key is {Age} days old. No rotation needed.",
                 purpose,
                 (int)(now - newest.CreatedAt).TotalDays);
@@ -104,10 +114,10 @@ public class RotateSigningKeysTask(
             CreatedAt = now,
         };
 
-        dbContext.SigningCredentials.Add(credential);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        this.dbContext.SigningCredentials.Add(credential);
+        await this.dbContext.SaveChangesAsync(cancellationToken);
 
-        logger.LogInformation("Created new {Purpose} key {KeyId}.", purpose, credential.Id);
+        this.logger.LogInformation("Created new {Purpose} key {KeyId}.", purpose, credential.Id);
     }
 
     private static RsaSecurityKey DeserializeKey(string keyData, string keyId)

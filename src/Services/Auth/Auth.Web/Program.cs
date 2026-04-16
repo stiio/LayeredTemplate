@@ -76,6 +76,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddAppSettings(configuration);
 
     services.AddStartupTask<RunMigrationsTask>();
+    services.AddStartupTask<RotateDataProtectionKeysTask>();
     services.AddStartupTask<SeedOidcClientsTask>();
 
     services.AddRazorComponents();
@@ -172,9 +173,6 @@ void ConfigureSerilog(IHostBuilder host)
     });
 }
 
-namespace LayeredTemplate.Auth.Web
+public partial class Program
 {
-    public partial class Program
-    {
-    }
 }

@@ -13,7 +13,7 @@ public class SeedOidcClientsTask : IStartupTask
         this.manager = manager;
     }
 
-    public int Order => 20;
+    public int Order => 40;
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
