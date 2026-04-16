@@ -1,0 +1,28 @@
+@page "/"
+
+<PageTitle>OAuth Sample</PageTitle>
+
+<h1>OAuth Sample Client</h1>
+
+<AuthorizeView>
+    <Authorized>
+        <p>Welcome, @context.User.Identity?.Name!</p>
+        <p><a href="dashboard">Go to Dashboard</a></p>
+    </Authorized>
+    <NotAuthorized>
+        <p>This is a sample OAuth client for testing the Auth.Web OIDC server.</p>
+        <p>
+            <button class="btn btn-primary" @onclick="Login">Log in with Auth Server</button>
+        </p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    private void Login()
+    {
+        Navigation.NavigateToLogin("authentication/login");
+    }
+}

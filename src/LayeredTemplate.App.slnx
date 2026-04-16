@@ -17,6 +17,9 @@
   <Folder Name="/Services/Auth/">
     <Project Path="Services/Auth/Auth.Web/Auth.Web.csproj" />
   </Folder>
+  <Folder Name="/Services/OAuthSample/">
+    <Project Path="Services/OAuthSample/OAuthSample.Web/OAuthSample.Web.csproj" />
+  </Folder>
   <Folder Name="/Services/Plugins/">
     <Project Path="Services/Plugins/Plugins.AssemblyExtensions/Plugins.AssemblyExtensions.csproj" />
     <Project Path="Services/Plugins/Plugins.Authorization.Abstractions/Plugins.Authorization.Abstractions.csproj" />

@@ -37,15 +37,20 @@ public class SeedOidcClientsTask : IStartupTask
                     {
                         new Uri("https://localhost:3062/callback.html"),
                         new Uri("http://localhost:3061/callback.html"),
+                        new Uri("https://localhost:7144/authentication/login-callback"),
+                        new Uri("http://localhost:5264/authentication/login-callback"),
                     },
                     PostLogoutRedirectUris =
                     {
                         new Uri("https://localhost:3062/index.html"),
                         new Uri("http://localhost:3061/index.html"),
+                        new Uri("https://localhost:7144/authentication/logout-callback"),
+                        new Uri("http://localhost:5264/authentication/logout-callback"),
                     },
                     Permissions =
                     {
                         Permissions.GrantTypes.AuthorizationCode,
+                        Permissions.GrantTypes.RefreshToken,
                         Permissions.ResponseTypes.Code,
                         Permissions.Endpoints.Authorization,
                         Permissions.Endpoints.Token,

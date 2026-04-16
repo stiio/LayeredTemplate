@@ -28,6 +28,7 @@ public static class ServicesExtensions
                     .SetEndSessionEndpointUris("/connect/logout");
 
                 options.AllowAuthorizationCodeFlow()
+                    .AllowRefreshTokenFlow()
                     .RequireProofKeyForCodeExchange();
 
                 options.SetAccessTokenLifetime(TimeSpan.FromHours(1))
