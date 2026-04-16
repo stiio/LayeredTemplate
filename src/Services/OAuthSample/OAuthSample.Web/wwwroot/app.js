@@ -1,18 +1,4 @@
-import { UserManager } from 'https://cdn.jsdelivr.net/npm/oidc-client-ts@3/+esm';
-
-const authServer = 'https://localhost:8080';
-const clientOrigin = window.location.origin;
-
-const config = {
-    authority: authServer,
-    client_id: 'default_client',
-    redirect_uri: clientOrigin + '/callback.html',
-    post_logout_redirect_uri: clientOrigin + '/index.html',
-    response_type: 'code',
-    scope: 'openid profile email offline_access',
-};
-
-const mgr = new UserManager(config);
+import { mgr, authServer } from './oidc-config.js';
 
 // --- Helpers ---
 
@@ -20,8 +6,7 @@ function decodeJwt(token) {
     try {
         const parts = token.split('.');
         if (parts.length !== 3) return null;
-        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-        return payload;
+        return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
     } catch {
         return null;
     }

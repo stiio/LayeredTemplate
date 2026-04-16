@@ -135,6 +135,7 @@ public class ConnectController(
         return this.Ok(claims);
     }
 
+    [HttpGet("~/connect/logout")]
     [HttpPost("~/connect/logout")]
     public async Task<IActionResult> Logout()
     {
