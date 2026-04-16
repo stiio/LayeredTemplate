@@ -4,6 +4,7 @@ using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 using LayeredTemplate.Plugins.StartupRunner.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -20,26 +21,33 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 /// Keys older than <see cref="MaxKeyAgeDays"/> are deleted.
 /// A new key is created if no key exists or all keys are older than <see cref="RotationIntervalDays"/>.
 /// After rotation, all active keys are loaded into <see cref="SigningKeyStore"/> for OpenIddict to consume.
+///
+/// KeyData is encrypted at rest using ASP.NET Data Protection.
 /// </summary>
 public class RotateSigningKeysTask : IStartupTask
 {
-    private readonly AuthDbContext dbContext;
-    private readonly SigningKeyStore keyStore;
-    private readonly ILogger<RotateSigningKeysTask> logger;
-
-    public RotateSigningKeysTask(AuthDbContext dbContext,
-        SigningKeyStore keyStore,
-        ILogger<RotateSigningKeysTask> logger)
-    {
-        this.dbContext = dbContext;
-        this.keyStore = keyStore;
-        this.logger = logger;
-    }
-
     private const int RotationIntervalDays = 90;
     private const int MaxKeyAgeDays = 180;
     private const string SigningPurpose = "signing";
     private const string EncryptionPurpose = "encryption";
+    private const string DataProtectionPurpose = "OpenIddict.SigningCredentials";
+
+    private readonly AuthDbContext dbContext;
+    private readonly SigningKeyStore keyStore;
+    private readonly IDataProtector protector;
+    private readonly ILogger<RotateSigningKeysTask> logger;
+
+    public RotateSigningKeysTask(
+        AuthDbContext dbContext,
+        SigningKeyStore keyStore,
+        IDataProtectionProvider dataProtectionProvider,
+        ILogger<RotateSigningKeysTask> logger)
+    {
+        this.dbContext = dbContext;
+        this.keyStore = keyStore;
+        this.protector = dataProtectionProvider.CreateProtector(DataProtectionPurpose);
+        this.logger = logger;
+    }
 
     public int Order => 30;
 
@@ -56,12 +64,12 @@ public class RotateSigningKeysTask : IStartupTask
 
         foreach (var key in allKeys.Where(k => k.Purpose == SigningPurpose))
         {
-            this.keyStore.SigningKeys.Add(DeserializeKey(key.KeyData, key.Id.ToString()));
+            this.keyStore.SigningKeys.Add(this.DeserializeKey(key.KeyData, key.Id.ToString()));
         }
 
         foreach (var key in allKeys.Where(k => k.Purpose == EncryptionPurpose))
         {
-            this.keyStore.EncryptionKeys.Add(DeserializeKey(key.KeyData, key.Id.ToString()));
+            this.keyStore.EncryptionKeys.Add(this.DeserializeKey(key.KeyData, key.Id.ToString()));
         }
 
         this.logger.LogInformation(
@@ -102,15 +110,16 @@ public class RotateSigningKeysTask : IStartupTask
             return;
         }
 
-        // Generate new RSA key
+        // Generate new RSA key and encrypt before storing
         using var rsa = RSA.Create(2048);
         var parameters = rsa.ExportParameters(true);
-        var keyData = JsonSerializer.Serialize(RsaKeyData.FromParameters(parameters));
+        var keyJson = JsonSerializer.Serialize(RsaKeyData.FromParameters(parameters));
+        var encryptedKeyData = this.protector.Protect(keyJson);
 
         var credential = new SigningCredential
         {
             Id = Guid.CreateVersion7(),
-            KeyData = keyData,
+            KeyData = encryptedKeyData,
             Purpose = purpose,
             CreatedAt = now,
         };
@@ -121,9 +130,10 @@ public class RotateSigningKeysTask : IStartupTask
         this.logger.LogInformation("Created new {Purpose} key {KeyId}.", purpose, credential.Id);
     }
 
-    private static RsaSecurityKey DeserializeKey(string keyData, string keyId)
+    private RsaSecurityKey DeserializeKey(string encryptedKeyData, string keyId)
     {
-        var data = JsonSerializer.Deserialize<RsaKeyData>(keyData)!;
+        var keyJson = this.protector.Unprotect(encryptedKeyData);
+        var data = JsonSerializer.Deserialize<RsaKeyData>(keyJson)!;
         var rsa = RSA.Create();
         rsa.ImportParameters(data.ToRSAParameters());
         return new RsaSecurityKey(rsa) { KeyId = keyId };
