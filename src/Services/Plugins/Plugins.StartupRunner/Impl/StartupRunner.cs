@@ -30,6 +30,7 @@ internal class StartupRunner : IStartupRunner
             var startupTask = (IStartupTask)scope.ServiceProvider.GetRequiredService(startupTaskType);
             this.logger.LogInformation("Running startup task {StartupTaskName}", startupTaskType.Name);
             await startupTask.ExecuteAsync(cancellationToken);
+            this.logger.LogInformation("Complete startup task {StartupTaskName}", startupTaskType.Name);
         }
     }
 }

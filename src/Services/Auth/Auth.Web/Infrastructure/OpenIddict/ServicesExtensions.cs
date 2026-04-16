@@ -8,7 +8,7 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 
 public static class ServicesExtensions
 {
-    public static OpenIddictBuilder AddOpenIddictApp(
+    public static OpenIddictBuilder AddAppOpenIddict(
         this IServiceCollection services,
         IConfiguration configuration,
         IWebHostEnvironment env)

@@ -3,7 +3,7 @@ using LayeredTemplate.Auth.Web.Components;
 using LayeredTemplate.Auth.Web.Components.Account;
 using LayeredTemplate.Auth.Web.Infrastructure.Cors;
 using LayeredTemplate.Auth.Web.Infrastructure.Data;
-using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
+using LayeredTemplate.Auth.Web.Infrastructure.DataProtection;
 using LayeredTemplate.Auth.Web.Infrastructure.Email;
 using LayeredTemplate.Auth.Web.Infrastructure.Identity;
 using LayeredTemplate.Auth.Web.Infrastructure.Logging;
@@ -14,7 +14,6 @@ using LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
 using LayeredTemplate.Auth.Web.Infrastructure.Sms;
 using LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 using LayeredTemplate.Plugins.StartupRunner;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -84,11 +83,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     services.RegisterDbContext(configuration[ConnectionStrings.AuthDbConnection]!);
     services.AddIdentityServices();
-    services.AddOpenIddictApp(configuration, env);
+    services.AddAppOpenIddict(configuration, env);
 
-    services.AddDataProtection()
-        .SetApplicationName("LayeredTemplate.Auth")
-        .PersistKeysToDbContext<AuthDbContext>();
+    services.AddAppDataProtection(configuration);
 
     services.AddHttpClient<ReCaptchaService>();
 

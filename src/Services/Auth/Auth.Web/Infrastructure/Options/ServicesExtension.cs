@@ -12,6 +12,7 @@ public static class ServicesExtension
         services.Configure<SmtpSettings>(configuration.GetSection(nameof(SmtpSettings)));
         services.Configure<ReCaptchaSettings>(configuration.GetSection(nameof(ReCaptchaSettings)));
         services.Configure<CorsSettings>(configuration.GetSection(nameof(CorsSettings)));
+        services.Configure<DataProtectionSettings>(configuration.GetSection(nameof(DataProtectionSettings)));
     }
 
     public static IConfigurationBuilder AddEnvironmentVariablesFromJsonVariables(this IConfigurationBuilder configurationBuilder)
