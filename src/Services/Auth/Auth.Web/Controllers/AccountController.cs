@@ -1,5 +1,5 @@
 using System.Text.Json;
-using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

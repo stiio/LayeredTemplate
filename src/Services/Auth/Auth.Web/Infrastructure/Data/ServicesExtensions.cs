@@ -1,7 +1,8 @@
 ﻿using System.Reflection;
+using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
 using Microsoft.EntityFrameworkCore;
 
-namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Contexts;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Data;
 
 public static class ServicesExtensions
 {

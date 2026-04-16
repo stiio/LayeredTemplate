@@ -1,10 +1,13 @@
 using HealthChecks.UI.Client;
 using LayeredTemplate.Auth.Web.Components;
 using LayeredTemplate.Auth.Web.Components.Account;
-using LayeredTemplate.Auth.Web.Extensions;
+using LayeredTemplate.Auth.Web.Infrastructure.Data;
+using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
+using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.Email;
-using LayeredTemplate.Auth.Web.Infrastructure.Identity.Contexts;
-using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.Identity;
+using LayeredTemplate.Auth.Web.Infrastructure.Logging;
+using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 using LayeredTemplate.Auth.Web.Infrastructure.Options;
 using LayeredTemplate.Auth.Web.Infrastructure.Options.Constants;
 using LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
@@ -171,6 +174,9 @@ void ConfigureSerilog(IHostBuilder host)
     });
 }
 
-public partial class Program
+namespace LayeredTemplate.Auth.Web
 {
+    public partial class Program
+    {
+    }
 }

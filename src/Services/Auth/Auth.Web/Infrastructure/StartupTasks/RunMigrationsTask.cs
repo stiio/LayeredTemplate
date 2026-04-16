@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.Auth.Web.Infrastructure.Identity.Contexts;
+﻿using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
 using LayeredTemplate.Plugins.StartupRunner.Services;
 using Microsoft.EntityFrameworkCore;
 

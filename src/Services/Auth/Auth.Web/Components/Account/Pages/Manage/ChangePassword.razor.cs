@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 

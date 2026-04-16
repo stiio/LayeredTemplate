@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.EntityConfigurations;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Data.EntityConfigurations;
 
 public class UserClaimConfiguration : IEntityTypeConfiguration<IdentityUserClaim<string>>
 {

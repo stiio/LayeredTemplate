@@ -1,9 +1,9 @@
-﻿using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
+﻿using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.EntityConfigurations;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Data.EntityConfigurations;
 
 public class UserConfiguration : IEntityTypeConfiguration<ApplicationUser>
 {

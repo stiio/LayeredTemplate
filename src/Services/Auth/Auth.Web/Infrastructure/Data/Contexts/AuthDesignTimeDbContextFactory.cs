@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Contexts;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
 
 public class AuthDesignTimeDbContextFactory : IDesignTimeDbContextFactory<AuthDbContext>
 {

@@ -1,10 +1,10 @@
 using System.Reflection;
-using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.Contexts;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
 
 public class AuthDbContext(DbContextOptions<AuthDbContext> options)
     : IdentityDbContext<ApplicationUser>(options), IDataProtectionKeyContext

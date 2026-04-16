@@ -1,6 +1,6 @@
 using System.Text;
+using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.Email;
-using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;

@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OpenIddict.EntityFrameworkCore.Models;
 
-namespace LayeredTemplate.Auth.Web.Infrastructure.Identity.EntityConfigurations;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Data.EntityConfigurations;
 
 public class OpenIddictAuthorizationConfiguration : IEntityTypeConfiguration<OpenIddictEntityFrameworkCoreAuthorization>
 {

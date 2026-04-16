@@ -1,10 +1,10 @@
-﻿using LayeredTemplate.Auth.Web.Infrastructure.Identity.Contexts;
-using LayeredTemplate.Auth.Web.Infrastructure.Identity.Entities;
+﻿using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
+using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using Microsoft.AspNetCore.Identity;
 
-namespace LayeredTemplate.Auth.Web.Extensions;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Identity;
 
-public static class IdentityExtensions
+public static class ServicesExtensions
 {
     public static IdentityBuilder AddIdentityServices(this IServiceCollection services)
     {
@@ -18,11 +18,6 @@ public static class IdentityExtensions
                 options.Password.RequireUppercase = true;
                 options.Password.RequiredLength = 6;
                 options.Password.RequiredUniqueChars = 1;
-
-                options.ClaimsIdentity.EmailClaimType = "email";
-                options.ClaimsIdentity.UserIdClaimType = "userid";
-                options.ClaimsIdentity.RoleClaimType = "role";
-                options.ClaimsIdentity.UserNameClaimType = "name";
 
                 options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
             })

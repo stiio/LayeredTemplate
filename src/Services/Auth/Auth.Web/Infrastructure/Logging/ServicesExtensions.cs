@@ -1,11 +1,10 @@
 ﻿using System.Security.Claims;
-using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
 using LayeredTemplate.Plugins.Http.Extensions;
 using Serilog;
 
-namespace LayeredTemplate.Auth.Web.Extensions;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Logging;
 
-public static class SerilogExtensions
+public static class ServicesExtensions
 {
     public static void UseRequestLogging(this IApplicationBuilder app)
     {
@@ -16,6 +15,7 @@ public static class SerilogExtensions
 
             opts.EnrichDiagnosticContext = (context, httpContext) =>
             {
+                context.Set("LogType", "RequestLog");
                 context.Set("RequestIp", httpContext.GetRequestIp());
                 context.Set("Referer", httpContext.Request.Headers.Referer.ToString());
                 if (httpContext.User.Identity?.IsAuthenticated ?? false)
@@ -24,8 +24,8 @@ public static class SerilogExtensions
                         "User",
                         new
                         {
-                            Id = httpContext.User.FindFirstValue(AppClaims.UserId),
-                            Email = httpContext.User.FindFirstValue(AppClaims.Email),
+                            Id = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier),
+                            Email = httpContext.User.FindFirstValue(ClaimTypes.Email),
                         },
                         true);
                 }

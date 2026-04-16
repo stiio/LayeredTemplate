@@ -1,8 +1,8 @@
-﻿using LayeredTemplate.Auth.Web.Infrastructure.Identity.Contexts;
+﻿using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
 
-namespace LayeredTemplate.Auth.Web.Extensions;
+namespace LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 
-public static class OpenIddictExtensions
+public static class ServicesExtensions
 {
     public static OpenIddictBuilder AddOpenIddictApp(
         this IServiceCollection services,
