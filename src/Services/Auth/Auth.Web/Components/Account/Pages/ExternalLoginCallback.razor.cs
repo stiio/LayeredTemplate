@@ -19,9 +19,6 @@ public partial class ExternalLoginCallback : ComponentBase
     private IUserStore<ApplicationUser> UserStore { get; set; } = default!;
 
     [Inject]
-    private IUserEmailStore<ApplicationUser> EmailStore { get; set; } = default!;
-
-    [Inject]
     private ILogger<ExternalLoginCallback> Logger { get; set; } = default!;
 
     [Inject]
@@ -72,7 +69,8 @@ public partial class ExternalLoginCallback : ComponentBase
 
         var user = new ApplicationUser();
         await this.UserStore.SetUserNameAsync(user, email, CancellationToken.None);
-        await this.EmailStore.SetEmailAsync(user, email, CancellationToken.None);
+        var emailStore = (IUserEmailStore<ApplicationUser>)this.UserStore;
+        await emailStore.SetEmailAsync(user, email, CancellationToken.None);
 
         var createResult = await this.UserManager.CreateAsync(user);
         if (!createResult.Succeeded)

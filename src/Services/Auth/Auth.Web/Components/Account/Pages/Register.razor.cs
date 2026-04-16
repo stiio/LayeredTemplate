@@ -22,9 +22,6 @@ public partial class Register : ComponentBase
     private IUserStore<ApplicationUser> UserStore { get; set; } = default!;
 
     [Inject]
-    private IUserEmailStore<ApplicationUser> UserEmailStore { get; set; } = default!;
-
-    [Inject]
     private SignInManager<ApplicationUser> SignInManager { get; set; } = default!;
 
     [Inject]
@@ -71,7 +68,8 @@ public partial class Register : ComponentBase
 
         this.UserManager.SetEmailAsync(user, this.Input.Email).Wait();
         await this.UserStore.SetUserNameAsync(user, this.Input.Email, CancellationToken.None);
-        await this.UserEmailStore.SetEmailAsync(user, this.Input.Email, CancellationToken.None);
+        var emailStore = (IUserEmailStore<ApplicationUser>)this.UserStore;
+        await emailStore.SetEmailAsync(user, this.Input.Email, CancellationToken.None);
         var result = await this.UserManager.CreateAsync(user, this.Input.Password);
 
         if (!result.Succeeded)
