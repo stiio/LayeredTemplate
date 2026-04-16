@@ -45,6 +45,7 @@ public class RotateSigningKeysTask : IStartupTask
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
+        // TODO: Add lock
         await this.RotateKeyAsync(SigningPurpose, cancellationToken);
         await this.RotateKeyAsync(EncryptionPurpose, cancellationToken);
 

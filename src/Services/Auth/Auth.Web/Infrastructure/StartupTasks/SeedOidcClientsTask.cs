@@ -17,6 +17,7 @@ public class SeedOidcClientsTask : IStartupTask
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
+        // TODO: Add lock
         if (await this.manager.FindByClientIdAsync("default_client", cancellationToken) is null)
         {
             await this.manager.CreateAsync(

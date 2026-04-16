@@ -19,6 +19,7 @@ public class RunMigrationsTask : IStartupTask
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
+        // TODO: Add lock
         this.logger.LogInformation("Start applying migrations for {DbContext}...", nameof(AuthDbContext));
 
         if ((await this.dbContext.Database.GetPendingMigrationsAsync(cancellationToken)).Any())

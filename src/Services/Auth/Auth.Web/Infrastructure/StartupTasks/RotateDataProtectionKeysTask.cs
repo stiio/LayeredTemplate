@@ -38,6 +38,7 @@ public class RotateDataProtectionKeysTask : IStartupTask
 
     public Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
+        // TODO: Add lock
         var now = DateTimeOffset.UtcNow;
 
         var allKeys = this.keyManager.GetAllKeys();
