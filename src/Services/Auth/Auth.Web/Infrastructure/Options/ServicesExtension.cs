@@ -11,6 +11,7 @@ public static class ServicesExtension
         services.Configure<AppSettings>(configuration.GetSection(nameof(AppSettings)));
         services.Configure<SmtpSettings>(configuration.GetSection(nameof(SmtpSettings)));
         services.Configure<ReCaptchaSettings>(configuration.GetSection(nameof(ReCaptchaSettings)));
+        services.Configure<CorsSettings>(configuration.GetSection(nameof(CorsSettings)));
     }
 
     public static IConfigurationBuilder AddEnvironmentVariablesFromJsonVariables(this IConfigurationBuilder configurationBuilder)

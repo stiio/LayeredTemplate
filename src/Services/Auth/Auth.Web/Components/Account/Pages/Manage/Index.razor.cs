@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.Email.Services;
 using LayeredTemplate.Auth.Web.Infrastructure.Sms;
+using LayeredTemplate.Auth.Web.Infrastructure.Sms.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
@@ -20,7 +22,7 @@ public partial class Index : ComponentBase
     private UserManager<ApplicationUser> UserManager { get; set; } = default!;
 
     [Inject]
-    private IEmailSender<ApplicationUser> EmailSender { get; set; } = default!;
+    private IUserEmailSender EmailSender { get; set; } = default!;
 
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
@@ -69,7 +71,7 @@ public partial class Index : ComponentBase
 
             await this.EmailSender.SendConfirmationLinkAsync(user, this.email, HtmlEncoder.Default.Encode(callbackUrl));
         }
-        
+
         this.RedirectManager.RedirectToCurrentPageWithStatus("Verification email sent. Please check your email.", this.HttpContext);
     }
 

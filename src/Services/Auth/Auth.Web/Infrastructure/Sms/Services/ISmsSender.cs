@@ -1,4 +1,4 @@
-namespace LayeredTemplate.Auth.Web.Infrastructure.Sms;
+namespace LayeredTemplate.Auth.Web.Infrastructure.Sms.Services;
 
 public interface ISmsSender
 {

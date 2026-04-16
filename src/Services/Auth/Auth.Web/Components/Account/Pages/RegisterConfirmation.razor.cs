@@ -1,9 +1,11 @@
 using System.Text;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
-using LayeredTemplate.Auth.Web.Infrastructure.Email;
+using LayeredTemplate.Auth.Web.Infrastructure.Email.Services;
+using LayeredTemplate.Auth.Web.Infrastructure.Options.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace LayeredTemplate.Auth.Web.Components.Account.Pages;
 
@@ -16,13 +18,16 @@ public partial class RegisterConfirmation : ComponentBase
     private UserManager<ApplicationUser> UserManager { get; set; } = default!;
 
     [Inject]
-    private IEmailSender<ApplicationUser> EmailSender { get; set; } = default!;
+    private IUserEmailSender EmailSender { get; set; } = default!;
 
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
 
     [Inject]
     private IdentityRedirectManager RedirectManager { get; set; } = default!;
+
+    [Inject]
+    private IOptions<AppSettings> AppSettings { get; set; } = default!;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -47,7 +52,7 @@ public partial class RegisterConfirmation : ComponentBase
             this.HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
             this.statusMessage = "Error finding user for unspecified email";
         }
-        else if (this.EmailSender is IdentityNoOpEmailSender)
+        else if (this.AppSettings.Value.UseMockEmailSender)
         {
             // Once you add a real email sender, you should remove this code that lets you confirm the account
             var userId = await this.UserManager.GetUserIdAsync(user);

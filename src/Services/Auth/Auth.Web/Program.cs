@@ -1,9 +1,9 @@
 using HealthChecks.UI.Client;
 using LayeredTemplate.Auth.Web.Components;
 using LayeredTemplate.Auth.Web.Components.Account;
+using LayeredTemplate.Auth.Web.Infrastructure.Cors;
 using LayeredTemplate.Auth.Web.Infrastructure.Data;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
-using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.Email;
 using LayeredTemplate.Auth.Web.Infrastructure.Identity;
 using LayeredTemplate.Auth.Web.Infrastructure.Logging;
@@ -93,8 +93,8 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddHttpClient<ReCaptchaService>();
 
     services.AddScoped<IdentityRedirectManager>();
-    services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-    services.AddSingleton<ISmsSender, NoOpSmsSender>();
+    services.AddAppEmailServices(configuration, env);
+    services.AddAppSmsServices();
 
     services.AddCascadingAuthenticationState();
 
@@ -114,13 +114,12 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
             opts.ClientId = configuration["Yandex:ClientId"]!;
             opts.ClientSecret = configuration["Yandex:ClientSecret"]!;
             opts.CallbackPath = "/signin-yandex";
-            // opts.Scope.Add("login:email");
-            // opts.Scope.Add("login:info");
-            // opts.Scope.Add("user:default_phone");
         })
         .AddIdentityCookies();
 
     services.AddHealthChecks();
+
+    services.AddAppCors(configuration);
 
     services.Configure<ForwardedHeadersOptions>(options =>
     {
@@ -133,8 +132,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
 void ConfigureMiddleware(WebApplication app, IWebHostEnvironment env)
 {
-    app.UseCors(x => x.SetIsOriginAllowed(origin => true));
     app.UseForwardedHeaders();
+    app.UseCors();
+
     app.UseRequestLogging();
 
     app.UseExceptionHandler("/error", createScopeForErrors: true);
@@ -151,13 +151,14 @@ void ConfigureMiddleware(WebApplication app, IWebHostEnvironment env)
 
 void ConfigureEndpoints(IEndpointRouteBuilder app)
 {
-    app.MapStaticAssets();
-    app.MapControllers();
-    app.MapRazorComponents<App>();
     app.MapHealthChecks("/health", new HealthCheckOptions()
     {
         ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
     });
+
+    app.MapStaticAssets();
+    app.MapControllers();
+    app.MapRazorComponents<App>();
 }
 
 void ConfigureSerilog(IHostBuilder host)

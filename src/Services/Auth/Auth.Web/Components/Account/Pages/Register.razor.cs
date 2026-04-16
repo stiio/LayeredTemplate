@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.Email.Services;
 using LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
@@ -27,7 +28,7 @@ public partial class Register : ComponentBase
     private SignInManager<ApplicationUser> SignInManager { get; set; } = default!;
 
     [Inject]
-    private IEmailSender<ApplicationUser> EmailSender { get; set; } = default!;
+    private IUserEmailSender EmailSender { get; set; } = default!;
 
     [Inject]
     private ILogger<Register> Logger { get; set; } = default!;

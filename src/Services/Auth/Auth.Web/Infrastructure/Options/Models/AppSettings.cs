@@ -2,4 +2,11 @@
 
 public class AppSettings
 {
+    public bool UseMockEmailSender { get; set; } = false;
+
+    public bool UseMockSmsSender { get; set; } = false;
+
+    public bool EnablePhoneConfirmation { get; set; } = false;
+
+    public bool EnableDeletePersonalData { get; set; } = false;
 }

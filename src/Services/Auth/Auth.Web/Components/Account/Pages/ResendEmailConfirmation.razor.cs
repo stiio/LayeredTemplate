@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.Email.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
@@ -16,7 +17,7 @@ public partial class ResendEmailConfirmation : ComponentBase
     private UserManager<ApplicationUser> UserManager { get; set; } = default!;
 
     [Inject]
-    private IEmailSender<ApplicationUser> EmailSender { get; set; } = default!;
+    private IUserEmailSender EmailSender { get; set; } = default!;
 
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
