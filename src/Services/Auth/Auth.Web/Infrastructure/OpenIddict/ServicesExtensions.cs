@@ -30,8 +30,9 @@ public static class ServicesExtensions
                 options.AllowAuthorizationCodeFlow()
                     .RequireProofKeyForCodeExchange();
 
-                // options.AddDevelopmentEncryptionCertificate()
-                //     .AddDevelopmentSigningCertificate();
+                options.SetAccessTokenLifetime(TimeSpan.FromHours(1))
+                    .SetIdentityTokenLifetime(TimeSpan.FromHours(1))
+                    .SetRefreshTokenLifetime(TimeSpan.FromDays(30));
 
                 options.RegisterScopes("openid", "profile", "email");
 
