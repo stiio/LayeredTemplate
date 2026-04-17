@@ -2,10 +2,12 @@ using System.Text;
 using System.Text.Encodings.Web;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.Email.Services;
+using LayeredTemplate.Auth.Web.Infrastructure.Options.Models;
 using LayeredTemplate.Auth.Web.Infrastructure.Sms.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace LayeredTemplate.Auth.Web.Components.Account.Pages.Manage;
 
@@ -31,6 +33,11 @@ public partial class Index : ComponentBase
 
     [Inject]
     private IdentityRedirectManager RedirectManager { get; set; } = default!;
+
+    [Inject]
+    private IOptions<AppSettings> AppSettings { get; set; } = default!;
+
+    private bool IsPhoneConfirmationEnabled => this.AppSettings.Value.IsPhoneConfirmationEnabled;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -76,6 +83,12 @@ public partial class Index : ComponentBase
 
     private async Task OnSendPhoneVerificationAsync()
     {
+        if (!this.IsPhoneConfirmationEnabled)
+        {
+            this.RedirectManager.RedirectTo("not_found");
+            return;
+        }
+
         var user = await this.UserManager.GetUserAsync(this.HttpContext.User);
         if (user is null || string.IsNullOrEmpty(this.phoneNumber))
         {

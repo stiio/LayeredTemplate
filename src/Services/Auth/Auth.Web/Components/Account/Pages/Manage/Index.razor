@@ -38,13 +38,20 @@
         <label class="form-label">Phone</label>
         <div class="field-row">
             <input type="text" value="@(phoneNumber ?? "Not set")" disabled class="form-input" />
-            <span class="@(isPhoneConfirmed ? "status-verified" : "status-unverified")">
-                @(isPhoneConfirmed ? "\u2713" : "\u2717")
-            </span>
+            @if (IsPhoneConfirmationEnabled)
+            {
+                <span class="@(isPhoneConfirmed ? "status-verified" : "status-unverified")">
+                    @(isPhoneConfirmed ? "\u2713" : "\u2717")
+                </span>
+            }
+            else
+            {
+                <span class="status-icon-spacer"></span>
+            }
         </div>
         <div class="field-actions">
             <a href="account/manage/edit_phone" class="btn btn-default field-action">Edit</a>
-            @if (!string.IsNullOrEmpty(phoneNumber) && !isPhoneConfirmed)
+            @if (IsPhoneConfirmationEnabled && !string.IsNullOrEmpty(phoneNumber) && !isPhoneConfirmed)
             {
                 <form method="post" @formname="confirm-phone" @onsubmit="OnSendPhoneVerificationAsync" style="display:inline;">
                     <AntiforgeryToken />

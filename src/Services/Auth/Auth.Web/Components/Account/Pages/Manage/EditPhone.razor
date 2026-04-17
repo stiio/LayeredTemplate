@@ -17,7 +17,7 @@
                            placeholder="+1234567890" data-phone-prefix="" />
                 <ValidationMessage For="() => PhoneInput.PhoneNumber" />
             </div>
-            <button type="submit" class="btn-primary btn-block">Send code</button>
+            <button type="submit" class="btn-primary btn-block">@(IsPhoneConfirmationEnabled ? "Send code" : "Save")</button>
         </EditForm>
     }
     else

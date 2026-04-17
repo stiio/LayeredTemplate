@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.Options.Models;
 using LayeredTemplate.Auth.Web.Infrastructure.Sms.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace LayeredTemplate.Auth.Web.Components.Account.Pages.Manage;
 
@@ -18,6 +20,11 @@ public partial class EditPhone : ComponentBase
 
     [Inject]
     private IdentityRedirectManager RedirectManager { get; set; } = default!;
+
+    [Inject]
+    private IOptions<AppSettings> AppSettings { get; set; } = default!;
+
+    private bool IsPhoneConfirmationEnabled => this.AppSettings.Value.IsPhoneConfirmationEnabled;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -46,6 +53,13 @@ public partial class EditPhone : ComponentBase
         this.PhoneInput ??= new();
         this.CodeInput ??= new();
 
+        // When confirmation is disabled, the verify step is unreachable.
+        if (!this.IsPhoneConfirmationEnabled && this.IsVerifyStep)
+        {
+            this.RedirectManager.RedirectTo("not_found");
+            return;
+        }
+
         var user = await this.UserManager.GetUserAsync(this.HttpContext.User);
         if (user is null)
         {
@@ -70,6 +84,24 @@ public partial class EditPhone : ComponentBase
         }
 
         var phone = this.PhoneInput.PhoneNumber!;
+
+        if (!this.IsPhoneConfirmationEnabled)
+        {
+            // SetPhoneNumberAsync updates the number and resets PhoneNumberConfirmed to false.
+            var setResult = await this.UserManager.SetPhoneNumberAsync(user, phone);
+            if (!setResult.Succeeded)
+            {
+                this.message = $"Error: {string.Join(" ", setResult.Errors.Select(e => e.Description))}";
+                return;
+            }
+
+            this.RedirectManager.RedirectToWithStatus(
+                "account/manage",
+                "Your phone number has been updated.",
+                this.HttpContext);
+            return;
+        }
+
         await this.SendVerificationCodeAsync(user, phone);
 
         this.RedirectManager.RedirectTo(
@@ -79,6 +111,12 @@ public partial class EditPhone : ComponentBase
 
     private async Task OnVerifyCodeAsync()
     {
+        if (!this.IsPhoneConfirmationEnabled)
+        {
+            this.RedirectManager.RedirectTo("not_found");
+            return;
+        }
+
         var user = await this.UserManager.GetUserAsync(this.HttpContext.User);
         if (user is null)
         {
@@ -105,6 +143,12 @@ public partial class EditPhone : ComponentBase
 
     private async Task OnResendCodeAsync()
     {
+        if (!this.IsPhoneConfirmationEnabled)
+        {
+            this.RedirectManager.RedirectTo("not_found");
+            return;
+        }
+
         var user = await this.UserManager.GetUserAsync(this.HttpContext.User);
         if (user is null || string.IsNullOrEmpty(this.Phone))
         {

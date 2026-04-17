@@ -6,7 +6,7 @@ public class AppSettings
 
     public bool UseMockSmsSender { get; set; } = false;
 
-    public bool EnablePhoneConfirmation { get; set; } = false;
+    public bool IsPhoneConfirmationEnabled { get; set; } = false;
 
     public bool EnableDeletePersonalData { get; set; } = false;
 }
