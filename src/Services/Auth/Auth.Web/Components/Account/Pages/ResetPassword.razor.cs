@@ -18,6 +18,12 @@ public partial class ResetPassword : ComponentBase
     [Inject]
     private UserManager<ApplicationUser> UserManager { get; set; } = default!;
 
+    [Inject]
+    private SignInManager<ApplicationUser> SignInManager { get; set; } = default!;
+
+    [Inject]
+    private ILogger<ResetPassword> Logger { get; set; } = default!;
+
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
 
@@ -69,13 +75,41 @@ public partial class ResetPassword : ComponentBase
         }
 
         var result = await this.UserManager.ResetPasswordAsync(user, this.Input.Code, this.Input.Password);
-        if (result.Succeeded)
+        if (!result.Succeeded)
         {
-            this.RedirectManager.RedirectTo("account/reset_password_confirmation");
+            this.identityErrors = result.Errors;
             return;
         }
 
-        this.identityErrors = result.Errors;
+        this.Logger.LogInformation("Password reset for user {UserId}.", user.Id);
+
+        // Clear any existing session (e.g. user was signed in as someone else).
+        await this.SignInManager.SignOutAsync();
+
+        // Auto-login. PasswordSignInAsync detects 2FA and sets the 2FA cookie if required.
+        var signInResult = await this.SignInManager.PasswordSignInAsync(
+            user,
+            this.Input.Password,
+            isPersistent: false,
+            lockoutOnFailure: false);
+
+        if (signInResult.Succeeded)
+        {
+            this.RedirectManager.RedirectTo("account/manage");
+            return;
+        }
+
+        if (signInResult.RequiresTwoFactor)
+        {
+            this.RedirectManager.RedirectTo(
+                "account/login_with_2fa",
+                new() { ["rememberMe"] = false });
+            return;
+        }
+
+        // IsNotAllowed (unconfirmed email) or IsLockedOut — can't auto-login, fall back to the
+        // confirmation page and let the user sign in manually.
+        this.RedirectManager.RedirectTo("account/reset_password_confirmation");
     }
 
     private sealed class InputModel

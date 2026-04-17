@@ -50,7 +50,7 @@ public class EmailSender : IEmailSender
             var response = await smtp.SendAsync(message);
             await smtp.DisconnectAsync(true);
 
-            this.logger.LogInformation("Email sent with response: {Response}", response);
+            this.logger.LogInformation("Email sent with response: {SendEmailResponse}", response);
         }
         catch (Exception e)
         {

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Text;
 using System.Text.Encodings.Web;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
@@ -135,7 +136,7 @@ public partial class Edit : ComponentBase
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
         var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
             this.NavigationManager.ToAbsoluteUri("account/reset_password").AbsoluteUri,
-            new Dictionary<string, object?> { ["code"] = code });
+            new Dictionary<string, object?> { ["code"] = code, ["email"] = WebUtility.UrlEncode(user.Email) });
 
         await this.EmailSender.SendPasswordResetLinkAsync(user, user.Email, HtmlEncoder.Default.Encode(callbackUrl));
 

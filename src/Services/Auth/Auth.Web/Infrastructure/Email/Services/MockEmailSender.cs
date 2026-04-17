@@ -11,15 +11,7 @@ public class MockEmailSender : IEmailSender
 
     public Task SendEmailAsync(string email, string subject, string htmlMessage)
     {
-        using var scope = this.logger.BeginScope(new Dictionary<string, object>()
-        {
-            ["RecipientEmail"] = email,
-            ["EmailSubject"] = subject,
-            ["EmailBody"] = htmlMessage,
-            ["IsMockEmailSender"] = true,
-        });
-
-        this.logger.LogInformation("Email sent.");
+        this.logger.LogInformation("Email sent to '{RecipientEmail}' with subject '{EmailSubject}' and message '{HtmlMessage}'.", email, subject, htmlMessage);
 
         return Task.CompletedTask;
     }
