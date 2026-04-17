@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
 
 public class AuthDbContext(DbContextOptions<AuthDbContext> options)
-    : IdentityDbContext<ApplicationUser>(options), IDataProtectionKeyContext
+    : IdentityDbContext<ApplicationUser, ApplicationRole, string>(options), IDataProtectionKeyContext
 {
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
 
