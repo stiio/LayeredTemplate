@@ -10,8 +10,9 @@
 
     <StatusMessage Message="@message"/>
 
-    <EditForm Model="Input" method="post" FormName="resend-email-confirmation" OnValidSubmit="OnValidSubmitAsync">
+    <EditForm Model="Input" method="post" FormName="resend-email-confirmation" OnValidSubmit="OnValidSubmitAsync" id="resend-email-confirmation-form">
         <DataAnnotationsValidator />
+        <ReCaptcha FormId="resend-email-confirmation-form" />
 
         <div class="form-group">
             <label for="Input.Email" class="form-label">Email</label>

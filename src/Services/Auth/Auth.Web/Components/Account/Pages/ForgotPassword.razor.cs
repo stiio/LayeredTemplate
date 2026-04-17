@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.Email.Services;
+using LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
@@ -12,6 +13,8 @@ namespace LayeredTemplate.Auth.Web.Components.Account.Pages;
 
 public partial class ForgotPassword : ComponentBase
 {
+    private string? message;
+
     [Inject]
     private UserManager<ApplicationUser> UserManager { get; set; } = default!;
 
@@ -27,6 +30,12 @@ public partial class ForgotPassword : ComponentBase
     [Inject]
     private ILogger<ForgotPassword> Logger { get; set; } = default!;
 
+    [Inject]
+    private ReCaptchaService ReCaptchaService { get; set; } = default!;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
 
@@ -37,6 +46,12 @@ public partial class ForgotPassword : ComponentBase
 
     private async Task OnValidSubmitAsync()
     {
+        if (!await this.ReCaptchaService.ValidateAsync(this.HttpContext))
+        {
+            this.message = "Error: reCAPTCHA validation failed. Please try again.";
+            return;
+        }
+
         var user = await this.UserManager.FindByEmailAsync(this.Input.Email);
         if (user is null || !(await this.UserManager.IsEmailConfirmedAsync(user)))
         {

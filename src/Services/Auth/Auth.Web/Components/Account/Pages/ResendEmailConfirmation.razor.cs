@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.Email.Services;
+using LayeredTemplate.Auth.Web.Infrastructure.ReCaptcha;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
@@ -25,6 +26,12 @@ public partial class ResendEmailConfirmation : ComponentBase
     [Inject]
     private IdentityRedirectManager RedirectManager { get; set; } = default!;
 
+    [Inject]
+    private ReCaptchaService ReCaptchaService { get; set; } = default!;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
 
@@ -38,6 +45,12 @@ public partial class ResendEmailConfirmation : ComponentBase
 
     private async Task OnValidSubmitAsync()
     {
+        if (!await this.ReCaptchaService.ValidateAsync(this.HttpContext))
+        {
+            this.message = "Error: reCAPTCHA validation failed. Please try again.";
+            return;
+        }
+
         var user = await this.UserManager.FindByEmailAsync(this.Input.Email!);
         if (user is null)
         {
