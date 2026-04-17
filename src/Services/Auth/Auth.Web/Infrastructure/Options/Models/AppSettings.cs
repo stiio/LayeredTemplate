@@ -8,5 +8,5 @@ public class AppSettings
 
     public bool IsPhoneConfirmationEnabled { get; set; } = false;
 
-    public bool EnableDeletePersonalData { get; set; } = false;
+    public bool IsDeletePersonalDataEnabled { get; set; } = false;
 }
