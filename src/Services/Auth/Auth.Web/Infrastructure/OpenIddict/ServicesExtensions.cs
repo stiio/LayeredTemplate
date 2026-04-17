@@ -1,4 +1,5 @@
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
+using LayeredTemplate.Auth.Web.Infrastructure.Identity;
 using LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.Extensions.Options;
@@ -29,19 +30,31 @@ public static class ServicesExtensions
 
                 options.AllowAuthorizationCodeFlow()
                     .AllowRefreshTokenFlow()
+                    .AllowClientCredentialsFlow()
                     .RequireProofKeyForCodeExchange();
+
+                if (env.IsDevelopment() || env.IsStaging())
+                {
+                    options.DisableAccessTokenEncryption();
+                }
 
                 options.SetAccessTokenLifetime(TimeSpan.FromHours(1))
                     .SetIdentityTokenLifetime(TimeSpan.FromHours(1))
                     .SetRefreshTokenLifetime(TimeSpan.FromDays(30));
 
-                options.RegisterScopes("openid", "profile", "email");
+                options.RegisterScopes("openid", "profile", "email", AppScopes.AdminUsers);
 
                 options.UseAspNetCore()
                     .EnableAuthorizationEndpointPassthrough()
                     .EnableTokenEndpointPassthrough()
                     .EnableUserInfoEndpointPassthrough()
                     .EnableEndSessionEndpointPassthrough();
+            })
+            .AddValidation(options =>
+            {
+                // Auth.Web validates its own tokens (same signing/encryption keys).
+                options.UseLocalServer();
+                options.UseAspNetCore();
             });
     }
 

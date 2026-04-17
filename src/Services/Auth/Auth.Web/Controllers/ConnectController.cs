@@ -60,6 +60,24 @@ public class ConnectController(
         var request = this.HttpContext.GetOpenIddictServerRequest() ??
                       throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
+        if (request.IsClientCredentialsGrantType())
+        {
+            // OpenIddict has already validated client_id + client_secret and that the requested
+            // scopes are a subset of what the client is permitted. We just build the principal.
+            var identity = new ClaimsIdentity(
+                OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                Claims.Name,
+                Claims.Role);
+
+            identity.AddClaim(new Claim(Claims.Subject, request.ClientId!)
+                .SetDestinations(Destinations.AccessToken));
+
+            var principal = new ClaimsPrincipal(identity);
+            principal.SetScopes(request.GetScopes());
+
+            return this.SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        }
+
         if (request.IsAuthorizationCodeGrantType() || request.IsRefreshTokenGrantType())
         {
             var result = await this.HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
