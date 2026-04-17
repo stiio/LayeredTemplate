@@ -1,0 +1,4 @@
+@using Microsoft.AspNetCore.Authorization
+@layout AdminLayout
+@attribute [ExcludeFromInteractiveRouting]
+@attribute [Authorize(Policy = AppRoles.Admin)]

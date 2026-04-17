@@ -1,0 +1,68 @@
+@* Shared form fields for Create/Edit. Host component owns the EditForm, Model and SubmitHandler. *@
+
+<div class="form-group">
+    <label class="form-label" for="@Model.ClientId">Client ID</label>
+    <InputText @bind-Value="Model.ClientId" name="Input.ClientId" class="form-input" disabled="@ClientIdReadonly" />
+    <ValidationMessage For="() => Model.ClientId" />
+</div>
+
+<div class="form-group">
+    <label class="form-label" for="@Model.DisplayName">Display name</label>
+    <InputText @bind-Value="Model.DisplayName" name="Input.DisplayName" class="form-input" />
+    <ValidationMessage For="() => Model.DisplayName" />
+</div>
+
+<div class="form-group">
+    <label class="form-label">Client type</label>
+    <div>
+        <label style="margin-right: 16px;">
+            <InputRadioGroup @bind-Value="Model.ClientType" name="Input.ClientType">
+                <InputRadio Value="ClientTypeOption.Confidential" /> Confidential
+                <InputRadio Value="ClientTypeOption.Public" /> Public
+            </InputRadioGroup>
+        </label>
+    </div>
+    <small style="color: #87867f;">Public clients have no client secret (SPAs, mobile). Confidential clients authenticate with a secret.</small>
+</div>
+
+<div class="form-group">
+    <label class="form-label" for="@Model.RedirectUris">Redirect URIs (one per line)</label>
+    <InputTextArea @bind-Value="Model.RedirectUris" name="Input.RedirectUris" class="form-input" rows="4" />
+</div>
+
+<div class="form-group">
+    <label class="form-label" for="@Model.PostLogoutRedirectUris">Post-logout redirect URIs (one per line)</label>
+    <InputTextArea @bind-Value="Model.PostLogoutRedirectUris" name="Input.PostLogoutRedirectUris" class="form-input" rows="3" />
+</div>
+
+<div class="form-group">
+    <label class="form-label">Grant types</label>
+    <div><label><InputCheckbox @bind-Value="Model.AllowAuthorizationCode" name="Input.AllowAuthorizationCode" /> Authorization Code</label></div>
+    <div><label><InputCheckbox @bind-Value="Model.AllowRefreshToken" name="Input.AllowRefreshToken" /> Refresh Token</label></div>
+    <div><label><InputCheckbox @bind-Value="Model.AllowClientCredentials" name="Input.AllowClientCredentials" /> Client Credentials</label></div>
+    <div><label><InputCheckbox @bind-Value="Model.AllowPassword" name="Input.AllowPassword" /> Password</label></div>
+</div>
+
+<div class="form-group">
+    <label class="form-label">Scopes</label>
+    <div><label><InputCheckbox @bind-Value="Model.ScopeOpenid" name="Input.ScopeOpenid" /> openid</label></div>
+    <div><label><InputCheckbox @bind-Value="Model.ScopeProfile" name="Input.ScopeProfile" /> profile</label></div>
+    <div><label><InputCheckbox @bind-Value="Model.ScopeEmail" name="Input.ScopeEmail" /> email</label></div>
+</div>
+
+<div class="form-group">
+    <label class="form-label" for="@Model.CustomScopes">Additional scopes (one per line)</label>
+    <InputTextArea @bind-Value="Model.CustomScopes" name="Input.CustomScopes" class="form-input" rows="2" />
+</div>
+
+<div class="form-group">
+    <label><InputCheckbox @bind-Value="Model.RequirePkce" name="Input.RequirePkce" /> Require PKCE</label>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public ApplicationFormModel Model { get; set; } = default!;
+
+    [Parameter]
+    public bool ClientIdReadonly { get; set; }
+}

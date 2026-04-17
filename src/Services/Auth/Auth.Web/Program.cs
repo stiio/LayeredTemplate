@@ -79,6 +79,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     services.AddStartupTask<RunMigrationsTask>();
     services.AddStartupTask<RotateDataProtectionKeysTask>();
+    services.AddStartupTask<SeedAdminRoleTask>();
     services.AddStartupTask<SeedOidcClientsTask>();
 
     services.AddRazorComponents();
@@ -119,6 +120,8 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
             opts.CallbackPath = "/signin-yandex";
         })
         .AddIdentityCookies();
+
+    services.AddAppAuthorization();
 
     services.AddHealthChecks();
 

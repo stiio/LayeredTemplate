@@ -1,0 +1,46 @@
+@page "/admin/applications"
+
+<PageTitle>Applications</PageTitle>
+
+<div class="admin-header">
+    <h3>OpenIddict Applications</h3>
+    <a href="admin/applications/create" class="btn btn-primary">New application</a>
+</div>
+
+<StatusMessage />
+
+@if (applications is null)
+{
+    <p>Loading...</p>
+}
+else if (applications.Count == 0)
+{
+    <p>No applications registered yet.</p>
+}
+else
+{
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Client ID</th>
+                <th>Display name</th>
+                <th>Type</th>
+                <th class="col-actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var app in applications)
+            {
+                <tr>
+                    <td><code>@app.ClientId</code></td>
+                    <td>@(app.DisplayName ?? "—")</td>
+                    <td>@(app.ClientType ?? "—")</td>
+                    <td class="col-actions">
+                        <a href="@($"admin/applications/edit/{Uri.EscapeDataString(app.ClientId)}")" class="btn btn-default">Edit</a>
+                        <a href="@($"admin/applications/delete/{Uri.EscapeDataString(app.ClientId)}")" class="btn btn-danger">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

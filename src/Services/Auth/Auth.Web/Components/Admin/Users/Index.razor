@@ -1,0 +1,54 @@
+@page "/admin/users"
+
+<PageTitle>Users</PageTitle>
+
+<div class="admin-header">
+    <h3>Users</h3>
+</div>
+
+<EditForm Model="Input" method="post" FormName="user-search" OnValidSubmit="OnSearchAsync">
+    <div class="admin-toolbar">
+        <label class="form-label" style="margin: 0;" for="@Input.Email">Email contains</label>
+        <InputText @bind-Value="Input.Email" name="Input.Email" class="form-input" style="flex: 1; max-width: 360px;"
+                   placeholder="name@example.com" />
+        <button type="submit" class="btn-primary">Search</button>
+    </div>
+</EditForm>
+
+@if (results is null)
+{
+    <p style="color: #87867f;">Enter an email fragment to search.</p>
+}
+else if (results.Count == 0)
+{
+    <p>No users match.</p>
+}
+else
+{
+    <p style="color: #87867f;">@(results.Count == MaxResults ? $"Showing first {MaxResults} matches — narrow your search." : $"Found {results.Count}.")</p>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Confirmed</th>
+                <th>Phone</th>
+                <th>2FA</th>
+                <th class="col-actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in results)
+            {
+                <tr>
+                    <td>@u.Email</td>
+                    <td>@(u.EmailConfirmed ? "✓" : "✗")</td>
+                    <td>@(u.PhoneNumber ?? "—")</td>
+                    <td>@(u.TwoFactorEnabled ? "✓" : "✗")</td>
+                    <td class="col-actions">
+                        <a href="@($"admin/users/edit/{u.Id}")" class="btn btn-default">Manage</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

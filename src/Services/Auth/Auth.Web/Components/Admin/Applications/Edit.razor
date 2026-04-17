@@ -1,0 +1,46 @@
+@page "/admin/applications/edit/{clientId}"
+
+<PageTitle>Edit application</PageTitle>
+
+<div class="admin-header">
+    <h3>Edit application: <code>@ClientId</code></h3>
+    <a href="admin/applications" class="btn btn-default">Back</a>
+</div>
+
+<StatusMessage Message="@message" />
+
+@if (regeneratedSecret is not null)
+{
+    <div class="alert alert-warning">
+        <strong>New client secret (shown once — copy it now):</strong>
+        <div class="admin-secret" style="margin-top: 8px;">@regeneratedSecret</div>
+    </div>
+}
+
+@if (notFound)
+{
+    <p>Application not found.</p>
+}
+else if (Input is not null)
+{
+    <EditForm Model="Input" method="post" FormName="edit-application" OnValidSubmit="OnValidSubmitAsync">
+        <DataAnnotationsValidator />
+
+        <ApplicationFormFields Model="Input" ClientIdReadonly="true" />
+
+        <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button type="submit" class="btn-primary">Save changes</button>
+        </div>
+    </EditForm>
+
+    @if (isConfidential)
+    {
+        <hr style="margin: 32px 0;" />
+        <h4>Client secret</h4>
+        <p style="color: #87867f;">Existing secrets are hashed and cannot be displayed. Regenerate a new one — the old one stops working immediately.</p>
+        <form method="post" @formname="regenerate-secret" @onsubmit="OnRegenerateSecretAsync">
+            <AntiforgeryToken />
+            <button type="submit" class="btn-danger">Regenerate client secret</button>
+        </form>
+    }
+}

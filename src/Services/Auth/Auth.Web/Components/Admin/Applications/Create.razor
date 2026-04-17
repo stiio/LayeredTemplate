@@ -1,0 +1,29 @@
+@page "/admin/applications/create"
+
+<PageTitle>Create application</PageTitle>
+
+<div class="admin-header">
+    <h3>New application</h3>
+    <a href="admin/applications" class="btn btn-default">Back</a>
+</div>
+
+<StatusMessage Message="@message" />
+
+@if (generatedSecret is not null)
+{
+    <div class="alert alert-warning">
+        <strong>Client secret (shown once — copy it now):</strong>
+        <div class="admin-secret" style="margin-top: 8px;">@generatedSecret</div>
+    </div>
+    <p><a href="admin/applications" class="btn btn-primary">Done</a></p>
+}
+else
+{
+    <EditForm Model="Input" method="post" FormName="create-application" OnValidSubmit="OnValidSubmitAsync">
+        <DataAnnotationsValidator />
+
+        <ApplicationFormFields Model="Input" />
+
+        <button type="submit" class="btn-primary">Create</button>
+    </EditForm>
+}

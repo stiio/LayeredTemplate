@@ -1,0 +1,28 @@
+@page "/admin/applications/delete/{clientId}"
+
+<PageTitle>Delete application</PageTitle>
+
+<div class="admin-header">
+    <h3>Delete application</h3>
+    <a href="admin/applications" class="btn btn-default">Back</a>
+</div>
+
+@if (notFound)
+{
+    <p>Application not found.</p>
+}
+else
+{
+    <div class="alert alert-warning">
+        Client <code>@ClientId</code> will be permanently deleted. Active tokens and authorizations
+        for this client are removed too. This action cannot be undone.
+    </div>
+
+    <form method="post" @formname="delete-application" @onsubmit="OnDeleteAsync">
+        <AntiforgeryToken />
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn-danger">Delete permanently</button>
+            <a href="admin/applications" class="btn btn-default">Cancel</a>
+        </div>
+    </form>
+}

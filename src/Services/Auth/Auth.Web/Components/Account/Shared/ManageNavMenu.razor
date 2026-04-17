@@ -5,6 +5,10 @@
     <NavLink href="account/manage/connected_accounts">Connected accounts</NavLink>
     <NavLink href="account/manage/personal_data">Personal data</NavLink>
 
+    <AuthorizeView Policy="@LayeredTemplate.Auth.Web.Infrastructure.Identity.AppRoles.Admin">
+        <NavLink href="admin/applications">Admin</NavLink>
+    </AuthorizeView>
+
     <div style="flex: 1;"></div>
 
     <div class="manage-nav-footer">

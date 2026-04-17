@@ -21,8 +21,17 @@ public static class ServicesExtensions
 
                 options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
             })
+            .AddRoles<ApplicationRole>()
             .AddEntityFrameworkStores<AuthDbContext>()
             .AddSignInManager()
             .AddDefaultTokenProviders();
+    }
+
+    public static void AddAppAuthorization(this IServiceCollection services)
+    {
+        services.AddAuthorization(opts =>
+        {
+            opts.AddPolicy(AppRoles.Admin, policy => policy.RequireRole(AppRoles.Admin));
+        });
     }
 }
