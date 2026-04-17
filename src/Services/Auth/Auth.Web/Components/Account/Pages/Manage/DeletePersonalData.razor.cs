@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.Options.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace LayeredTemplate.Auth.Web.Components.Account.Pages.Manage;
 
@@ -23,6 +25,11 @@ public partial class DeletePersonalData : ComponentBase
     [Inject]
     private ILogger<DeletePersonalData> Logger { get; set; } = default!;
 
+    [Inject]
+    private IOptions<AppSettings> AppSettings { get; set; } = default!;
+
+    private bool IsDeletePersonalDataEnabled => this.AppSettings.Value.IsDeletePersonalDataEnabled;
+
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
@@ -31,6 +38,12 @@ public partial class DeletePersonalData : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
+        if (!this.IsDeletePersonalDataEnabled)
+        {
+            this.RedirectManager.RedirectTo("not_found");
+            return;
+        }
+
         this.Input ??= new();
 
         this.user = await this.UserManager.GetUserAsync(this.HttpContext.User);
@@ -45,6 +58,12 @@ public partial class DeletePersonalData : ComponentBase
 
     private async Task OnValidSubmitAsync()
     {
+        if (!this.IsDeletePersonalDataEnabled)
+        {
+            this.RedirectManager.RedirectTo("not_found");
+            return;
+        }
+
         if (this.user is null)
         {
             this.RedirectManager.RedirectToInvalidUser(this.UserManager, this.HttpContext);
