@@ -1,6 +1,7 @@
 using HealthChecks.UI.Client;
 using LayeredTemplate.Auth.Web.Components;
 using LayeredTemplate.Auth.Web.Components.Account;
+using LayeredTemplate.Auth.Web.Infrastructure.BackgroundTasks;
 using LayeredTemplate.Auth.Web.Infrastructure.Cors;
 using LayeredTemplate.Auth.Web.Infrastructure.Data;
 using LayeredTemplate.Auth.Web.Infrastructure.DataProtection;
@@ -95,6 +96,8 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddAppEmailServices(configuration, env);
     services.AddAppSmsServices(configuration, env);
     services.AddPostgresLockProvider();
+
+    services.AddAppBackgroundTasks();
 
     services.AddCascadingAuthenticationState();
 
