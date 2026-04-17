@@ -6,11 +6,15 @@
 <StatusMessage/>
 
 <div class="card">
+
     <div class="form-group">
-        <label class="form-label">Username</label>
+        <label class="form-label">Name</label>
         <div class="field-row">
-            <input type="text" value="@username" disabled class="form-input" />
+            <input type="text" value="@(fullName ?? "Not set")" disabled class="form-input" />
             <span class="status-icon-spacer"></span>
+        </div>
+        <div class="field-actions">
+            <a href="account/manage/edit_profile" class="btn btn-default field-action">Edit</a>
         </div>
     </div>
 

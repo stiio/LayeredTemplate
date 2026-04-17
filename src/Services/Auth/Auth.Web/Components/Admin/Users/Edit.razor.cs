@@ -1,12 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using System.Net;
-using System.Text;
-using System.Text.Encodings.Web;
+using LayeredTemplate.Auth.Web.Components.Account;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
-using LayeredTemplate.Auth.Web.Infrastructure.Email.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.WebUtilities;
 
 namespace LayeredTemplate.Auth.Web.Components.Admin.Users;
 
@@ -14,56 +10,51 @@ public partial class Edit : ComponentBase
 {
     private string? message;
     private bool notFound;
-    private UserView? view;
 
     [Inject]
     private UserManager<ApplicationUser> UserManager { get; set; } = default!;
 
     [Inject]
-    private IUserEmailSender EmailSender { get; set; } = default!;
-
-    [Inject]
-    private NavigationManager NavigationManager { get; set; } = default!;
+    private IdentityRedirectManager RedirectManager { get; set; } = default!;
 
     [Inject]
     private ILogger<Edit> Logger { get; set; } = default!;
 
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
     [Parameter]
     public string Id { get; set; } = string.Empty;
 
-    [SupplyParameterFromForm(FormName = "set-password")]
-    private SetPasswordInput PwdInput { get; set; } = default!;
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
-        this.PwdInput ??= new();
-        await this.LoadViewAsync();
-    }
+        // Set Input before the first await so EditForm has a non-null Model on initial render.
+        this.Input ??= new();
 
-    private async Task<ApplicationUser?> LoadViewAsync()
-    {
         var user = await this.UserManager.FindByIdAsync(this.Id);
         if (user is null)
         {
             this.notFound = true;
-            this.view = null;
-            return null;
+            return;
         }
 
-        this.view = new UserView
+        // Pre-fill only on GET. On POST, SupplyParameterFromForm has already populated Input
+        // with submitted values — overwriting them from the DB would swallow the user's edits.
+        if (HttpMethods.IsGet(this.HttpContext.Request.Method))
         {
-            Email = user.Email ?? string.Empty,
-            EmailConfirmed = user.EmailConfirmed,
-            PhoneNumber = user.PhoneNumber,
-            PhoneConfirmed = user.PhoneNumberConfirmed,
-            HasPassword = await this.UserManager.HasPasswordAsync(user),
-            Roles = (await this.UserManager.GetRolesAsync(user)).ToList(),
-        };
-
-        return user;
+            this.Input.Email = user.Email ?? string.Empty;
+            this.Input.EmailConfirmed = user.EmailConfirmed;
+            this.Input.PhoneNumber = user.PhoneNumber;
+            this.Input.PhoneNumberConfirmed = user.PhoneNumberConfirmed;
+            this.Input.FirstName = user.FirstName;
+            this.Input.LastName = user.LastName;
+        }
     }
 
-    private async Task OnConfirmEmailAsync()
+    private async Task OnValidSubmitAsync()
     {
         var user = await this.UserManager.FindByIdAsync(this.Id);
         if (user is null)
@@ -72,126 +63,107 @@ public partial class Edit : ComponentBase
             return;
         }
 
-        if (user.EmailConfirmed)
+        var newEmail = this.Input.Email.Trim();
+        var newPhone = string.IsNullOrWhiteSpace(this.Input.PhoneNumber) ? null : this.Input.PhoneNumber.Trim();
+
+        // Email change uses SetEmailAsync (resets EmailConfirmed and normalizes). Keep UserName in sync.
+        if (!string.Equals(user.Email, newEmail, StringComparison.OrdinalIgnoreCase))
         {
-            this.message = "Email is already confirmed.";
-            await this.LoadViewAsync();
-            return;
+            var clash = await this.UserManager.FindByEmailAsync(newEmail);
+            if (clash is not null && clash.Id != user.Id)
+            {
+                this.message = $"Error: another user already has email '{newEmail}'.";
+                return;
+            }
+
+            var setEmail = await this.UserManager.SetEmailAsync(user, newEmail);
+            if (!setEmail.Succeeded)
+            {
+                this.message = $"Error: {string.Join(" ", setEmail.Errors.Select(e => e.Description))}";
+                return;
+            }
+
+            var setUserName = await this.UserManager.SetUserNameAsync(user, newEmail);
+            if (!setUserName.Succeeded)
+            {
+                this.message = $"Error: {string.Join(" ", setUserName.Errors.Select(e => e.Description))}";
+                return;
+            }
         }
 
-        user.EmailConfirmed = true;
+        // Phone change resets PhoneNumberConfirmed; only call when actually changing.
+        if (!string.Equals(user.PhoneNumber, newPhone, StringComparison.Ordinal))
+        {
+            var setPhone = await this.UserManager.SetPhoneNumberAsync(user, newPhone);
+            if (!setPhone.Succeeded)
+            {
+                this.message = $"Error: {string.Join(" ", setPhone.Errors.Select(e => e.Description))}";
+                return;
+            }
+        }
+
+        // Apply confirmation flags last — SetEmailAsync/SetPhoneNumberAsync force them back to false.
+        user.EmailConfirmed = this.Input.EmailConfirmed;
+        user.PhoneNumberConfirmed = user.PhoneNumber is not null && this.Input.PhoneNumberConfirmed;
+
+        user.FirstName = string.IsNullOrWhiteSpace(this.Input.FirstName) ? null : this.Input.FirstName.Trim();
+        user.LastName = string.IsNullOrWhiteSpace(this.Input.LastName) ? null : this.Input.LastName.Trim();
+
         var result = await this.UserManager.UpdateAsync(user);
         if (!result.Succeeded)
         {
             this.message = $"Error: {string.Join(" ", result.Errors.Select(e => e.Description))}";
-            await this.LoadViewAsync();
             return;
         }
 
-        this.Logger.LogWarning("Admin manually confirmed email for user {UserId}.", this.Id);
-        this.message = "Email marked as confirmed.";
-        await this.LoadViewAsync();
+        this.Logger.LogInformation(
+            "Admin {AdminId} updated profile for user {UserId}.",
+            this.UserManager.GetUserId(this.HttpContext.User),
+            this.Id);
+
+        this.RedirectManager.RedirectToWithStatus(
+            $"admin/users/details/{this.Id}",
+            "User profile saved.",
+            this.HttpContext);
     }
 
-    private async Task OnSendConfirmationAsync()
+    private sealed class InputModel
     {
-        var user = await this.UserManager.FindByIdAsync(this.Id);
-        if (user is null || string.IsNullOrEmpty(user.Email))
-        {
-            this.notFound = user is null;
-            this.message = user is null ? null : "Error: user has no email.";
-            return;
-        }
+        // Blazor SSR binds empty form fields to "" (not null), which breaks [Phone] on empty input.
+        // Normalize optional strings so blanks become null and pass validation.
+        private string? phoneNumber;
+        private string? firstName;
+        private string? lastName;
 
-        if (user.EmailConfirmed)
-        {
-            this.message = "Email is already confirmed.";
-            return;
-        }
-
-        var userId = await this.UserManager.GetUserIdAsync(user);
-        var code = await this.UserManager.GenerateEmailConfirmationTokenAsync(user);
-        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
-            this.NavigationManager.ToAbsoluteUri("account/confirm_email").AbsoluteUri,
-            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
-
-        await this.EmailSender.SendConfirmationLinkAsync(user, user.Email, HtmlEncoder.Default.Encode(callbackUrl));
-
-        this.Logger.LogInformation("Admin sent email confirmation link for user {UserId}.", this.Id);
-        this.message = "Confirmation email sent.";
-    }
-
-    private async Task OnSendPasswordResetAsync()
-    {
-        var user = await this.UserManager.FindByIdAsync(this.Id);
-        if (user is null || string.IsNullOrEmpty(user.Email))
-        {
-            this.notFound = user is null;
-            this.message = user is null ? null : "Error: user has no email.";
-            return;
-        }
-
-        var code = await this.UserManager.GeneratePasswordResetTokenAsync(user);
-        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        var callbackUrl = this.NavigationManager.GetUriWithQueryParameters(
-            this.NavigationManager.ToAbsoluteUri("account/reset_password").AbsoluteUri,
-            new Dictionary<string, object?> { ["code"] = code, ["email"] = WebUtility.UrlEncode(user.Email) });
-
-        await this.EmailSender.SendPasswordResetLinkAsync(user, user.Email, HtmlEncoder.Default.Encode(callbackUrl));
-
-        this.Logger.LogInformation("Admin sent password reset link for user {UserId}.", this.Id);
-        this.message = "Password reset email sent.";
-    }
-
-    private async Task OnSetPasswordAsync()
-    {
-        var user = await this.UserManager.FindByIdAsync(this.Id);
-        if (user is null)
-        {
-            this.notFound = true;
-            return;
-        }
-
-        IdentityResult result;
-        if (await this.UserManager.HasPasswordAsync(user))
-        {
-            var token = await this.UserManager.GeneratePasswordResetTokenAsync(user);
-            result = await this.UserManager.ResetPasswordAsync(user, token, this.PwdInput.NewPassword);
-        }
-        else
-        {
-            result = await this.UserManager.AddPasswordAsync(user, this.PwdInput.NewPassword);
-        }
-
-        if (!result.Succeeded)
-        {
-            this.message = $"Error: {string.Join(" ", result.Errors.Select(e => e.Description))}";
-            await this.LoadViewAsync();
-            return;
-        }
-
-        this.Logger.LogWarning("Admin set password manually for user {UserId}.", this.Id);
-        this.message = "Password updated.";
-        this.PwdInput = new();
-        await this.LoadViewAsync();
-    }
-
-    private sealed class UserView
-    {
-        public string Email { get; set; } = string.Empty;
-        public bool EmailConfirmed { get; set; }
-        public string? PhoneNumber { get; set; }
-        public bool PhoneConfirmed { get; set; }
-        public bool HasPassword { get; set; }
-        public List<string> Roles { get; set; } = [];
-    }
-
-    private sealed class SetPasswordInput
-    {
         [Required]
-        [DataType(DataType.Password)]
-        [StringLength(100, MinimumLength = 6)]
-        public string NewPassword { get; set; } = string.Empty;
+        [EmailAddress]
+        [MaxLength(128)]
+        public string Email { get; set; } = string.Empty;
+
+        public bool EmailConfirmed { get; set; }
+
+        [Phone]
+        [MaxLength(20)]
+        public string? PhoneNumber
+        {
+            get => this.phoneNumber;
+            set => this.phoneNumber = string.IsNullOrWhiteSpace(value) ? null : value;
+        }
+
+        public bool PhoneNumberConfirmed { get; set; }
+
+        [MaxLength(100)]
+        public string? FirstName
+        {
+            get => this.firstName;
+            set => this.firstName = string.IsNullOrWhiteSpace(value) ? null : value;
+        }
+
+        [MaxLength(100)]
+        public string? LastName
+        {
+            get => this.lastName;
+            set => this.lastName = string.IsNullOrWhiteSpace(value) ? null : value;
+        }
     }
 }

@@ -46,6 +46,12 @@ public class UserConfiguration : IEntityTypeConfiguration<ApplicationUser>
         builder.Property(x => x.PasswordHash)
             .HasMaxLength(256);
 
+        builder.Property(x => x.FirstName)
+            .HasMaxLength(100);
+
+        builder.Property(x => x.LastName)
+            .HasMaxLength(100);
+
         builder.HasIndex(u => u.NormalizedUserName).HasDatabaseName("UserNameIndex").IsUnique();
         builder.HasIndex(u => u.NormalizedEmail).HasDatabaseName("EmailIndex").IsUnique();
 

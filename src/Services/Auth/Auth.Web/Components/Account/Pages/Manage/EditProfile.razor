@@ -1,0 +1,33 @@
+@page "/account/manage/edit_profile"
+
+<PageTitle>Edit profile</PageTitle>
+
+<h3>Edit profile</h3>
+<StatusMessage Message="@message" />
+
+<div class="card">
+    <EditForm Model="Input" method="post" FormName="edit-profile" OnValidSubmit="OnValidSubmitAsync">
+        <DataAnnotationsValidator />
+
+        <div class="form-group">
+            <label class="form-label" for="Input.FirstName">First name</label>
+            <InputText @bind-Value="Input.FirstName" id="Input.FirstName" name="Input.FirstName" class="form-input"
+                       autocomplete="given-name" placeholder="John" />
+            <ValidationMessage For="() => Input.FirstName" />
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="Input.LastName">Last name</label>
+            <InputText @bind-Value="Input.LastName" id="Input.LastName" name="Input.LastName" class="form-input"
+                       autocomplete="family-name" placeholder="Doe" />
+            <ValidationMessage For="() => Input.LastName" />
+        </div>
+
+        <button type="submit" class="btn-primary btn-block">Save</button>
+    </EditForm>
+
+    <hr />
+    <div style="text-align: center;">
+        <a href="account/manage">Back to profile</a>
+    </div>
+</div>

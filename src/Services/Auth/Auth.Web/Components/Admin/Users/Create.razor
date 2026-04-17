@@ -1,0 +1,68 @@
+@page "/admin/users/create"
+
+<PageTitle>New user</PageTitle>
+
+<div class="admin-header">
+    <h3>New user</h3>
+    <a href="admin/users" class="btn btn-default">Back</a>
+</div>
+
+<StatusMessage Message="@message" />
+
+<EditForm Model="Input" method="post" FormName="create-user" OnValidSubmit="OnValidSubmitAsync">
+    <DataAnnotationsValidator />
+
+    <div class="card" style="max-width: 640px;">
+        <div class="form-group">
+            <label class="form-label" for="@Input.Email">Email</label>
+            <InputText @bind-Value="Input.Email" name="Input.Email" class="form-input"
+                       placeholder="name@example.com" autocomplete="off" />
+            <ValidationMessage For="() => Input.Email" />
+        </div>
+
+        <div class="form-group">
+            <label>
+                <InputCheckbox @bind-Value="Input.EmailConfirmed" name="Input.EmailConfirmed" />
+                Email is confirmed
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="@Input.PhoneNumber">Phone</label>
+            <InputText @bind-Value="Input.PhoneNumber" name="Input.PhoneNumber" class="form-input"
+                       placeholder="+1234567890" />
+            <ValidationMessage For="() => Input.PhoneNumber" />
+        </div>
+
+        <div class="form-group">
+            <label>
+                <InputCheckbox @bind-Value="Input.PhoneNumberConfirmed" name="Input.PhoneNumberConfirmed" />
+                Phone is confirmed
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="@Input.FirstName">First name</label>
+            <InputText @bind-Value="Input.FirstName" name="Input.FirstName" class="form-input" placeholder="John" />
+            <ValidationMessage For="() => Input.FirstName" />
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="@Input.LastName">Last name</label>
+            <InputText @bind-Value="Input.LastName" name="Input.LastName" class="form-input" placeholder="Doe" />
+            <ValidationMessage For="() => Input.LastName" />
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="@Input.Password">Password</label>
+            <InputText @bind-Value="Input.Password" name="Input.Password" type="password" class="form-input"
+                       autocomplete="new-password" />
+            <small style="color: #87867f;">Leave blank for external-login-only account.</small>
+            <ValidationMessage For="() => Input.Password" />
+        </div>
+    </div>
+
+    <div style="margin-top: 16px;">
+        <button type="submit" class="btn-primary">Create user</button>
+    </div>
+</EditForm>

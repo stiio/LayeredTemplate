@@ -64,7 +64,11 @@ public partial class Register : ComponentBase
             return;
         }
 
-        var user = new ApplicationUser();
+        var user = new ApplicationUser
+        {
+            FirstName = string.IsNullOrWhiteSpace(this.Input.FirstName) ? null : this.Input.FirstName.Trim(),
+            LastName = string.IsNullOrWhiteSpace(this.Input.LastName) ? null : this.Input.LastName.Trim(),
+        };
 
         this.UserManager.SetEmailAsync(user, this.Input.Email).Wait();
         await this.UserStore.SetUserNameAsync(user, this.Input.Email, CancellationToken.None);
@@ -109,6 +113,14 @@ public partial class Register : ComponentBase
         [MaxLength(128)]
         [Display(Name = "Email")]
         public string Email { get; set; } = string.Empty;
+
+        [MaxLength(100)]
+        [Display(Name = "First name")]
+        public string? FirstName { get; set; }
+
+        [MaxLength(100)]
+        [Display(Name = "Last name")]
+        public string? LastName { get; set; }
 
         [Required]
         [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]

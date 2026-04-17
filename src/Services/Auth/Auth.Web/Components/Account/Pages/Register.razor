@@ -19,6 +19,20 @@
         </div>
 
         <div class="form-group">
+            <label class="form-label" for="Input.FirstName">First name</label>
+            <InputText @bind-Value="Input.FirstName" id="Input.FirstName" name="Input.FirstName" class="form-input"
+                       autocomplete="given-name" placeholder="John" />
+            <ValidationMessage For="() => Input.FirstName" />
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="Input.LastName">Last name</label>
+            <InputText @bind-Value="Input.LastName" id="Input.LastName" name="Input.LastName" class="form-input"
+                       autocomplete="family-name" placeholder="Doe" />
+            <ValidationMessage For="() => Input.LastName" />
+        </div>
+
+        <div class="form-group">
             <label class="form-label" for="Input.Password">Password</label>
             <div class="password-wrapper">
                 <InputText @bind-Value="Input.Password" id="Input.Password" name="Input.Password" type="password" class="form-input"

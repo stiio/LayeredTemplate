@@ -67,7 +67,14 @@ public partial class ExternalLoginCallback : ComponentBase
             return;
         }
 
-        var user = new ApplicationUser();
+        var (firstName, lastName) = ExtractName(info.Principal);
+
+        var user = new ApplicationUser
+        {
+            FirstName = firstName,
+            LastName = lastName,
+        };
+
         await this.UserStore.SetUserNameAsync(user, email, CancellationToken.None);
         var emailStore = (IUserEmailStore<ApplicationUser>)this.UserStore;
         await emailStore.SetEmailAsync(user, email, CancellationToken.None);
@@ -96,5 +103,36 @@ public partial class ExternalLoginCallback : ComponentBase
         this.Logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
 
         this.RedirectManager.RedirectTo(this.ReturnUrl ?? "account/manage");
+    }
+
+    /// <summary>
+    /// Pulls first/last name from the external principal. Yandex maps them to GivenName/Surname
+    /// natively; GitHub only provides a single <c>name</c> claim, which we split heuristically.
+    /// </summary>
+    private static (string? FirstName, string? LastName) ExtractName(ClaimsPrincipal principal)
+    {
+        var firstName = principal.FindFirstValue(ClaimTypes.GivenName);
+        var lastName = principal.FindFirstValue(ClaimTypes.Surname);
+
+        if (!string.IsNullOrWhiteSpace(firstName) || !string.IsNullOrWhiteSpace(lastName))
+        {
+            return (NullIfBlank(firstName), NullIfBlank(lastName));
+        }
+
+        var fullName = principal.FindFirstValue(ClaimTypes.Name);
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return (null, null);
+        }
+
+        var parts = fullName.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length switch
+        {
+            0 => (null, null),
+            1 => (parts[0], null),
+            _ => (parts[0], parts[1]),
+        };
+
+        static string? NullIfBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

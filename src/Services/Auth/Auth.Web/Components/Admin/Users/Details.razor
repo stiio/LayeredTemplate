@@ -1,0 +1,133 @@
+@page "/admin/users/details/{id}"
+
+<PageTitle>User details</PageTitle>
+
+<div class="admin-header">
+    <h3>User</h3>
+    <div style="display: flex; gap: 8px;">
+        @if (!notFound && view is not null)
+        {
+            <a href="@($"admin/users/edit/{Id}")" class="btn btn-primary">Edit</a>
+        }
+        <a href="admin/users" class="btn btn-default">Back</a>
+    </div>
+</div>
+
+<StatusMessage Message="@message" />
+
+@if (notFound)
+{
+    <p>User not found.</p>
+}
+else if (view is not null)
+{
+    <div class="card" style="max-width: 640px;">
+        <div class="form-group">
+            <label class="form-label">Email</label>
+            <div class="field-row">
+                <input type="text" value="@view.Email" disabled class="form-input" />
+                <span class="@(view.EmailConfirmed ? "status-verified" : "status-unverified")">
+                    @(view.EmailConfirmed ? "\u2713" : "\u2717")
+                </span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Phone</label>
+            <div class="field-row">
+                <input type="text" value="@(view.PhoneNumber ?? "Not set")" disabled class="form-input" />
+                <span class="@(view.PhoneConfirmed ? "status-verified" : "status-unverified")">
+                    @(view.PhoneConfirmed ? "\u2713" : "\u2717")
+                </span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">First name</label>
+            <div class="field-row">
+                <input type="text" value="@(view.FirstName ?? "Not set")" disabled class="form-input" />
+                <span class="status-icon-spacer"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Last name</label>
+            <div class="field-row">
+                <input type="text" value="@(view.LastName ?? "Not set")" disabled class="form-input" />
+                <span class="status-icon-spacer"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Has password</label>
+            <div>@(view.HasPassword ? "Yes" : "No (external login only)")</div>
+        </div>
+    </div>
+
+    <hr style="margin: 32px 0;" />
+    <h4>Roles</h4>
+
+    @if (availableRoles.Count == 0)
+    {
+        <p style="color: #87867f;">No roles defined.</p>
+    }
+    else
+    {
+        @if (isSelf && view.Roles.Contains(LayeredTemplate.Auth.Web.Infrastructure.Identity.AppRoles.Admin))
+        {
+            <div class="alert alert-warning" style="max-width: 640px;">
+                You cannot remove the Admin role from your own account. Ask another admin to do that.
+            </div>
+        }
+        <EditForm Model="RolesInput" method="post" FormName="edit-roles" OnValidSubmit="OnSaveRolesAsync">
+            <div class="card" style="max-width: 640px;">
+                @foreach (var role in availableRoles)
+                {
+                    var isAdminSelf = isSelf && role == LayeredTemplate.Auth.Web.Infrastructure.Identity.AppRoles.Admin;
+                    <div>
+                        <label>
+                            <input type="checkbox" name="RolesInput.Roles" value="@role"
+                                   checked="@RolesInput.Roles.Contains(role)"
+                                   disabled="@isAdminSelf" />
+                            @role
+                        </label>
+                        @if (isAdminSelf)
+                        {
+                            @* Disabled input isn't posted; hidden input keeps Admin in the submission so the role stays on the user. *@
+                            <input type="hidden" name="RolesInput.Roles" value="@role" />
+                        }
+                    </div>
+                }
+            </div>
+            <div style="margin-top: 12px;">
+                <button type="submit" class="btn-primary">Save roles</button>
+            </div>
+        </EditForm>
+    }
+
+    @if (!view.EmailConfirmed)
+    {
+        <hr style="margin: 32px 0;" />
+        <h4>Email</h4>
+        <form method="post" @formname="send-confirmation" @onsubmit="OnSendConfirmationAsync">
+            <AntiforgeryToken />
+            <button type="submit" class="btn-default">Send confirmation email</button>
+        </form>
+    }
+
+    <hr style="margin: 32px 0;" />
+    <h4>Password</h4>
+
+    <form method="post" @formname="send-reset" @onsubmit="OnSendPasswordResetAsync" style="margin-bottom: 16px;">
+        <AntiforgeryToken />
+        <button type="submit" class="btn-default">Send password reset email</button>
+    </form>
+
+    <EditForm Model="PwdInput" method="post" FormName="set-password" OnValidSubmit="OnSetPasswordAsync">
+        <DataAnnotationsValidator />
+
+        <div class="form-group">
+            <label class="form-label" for="@PwdInput.NewPassword">New password</label>
+            <InputText @bind-Value="PwdInput.NewPassword" name="PwdInput.NewPassword" type="password"
+                       class="form-input" style="max-width: 360px;" />
+            <ValidationMessage For="() => PwdInput.NewPassword" />
+        </div>
+        <button type="submit" class="btn-danger">Set password manually</button>
+    </EditForm>
+}

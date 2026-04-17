@@ -13,9 +13,9 @@ namespace LayeredTemplate.Auth.Web.Components.Account.Pages.Manage;
 
 public partial class Index : ComponentBase
 {
-    private string? username;
     private string? email;
     private string? phoneNumber;
+    private string? fullName;
     private bool isEmailConfirmed;
     private bool isPhoneConfirmed;
 
@@ -51,11 +51,14 @@ public partial class Index : ComponentBase
             return;
         }
 
-        this.username = await this.UserManager.GetUserNameAsync(user);
         this.email = await this.UserManager.GetEmailAsync(user);
         this.phoneNumber = await this.UserManager.GetPhoneNumberAsync(user);
         this.isEmailConfirmed = await this.UserManager.IsEmailConfirmedAsync(user);
         this.isPhoneConfirmed = user.PhoneNumberConfirmed;
+
+        var name = string.Join(' ', new[] { user.FirstName, user.LastName }
+            .Where(s => !string.IsNullOrWhiteSpace(s)));
+        this.fullName = string.IsNullOrEmpty(name) ? null : name;
     }
 
     private async Task OnSendEmailVerificationAsync()

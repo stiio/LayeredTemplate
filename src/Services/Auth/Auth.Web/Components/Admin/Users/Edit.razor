@@ -1,10 +1,10 @@
 @page "/admin/users/edit/{id}"
 
-<PageTitle>Manage user</PageTitle>
+<PageTitle>Edit user</PageTitle>
 
 <div class="admin-header">
-    <h3>User</h3>
-    <a href="admin/users" class="btn btn-default">Back</a>
+    <h3>Edit user</h3>
+    <a href="@($"admin/users/details/{Id}")" class="btn btn-default">Back</a>
 </div>
 
 <StatusMessage Message="@message" />
@@ -13,74 +13,55 @@
 {
     <p>User not found.</p>
 }
-else if (view is not null)
+else
 {
-    <div class="card" style="max-width: 640px;">
-        <div class="form-group">
-            <label class="form-label">Email</label>
-            <div class="field-row">
-                <input type="text" value="@view.Email" disabled class="form-input" />
-                <span class="@(view.EmailConfirmed ? "status-verified" : "status-unverified")">
-                    @(view.EmailConfirmed ? "\u2713" : "\u2717")
-                </span>
-            </div>
-        </div>
-        <div class="form-group">
-            <label class="form-label">Phone</label>
-            <div class="field-row">
-                <input type="text" value="@(view.PhoneNumber ?? "Not set")" disabled class="form-input" />
-                <span class="@(view.PhoneConfirmed ? "status-verified" : "status-unverified")">
-                    @(view.PhoneConfirmed ? "\u2713" : "\u2717")
-                </span>
-            </div>
-        </div>
-        <div class="form-group">
-            <label class="form-label">Has password</label>
-            <div>@(view.HasPassword ? "Yes" : "No (external login only)")</div>
-        </div>
-        <div class="form-group">
-            <label class="form-label">Roles</label>
-            <div>@(view.Roles.Count == 0 ? "—" : string.Join(", ", view.Roles))</div>
-        </div>
-    </div>
-    
-    @if (!view.EmailConfirmed)
-    {
-        <hr style="margin: 32px 0;" />
-    
-        <h4>Email</h4>
-
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-            
-            <form method="post" @formname="confirm-email" @onsubmit="OnConfirmEmailAsync">
-                <AntiforgeryToken />
-                <button type="submit" class="btn-default">Mark email confirmed</button>
-            </form>
-            <form method="post" @formname="send-confirmation" @onsubmit="OnSendConfirmationAsync">
-                <AntiforgeryToken />
-                <button type="submit" class="btn-default">Send confirmation email</button>
-            </form>
-            
-        </div>
-    }
-
-    <hr style="margin: 32px 0;" />
-    <h4>Password</h4>
-
-    <form method="post" @formname="send-reset" @onsubmit="OnSendPasswordResetAsync" style="margin-bottom: 16px;">
-        <AntiforgeryToken />
-        <button type="submit" class="btn-default">Send password reset email</button>
-    </form>
-
-    <EditForm Model="PwdInput" method="post" FormName="set-password" OnValidSubmit="OnSetPasswordAsync">
+    <EditForm Model="Input" method="post" FormName="edit-user" OnValidSubmit="OnValidSubmitAsync">
         <DataAnnotationsValidator />
 
-        <div class="form-group">
-            <label class="form-label" for="@PwdInput.NewPassword">New password</label>
-            <InputText @bind-Value="PwdInput.NewPassword" name="PwdInput.NewPassword" type="password"
-                       class="form-input" style="max-width: 360px;" />
-            <ValidationMessage For="() => PwdInput.NewPassword" />
+        <div class="card" style="max-width: 640px;">
+            <div class="form-group">
+                <label class="form-label" for="@Input.Email">Email</label>
+                <InputText @bind-Value="Input.Email" name="Input.Email" class="form-input"
+                           placeholder="name@example.com" autocomplete="off" />
+                <ValidationMessage For="() => Input.Email" />
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <InputCheckbox @bind-Value="Input.EmailConfirmed" name="Input.EmailConfirmed" />
+                    Email is confirmed
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="@Input.PhoneNumber">Phone</label>
+                <InputText @bind-Value="Input.PhoneNumber" name="Input.PhoneNumber" class="form-input"
+                           placeholder="+1234567890" />
+                <ValidationMessage For="() => Input.PhoneNumber" />
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <InputCheckbox @bind-Value="Input.PhoneNumberConfirmed" name="Input.PhoneNumberConfirmed" />
+                    Phone is confirmed
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="@Input.FirstName">First name</label>
+                <InputText @bind-Value="Input.FirstName" name="Input.FirstName" class="form-input" placeholder="John" />
+                <ValidationMessage For="() => Input.FirstName" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="@Input.LastName">Last name</label>
+                <InputText @bind-Value="Input.LastName" name="Input.LastName" class="form-input" placeholder="Doe" />
+                <ValidationMessage For="() => Input.LastName" />
+            </div>
         </div>
-        <button type="submit" class="btn-danger">Set password manually</button>
+
+        <div style="margin-top: 16px;">
+            <button type="submit" class="btn-primary">Save</button>
+        </div>
     </EditForm>
 }

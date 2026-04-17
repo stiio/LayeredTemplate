@@ -4,6 +4,7 @@
 
 <div class="admin-header">
     <h3>Users</h3>
+    <a href="admin/users/create" class="btn btn-primary">New user</a>
 </div>
 
 <EditForm Model="Input" method="post" FormName="user-search" OnValidSubmit="OnSearchAsync">
@@ -68,9 +69,13 @@ else
                         </span>
                     </td>
                     <td class="col-actions">
-                        <a href="@($"admin/users/edit/{u.Id}")"
+                        <a href="@($"admin/users/details/{u.Id}")"
                            class="btn btn-default btn-icon" title="Manage" aria-label="Manage">
                             <span class="icon icon-edit" aria-hidden="true"></span>
+                        </a>
+                        <a href="@($"admin/users/delete/{u.Id}")"
+                           class="btn btn-danger btn-icon" title="Delete" aria-label="Delete">
+                            <span class="icon icon-delete" aria-hidden="true"></span>
                         </a>
                     </td>
                 </tr>

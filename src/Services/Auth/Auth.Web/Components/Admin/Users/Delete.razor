@@ -1,0 +1,35 @@
+@page "/admin/users/delete/{id}"
+
+<PageTitle>Delete user</PageTitle>
+
+<div class="admin-header">
+    <h3>Delete user</h3>
+    <a href="admin/users" class="btn btn-default">Back</a>
+</div>
+
+<StatusMessage Message="@message" />
+
+@if (notFound)
+{
+    <p>User not found.</p>
+}
+else if (isSelf)
+{
+    <div class="alert alert-warning">You cannot delete your own account from the admin panel.</div>
+    <a href="admin/users" class="btn btn-default">Back</a>
+}
+else if (email is not null)
+{
+    <div class="alert alert-warning">
+        User <strong>@email</strong> will be permanently deleted along with their logins, tokens
+        and claims. This action cannot be undone.
+    </div>
+
+    <form method="post" @formname="delete-user" @onsubmit="OnDeleteAsync">
+        <AntiforgeryToken />
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn-danger">Delete permanently</button>
+            <a href="admin/users" class="btn btn-default">Cancel</a>
+        </div>
+    </form>
+}

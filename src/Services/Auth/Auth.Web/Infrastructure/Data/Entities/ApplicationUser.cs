@@ -6,4 +6,10 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 public class ApplicationUser : IdentityUser
 {
     public override string Id { get; set; } = Guid.CreateVersion7().ToString();
+
+    [PersonalData]
+    public string? FirstName { get; set; }
+
+    [PersonalData]
+    public string? LastName { get; set; }
 }
