@@ -18,11 +18,21 @@ else if (view is not null)
     <div class="card" style="max-width: 640px;">
         <div class="form-group">
             <label class="form-label">Email</label>
-            <div>@view.Email @(view.EmailConfirmed ? "✓" : "— unconfirmed")</div>
+            <div class="field-row">
+                <input type="text" value="@view.Email" disabled class="form-input" />
+                <span class="@(view.EmailConfirmed ? "status-verified" : "status-unverified")">
+                    @(view.EmailConfirmed ? "\u2713" : "\u2717")
+                </span>
+            </div>
         </div>
         <div class="form-group">
             <label class="form-label">Phone</label>
-            <div>@(view.PhoneNumber ?? "—") @(view.PhoneConfirmed ? "✓" : "")</div>
+            <div class="field-row">
+                <input type="text" value="@(view.PhoneNumber ?? "Not set")" disabled class="form-input" />
+                <span class="@(view.PhoneConfirmed ? "status-verified" : "status-unverified")">
+                    @(view.PhoneConfirmed ? "\u2713" : "\u2717")
+                </span>
+            </div>
         </div>
         <div class="form-group">
             <label class="form-label">Has password</label>
@@ -33,13 +43,15 @@ else if (view is not null)
             <div>@(view.Roles.Count == 0 ? "—" : string.Join(", ", view.Roles))</div>
         </div>
     </div>
+    
+    @if (!view.EmailConfirmed)
+    {
+        <hr style="margin: 32px 0;" />
+    
+        <h4>Email</h4>
 
-    <hr style="margin: 32px 0;" />
-    <h4>Email</h4>
-
-    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-        @if (!view.EmailConfirmed)
-        {
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            
             <form method="post" @formname="confirm-email" @onsubmit="OnConfirmEmailAsync">
                 <AntiforgeryToken />
                 <button type="submit" class="btn-default">Mark email confirmed</button>
@@ -48,8 +60,9 @@ else if (view is not null)
                 <AntiforgeryToken />
                 <button type="submit" class="btn-default">Send confirmation email</button>
             </form>
-        }
-    </div>
+            
+        </div>
+    }
 
     <hr style="margin: 32px 0;" />
     <h4>Password</h4>
@@ -63,7 +76,7 @@ else if (view is not null)
         <DataAnnotationsValidator />
 
         <div class="form-group">
-            <label class="form-label" for="PwdInput.NewPassword">New password</label>
+            <label class="form-label" for="@PwdInput.NewPassword">New password</label>
             <InputText @bind-Value="PwdInput.NewPassword" name="PwdInput.NewPassword" type="password"
                        class="form-input" style="max-width: 360px;" />
             <ValidationMessage For="() => PwdInput.NewPassword" />

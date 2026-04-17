@@ -528,6 +528,11 @@ input[type="checkbox"] {
 }
 .admin-table tr:hover td { background: rgba(201, 100, 66, 0.04); }
 .admin-table .col-actions { width: 1%; white-space: nowrap; }
+.cell-with-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
 
 .btn-icon {
     padding: 6px 8px;

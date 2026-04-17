@@ -44,6 +44,7 @@ public partial class Index : ComponentBase
                 Email = u.Email ?? string.Empty,
                 EmailConfirmed = u.EmailConfirmed,
                 PhoneNumber = u.PhoneNumber,
+                PhoneNumberConfirmed = u.PhoneNumberConfirmed,
                 TwoFactorEnabled = u.TwoFactorEnabled,
             })
             .ToListAsync();
@@ -64,6 +65,7 @@ public partial class Index : ComponentBase
         public string Email { get; set; } = string.Empty;
         public bool EmailConfirmed { get; set; }
         public string? PhoneNumber { get; set; }
+        public bool PhoneNumberConfirmed { get; set; }
         public bool TwoFactorEnabled { get; set; }
     }
 }

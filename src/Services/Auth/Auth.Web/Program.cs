@@ -81,7 +81,10 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddStartupTask<RotateDataProtectionKeysTask>();
     services.AddStartupTask<SeedAdminRoleTask>();
     services.AddStartupTask<SeedOidcScopesTask>();
-    services.AddStartupTask<SeedOidcClientsTask>();
+    if (env.IsDevelopment())
+    {
+        services.AddStartupTask<SeedOidcClientsTask>();
+    }
 
     services.AddRazorComponents();
     services.AddControllersWithViews();

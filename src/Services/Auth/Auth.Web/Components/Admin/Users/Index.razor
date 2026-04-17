@@ -30,7 +30,6 @@ else
         <thead>
             <tr>
                 <th>Email</th>
-                <th>Confirmed</th>
                 <th>Phone</th>
                 <th>2FA</th>
                 <th class="col-actions">Actions</th>
@@ -40,10 +39,34 @@ else
             @foreach (var u in results)
             {
                 <tr>
-                    <td>@u.Email</td>
-                    <td>@(u.EmailConfirmed ? "✓" : "✗")</td>
-                    <td>@(u.PhoneNumber ?? "—")</td>
-                    <td>@(u.TwoFactorEnabled ? "✓" : "✗")</td>
+                    <td>
+                        <span class="cell-with-status">
+                            @u.Email
+                            <span class="@(u.EmailConfirmed ? "status-verified" : "status-unverified")">
+                                @(u.EmailConfirmed ? "\u2713" : "\u2717")
+                            </span>
+                        </span>
+                    </td>
+                    <td>
+                        @if (string.IsNullOrEmpty(u.PhoneNumber))
+                        {
+                            <span style="color: #87867f;">—</span>
+                        }
+                        else
+                        {
+                            <span class="cell-with-status">
+                                @u.PhoneNumber
+                                <span class="@(u.PhoneNumberConfirmed ? "status-verified" : "status-unverified")">
+                                    @(u.PhoneNumberConfirmed ? "\u2713" : "\u2717")
+                                </span>
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        <span class="@(u.TwoFactorEnabled ? "status-verified" : "status-unverified")">
+                            @(u.TwoFactorEnabled ? "\u2713" : "\u2717")
+                        </span>
+                    </td>
                     <td class="col-actions">
                         <a href="@($"admin/users/edit/{u.Id}")"
                            class="btn btn-default btn-icon" title="Manage" aria-label="Manage">
