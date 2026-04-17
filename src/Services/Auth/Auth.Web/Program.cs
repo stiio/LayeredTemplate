@@ -80,6 +80,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddStartupTask<RunMigrationsTask>();
     services.AddStartupTask<RotateDataProtectionKeysTask>();
     services.AddStartupTask<SeedAdminRoleTask>();
+    services.AddStartupTask<SeedOidcScopesTask>();
     services.AddStartupTask<SeedOidcClientsTask>();
 
     services.AddRazorComponents();

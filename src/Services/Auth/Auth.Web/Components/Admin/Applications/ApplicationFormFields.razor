@@ -2,7 +2,7 @@
 
 <div class="form-group">
     <label class="form-label" for="@Model.ClientId">Client ID</label>
-    <InputText @bind-Value="Model.ClientId" name="Input.ClientId" class="form-input" disabled="@ClientIdReadonly" />
+    <InputText @bind-Value="Model.ClientId" name="Input.ClientId" class="form-input" readonly="@ClientIdReadonly" />
     <ValidationMessage For="() => Model.ClientId" />
 </div>
 
@@ -14,15 +14,26 @@
 
 <div class="form-group">
     <label class="form-label">Client type</label>
-    <div>
-        <label style="margin-right: 16px;">
-            <InputRadioGroup @bind-Value="Model.ClientType" name="Input.ClientType">
+    @if (ClientTypeReadonly)
+    {
+        <div class="form-input-static">
+            @(Model.ClientType == ClientTypeOption.Public ? "Public" : "Confidential")
+        </div>
+        <input type="hidden" name="Input.ClientType" value="@Model.ClientType" />
+        <small style="color: #87867f;">Type cannot be changed after creation — recreate the application to switch.</small>
+    }
+    else
+    {
+        <InputRadioGroup @bind-Value="Model.ClientType" name="Input.ClientType">
+            <label style="margin-right: 16px;">
                 <InputRadio Value="ClientTypeOption.Confidential" /> Confidential
+            </label>
+            <label>
                 <InputRadio Value="ClientTypeOption.Public" /> Public
-            </InputRadioGroup>
-        </label>
-    </div>
-    <small style="color: #87867f;">Public clients have no client secret (SPAs, mobile). Confidential clients authenticate with a secret.</small>
+            </label>
+        </InputRadioGroup>
+        <small style="color: #87867f; display: block; margin-top: 4px;">Public clients have no client secret (SPAs, mobile). Confidential clients authenticate with a secret.</small>
+    }
 </div>
 
 <div class="form-group">
@@ -45,14 +56,23 @@
 
 <div class="form-group">
     <label class="form-label">Scopes</label>
-    <div><label><InputCheckbox @bind-Value="Model.ScopeOpenid" name="Input.ScopeOpenid" /> openid</label></div>
-    <div><label><InputCheckbox @bind-Value="Model.ScopeProfile" name="Input.ScopeProfile" /> profile</label></div>
-    <div><label><InputCheckbox @bind-Value="Model.ScopeEmail" name="Input.ScopeEmail" /> email</label></div>
-</div>
-
-<div class="form-group">
-    <label class="form-label" for="@Model.CustomScopes">Additional scopes (one per line)</label>
-    <InputTextArea @bind-Value="Model.CustomScopes" name="Input.CustomScopes" class="form-input" rows="2" />
+    @if (AvailableScopes.Count == 0)
+    {
+        <small style="color: #87867f;">No scopes registered. Seed scopes via <code>IOpenIddictScopeManager</code> before assigning them.</small>
+    }
+    else
+    {
+        @foreach (var scope in AvailableScopes)
+        {
+            <div>
+                <label>
+                    <input type="checkbox" name="Input.Scopes" value="@scope"
+                           checked="@Model.Scopes.Contains(scope)" />
+                    @scope
+                </label>
+            </div>
+        }
+    }
 </div>
 
 <div class="form-group">
@@ -65,4 +85,10 @@
 
     [Parameter]
     public bool ClientIdReadonly { get; set; }
+
+    [Parameter]
+    public bool ClientTypeReadonly { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<string> AvailableScopes { get; set; } = [];
 }

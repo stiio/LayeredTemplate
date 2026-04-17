@@ -33,48 +33,30 @@ public class ApplicationFormModel
 
     public bool AllowPassword { get; set; }
 
-    public bool ScopeOpenid { get; set; } = true;
-
-    public bool ScopeProfile { get; set; } = true;
-
-    public bool ScopeEmail { get; set; } = true;
-
-    /// <summary>Newline-separated list of extra scope names (without the scp: prefix).</summary>
-    public string? CustomScopes { get; set; }
+    /// <summary>Scopes selected via checkboxes. Values must match names registered in the OpenIddict scope store.</summary>
+    public List<string> Scopes { get; set; } = [];
 
     public bool RequirePkce { get; set; } = true;
 
-    public static ApplicationFormModel FromDescriptor(OpenIddictApplicationDescriptor d)
+    public static ApplicationFormModel FromDescriptor(OpenIddictApplicationDescriptor d) => new()
     {
-        var model = new ApplicationFormModel
-        {
-            ClientId = d.ClientId ?? string.Empty,
-            DisplayName = d.DisplayName,
-            ClientType = string.Equals(d.ClientType, ClientTypes.Public, StringComparison.OrdinalIgnoreCase)
-                ? ClientTypeOption.Public
-                : ClientTypeOption.Confidential,
-            RedirectUris = string.Join("\n", d.RedirectUris.Select(u => u.ToString())),
-            PostLogoutRedirectUris = string.Join("\n", d.PostLogoutRedirectUris.Select(u => u.ToString())),
-            AllowAuthorizationCode = d.Permissions.Contains(Permissions.GrantTypes.AuthorizationCode),
-            AllowRefreshToken = d.Permissions.Contains(Permissions.GrantTypes.RefreshToken),
-            AllowClientCredentials = d.Permissions.Contains(Permissions.GrantTypes.ClientCredentials),
-            AllowPassword = d.Permissions.Contains(Permissions.GrantTypes.Password),
-            ScopeOpenid = d.Permissions.Contains(Permissions.Prefixes.Scope + "openid"),
-            ScopeProfile = d.Permissions.Contains(Permissions.Prefixes.Scope + "profile"),
-            ScopeEmail = d.Permissions.Contains(Permissions.Prefixes.Scope + "email"),
-            RequirePkce = d.Requirements.Contains(Requirements.Features.ProofKeyForCodeExchange),
-        };
-
-        var knownScopes = new[] { "openid", "profile", "email" };
-        var customScopes = d.Permissions
+        ClientId = d.ClientId ?? string.Empty,
+        DisplayName = d.DisplayName,
+        ClientType = string.Equals(d.ClientType, ClientTypes.Public, StringComparison.OrdinalIgnoreCase)
+            ? ClientTypeOption.Public
+            : ClientTypeOption.Confidential,
+        RedirectUris = string.Join("\n", d.RedirectUris.Select(u => u.ToString())),
+        PostLogoutRedirectUris = string.Join("\n", d.PostLogoutRedirectUris.Select(u => u.ToString())),
+        AllowAuthorizationCode = d.Permissions.Contains(Permissions.GrantTypes.AuthorizationCode),
+        AllowRefreshToken = d.Permissions.Contains(Permissions.GrantTypes.RefreshToken),
+        AllowClientCredentials = d.Permissions.Contains(Permissions.GrantTypes.ClientCredentials),
+        AllowPassword = d.Permissions.Contains(Permissions.GrantTypes.Password),
+        Scopes = d.Permissions
             .Where(p => p.StartsWith(Permissions.Prefixes.Scope, StringComparison.Ordinal))
             .Select(p => p[Permissions.Prefixes.Scope.Length..])
-            .Where(s => !knownScopes.Contains(s, StringComparer.Ordinal))
-            .ToList();
-        model.CustomScopes = customScopes.Count > 0 ? string.Join("\n", customScopes) : null;
-
-        return model;
-    }
+            .ToList(),
+        RequirePkce = d.Requirements.Contains(Requirements.Features.ProofKeyForCodeExchange),
+    };
 
     public void ApplyTo(OpenIddictApplicationDescriptor d)
     {
@@ -122,22 +104,7 @@ public class ApplicationFormModel
             d.Permissions.Add(Permissions.Endpoints.Token);
         }
 
-        if (this.ScopeOpenid)
-        {
-            d.Permissions.Add(Permissions.Prefixes.Scope + "openid");
-        }
-
-        if (this.ScopeProfile)
-        {
-            d.Permissions.Add(Permissions.Prefixes.Scope + "profile");
-        }
-
-        if (this.ScopeEmail)
-        {
-            d.Permissions.Add(Permissions.Prefixes.Scope + "email");
-        }
-
-        foreach (var scope in ParseLines(this.CustomScopes))
+        foreach (var scope in this.Scopes.Distinct(StringComparer.Ordinal))
         {
             d.Permissions.Add(Permissions.Prefixes.Scope + scope);
         }

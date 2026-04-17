@@ -22,7 +22,7 @@ else
     <EditForm Model="Input" method="post" FormName="create-application" OnValidSubmit="OnValidSubmitAsync">
         <DataAnnotationsValidator />
 
-        <ApplicationFormFields Model="Input" />
+        <ApplicationFormFields Model="Input" AvailableScopes="availableScopes" />
 
         <button type="submit" class="btn-primary">Create</button>
     </EditForm>

@@ -36,8 +36,14 @@ else
                     <td>@(app.DisplayName ?? "—")</td>
                     <td>@(app.ClientType ?? "—")</td>
                     <td class="col-actions">
-                        <a href="@($"admin/applications/edit/{Uri.EscapeDataString(app.ClientId)}")" class="btn btn-default">Edit</a>
-                        <a href="@($"admin/applications/delete/{Uri.EscapeDataString(app.ClientId)}")" class="btn btn-danger">Delete</a>
+                        <a href="@($"admin/applications/edit/{Uri.EscapeDataString(app.ClientId)}")"
+                           class="btn btn-default btn-icon" title="Edit" aria-label="Edit">
+                            <span class="icon icon-edit" aria-hidden="true"></span>
+                        </a>
+                        <a href="@($"admin/applications/delete/{Uri.EscapeDataString(app.ClientId)}")"
+                           class="btn btn-danger btn-icon" title="Delete" aria-label="Delete">
+                            <span class="icon icon-delete" aria-hidden="true"></span>
+                        </a>
                     </td>
                 </tr>
             }

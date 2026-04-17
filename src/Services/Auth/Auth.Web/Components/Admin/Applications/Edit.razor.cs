@@ -11,9 +11,13 @@ public partial class Edit : ComponentBase
     private string? regeneratedSecret;
     private bool notFound;
     private bool isConfidential;
+    private List<string> availableScopes = [];
 
     [Inject]
     private IOpenIddictApplicationManager ApplicationManager { get; set; } = default!;
+
+    [Inject]
+    private IOpenIddictScopeManager ScopeManager { get; set; } = default!;
 
     [Inject]
     private ILogger<Edit> Logger { get; set; } = default!;
@@ -26,6 +30,8 @@ public partial class Edit : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
+        this.availableScopes = await AdminScopeHelper.ListScopeNamesAsync(this.ScopeManager);
+
         var app = await this.ApplicationManager.FindByClientIdAsync(this.ClientId);
         if (app is null)
         {
@@ -63,13 +69,13 @@ public partial class Edit : ComponentBase
         var descriptor = new OpenIddictApplicationDescriptor();
         await this.ApplicationManager.PopulateAsync(descriptor, app);
 
-        // ClientId edit is disabled in UI; keep form value aligned with route.
+        // ClientId input is readonly in UI; align with route just in case.
         this.Input.ClientId = this.ClientId;
+        this.Input.Scopes = AdminScopeHelper.FilterToKnown(this.Input.Scopes, this.availableScopes);
         this.Input.ApplyTo(descriptor);
 
-        // Preserve existing client secret on plain updates — secret is rotated via a separate action.
-        descriptor.ClientSecret = null;
-
+        // ClientType is frozen in the edit UI, so the existing hashed secret rides through the
+        // descriptor unchanged. PopulateAsync back stores it as-is — no re-hashing, no clearing.
         await this.ApplicationManager.PopulateAsync(app, descriptor);
         await this.ApplicationManager.UpdateAsync(app);
 

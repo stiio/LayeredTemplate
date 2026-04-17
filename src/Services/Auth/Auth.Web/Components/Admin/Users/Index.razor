@@ -45,7 +45,10 @@ else
                     <td>@(u.PhoneNumber ?? "—")</td>
                     <td>@(u.TwoFactorEnabled ? "✓" : "✗")</td>
                     <td class="col-actions">
-                        <a href="@($"admin/users/edit/{u.Id}")" class="btn btn-default">Manage</a>
+                        <a href="@($"admin/users/edit/{u.Id}")"
+                           class="btn btn-default btn-icon" title="Manage" aria-label="Manage">
+                            <span class="icon icon-edit" aria-hidden="true"></span>
+                        </a>
                     </td>
                 </tr>
             }

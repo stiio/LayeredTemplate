@@ -26,7 +26,7 @@ else if (Input is not null)
     <EditForm Model="Input" method="post" FormName="edit-application" OnValidSubmit="OnValidSubmitAsync">
         <DataAnnotationsValidator />
 
-        <ApplicationFormFields Model="Input" ClientIdReadonly="true" />
+        <ApplicationFormFields Model="Input" ClientIdReadonly="true" ClientTypeReadonly="true" AvailableScopes="availableScopes" />
 
         <div style="display: flex; gap: 12px; margin-top: 16px;">
             <button type="submit" class="btn-primary">Save changes</button>
