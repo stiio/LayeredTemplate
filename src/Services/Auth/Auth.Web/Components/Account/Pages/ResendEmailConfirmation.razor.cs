@@ -28,9 +28,12 @@ public partial class ResendEmailConfirmation : ComponentBase
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
 
+    [SupplyParameterFromQuery(Name = "email")]
+    private string? EmailFromQuery { get; set; }
+
     protected override void OnInitialized()
     {
-        this.Input ??= new();
+        this.Input ??= new() { Email = this.EmailFromQuery ?? string.Empty };
     }
 
     private async Task OnValidSubmitAsync()

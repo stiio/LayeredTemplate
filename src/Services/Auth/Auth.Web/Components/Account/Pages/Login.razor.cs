@@ -10,9 +10,14 @@ namespace LayeredTemplate.Auth.Web.Components.Account.Pages;
 public partial class Login : ComponentBase
 {
     private string? errorMessage;
+    private bool needsEmailConfirmation;
+    private string? unconfirmedEmail;
 
     [Inject]
     private SignInManager<ApplicationUser> SignInManager { get; set; } = default!;
+
+    [Inject]
+    private UserManager<ApplicationUser> UserManager { get; set; } = default!;
 
     [Inject]
     private ILogger<Login> Logger { get; set; } = default!;
@@ -63,10 +68,35 @@ public partial class Login : ComponentBase
             this.Logger.LogWarning("User account locked out.");
             this.RedirectManager.RedirectTo("account/lockout");
         }
+        else if (result.IsNotAllowed && await this.IsUnconfirmedWithValidPasswordAsync())
+        {
+            // PasswordSignInAsync returns IsNotAllowed without checking the password.
+            // We verify the password explicitly to avoid user-enumeration: the helpful
+            // "confirm your email" message is shown only to someone who proves they
+            // own the account by supplying the correct password.
+            this.needsEmailConfirmation = true;
+            this.unconfirmedEmail = this.Input.Email;
+        }
         else
         {
             this.errorMessage = "Error: Invalid login attempt.";
         }
+    }
+
+    private async Task<bool> IsUnconfirmedWithValidPasswordAsync()
+    {
+        var user = await this.UserManager.FindByEmailAsync(this.Input.Email);
+        if (user is null)
+        {
+            return false;
+        }
+
+        if (!await this.UserManager.CheckPasswordAsync(user, this.Input.Password))
+        {
+            return false;
+        }
+
+        return !await this.UserManager.IsEmailConfirmedAsync(user);
     }
 
     protected override async Task OnInitializedAsync()
