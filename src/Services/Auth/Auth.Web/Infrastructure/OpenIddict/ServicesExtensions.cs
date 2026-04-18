@@ -3,6 +3,7 @@ using LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.Extensions.Options;
 using OpenIddict.Server;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 
@@ -31,6 +32,26 @@ public static class ServicesExtensions
                     .AllowRefreshTokenFlow()
                     .AllowClientCredentialsFlow()
                     .RequireProofKeyForCodeExchange();
+
+                options.RegisterScopes(
+                    AppScopes.Email,
+                    AppScopes.Phone,
+                    AppScopes.Profile,
+                    AppScopes.OfflineAccess,
+                    AppScopes.Roles,
+                    AppScopes.OpenId);
+
+                options.RegisterClaims(
+                    Claims.Subject,
+                    Claims.Name,
+                    Claims.GivenName,
+                    Claims.FamilyName,
+                    Claims.Email,
+                    Claims.Role,
+                    Claims.Email,
+                    Claims.EmailVerified,
+                    Claims.PhoneNumber,
+                    Claims.PhoneNumberVerified);
 
                 options.DisableAccessTokenEncryption();
 
