@@ -23,6 +23,17 @@ else if (view is not null)
 {
     <div class="card" style="max-width: 640px;">
         <div class="form-group">
+            <label class="form-label">ID</label>
+            <div class="field-row">
+                <input type="text" value="@Id" disabled class="form-input"
+                       style="font-family: 'Consolas', 'Monaco', monospace; font-size: 13px;" />
+                <button type="button" class="btn-copy" data-copy="@Id"
+                        title="Copy ID" aria-label="Copy ID">
+                    <span class="icon icon-copy" aria-hidden="true"></span>
+                </button>
+            </div>
+        </div>
+        <div class="form-group">
             <label class="form-label">Email</label>
             <div class="field-row">
                 <input type="text" value="@view.Email" disabled class="form-input" />

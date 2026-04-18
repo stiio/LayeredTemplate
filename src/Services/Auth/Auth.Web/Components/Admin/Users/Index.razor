@@ -30,6 +30,7 @@ else
     <table class="admin-table">
         <thead>
             <tr>
+                <th>ID</th>
                 <th>Email</th>
                 <th>Phone</th>
                 <th>2FA</th>
@@ -40,6 +41,15 @@ else
             @foreach (var u in results)
             {
                 <tr>
+                    <td>
+                        <span class="id-cell" title="@u.Id">
+                            @u.Id[..8]
+                            <button type="button" class="btn-copy" data-copy="@u.Id"
+                                    title="Copy ID" aria-label="Copy ID">
+                                <span class="icon icon-copy" aria-hidden="true"></span>
+                            </button>
+                        </span>
+                    </td>
                     <td>
                         <span class="cell-with-status">
                             @u.Email
