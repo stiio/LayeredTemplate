@@ -1,3 +1,9 @@
+import { mgr } from './oidc-config.js';
+
+const guestBlock = document.getElementById('guest');
+const formBlock = document.getElementById('form-block');
+const signInBtn = document.getElementById('sign-in');
+const signedInAs = document.getElementById('signed-in-as');
 const emailInput = document.getElementById('email');
 const sendBtn = document.getElementById('send');
 const resultBlock = document.getElementById('result');
@@ -12,10 +18,36 @@ function showStatus(message, isError = false) {
     }
 }
 
+async function init() {
+    const user = await mgr.getUser();
+    if (!user || user.expired) {
+        guestBlock.style.display = 'block';
+        formBlock.style.display = 'none';
+        return;
+    }
+
+    guestBlock.style.display = 'none';
+    formBlock.style.display = 'block';
+    const name = user.profile?.name || user.profile?.email || user.profile?.sub || 'user';
+    signedInAs.textContent = `Signed in as ${name}.`;
+}
+
+signInBtn.addEventListener('click', () => {
+    // Preserve where we came from so callback.html can bring us back here after the OIDC roundtrip.
+    mgr.signinRedirect({ state: { returnTo: '/invite.html' } });
+});
+
 sendBtn.addEventListener('click', async () => {
     const email = emailInput.value.trim();
     if (!email) {
         showStatus('Please enter an email.', true);
+        return;
+    }
+
+    // Re-read user — token in sessionStorage might have expired between page load and submit.
+    const user = await mgr.getUser();
+    if (!user || user.expired || !user.id_token) {
+        showStatus('Your session expired. <a href="/invite.html">Reload</a>.', true);
         return;
     }
 
@@ -25,10 +57,17 @@ sendBtn.addEventListener('click', async () => {
     try {
         const res = await fetch('/api/users/invite', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + user.id_token,
+            },
             body: JSON.stringify({ email }),
         });
 
+        if (res.status === 401) {
+            showStatus('Unauthorized — your id_token is invalid or expired. <a href="/invite.html">Reload</a>.', true);
+            return;
+        }
         if (!res.ok) {
             const body = await res.text();
             showStatus(`Error ${res.status}: ${body || res.statusText}`, true);
@@ -60,3 +99,5 @@ copyBtn.addEventListener('click', async () => {
         document.execCommand('copy');
     }
 });
+
+init().catch(e => console.error(e));

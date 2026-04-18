@@ -6,10 +6,14 @@
     import { mgr } from './oidc-config.js';
     mgr.signinRedirectCallback().then(user => {
         // Custom state passed to signinRedirect({ state: {...} }) comes back on user.state.
-        // Invite flow stashes { inviteId } so it survives the OIDC roundtrip — replay it here.
-        const inviteId = user?.state?.inviteId;
-        if (inviteId) {
-            window.location = '/invite-complete.html?inviteId=' + encodeURIComponent(inviteId);
+        // Supports two flows:
+        //   - invite acceptance → { inviteId } → lands on /invite-complete.html
+        //   - protected page flow → { returnTo } → returns to the originating page
+        const state = user?.state;
+        if (state?.inviteId) {
+            window.location = '/invite-complete.html?inviteId=' + encodeURIComponent(state.inviteId);
+        } else if (typeof state?.returnTo === 'string' && state.returnTo.startsWith('/')) {
+            window.location = state.returnTo;
         } else {
             window.location = '/index.html';
         }

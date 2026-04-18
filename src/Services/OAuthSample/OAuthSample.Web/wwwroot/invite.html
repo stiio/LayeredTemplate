@@ -17,7 +17,13 @@
     <h2>Invite a User</h2>
     <p class="muted"><a href="/">← Back to login</a></p>
 
-    <div class="card">
+    <div id="guest" class="card" style="display: none; text-align: center;">
+        <p>You must be signed in to create invites.</p>
+        <button class="btn-login" id="sign-in">Sign in</button>
+    </div>
+
+    <div id="form-block" class="card" style="display: none;">
+        <p class="muted" id="signed-in-as"></p>
         <div class="field">
             <label for="email">Email</label>
             <input type="email" id="email" placeholder="name@example.com" autocomplete="off" />

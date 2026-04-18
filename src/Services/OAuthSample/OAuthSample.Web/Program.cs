@@ -2,7 +2,11 @@ using System.Text.Json;
 using LayeredTemplate.Auth.ApiClient;
 using LayeredTemplate.Auth.ApiClient.Clients;
 using LayeredTemplate.Auth.ApiClient.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
+
+const string AuthIssuer = "https://localhost:8080";
+const string SpaClientId = "default_client";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,14 +14,31 @@ builder.Services.AddAuthApiClient(builder.Configuration, opts =>
 {
     opts.ClientId = "backend";
     opts.ClientSecret = "+qZW6uP+RmhkCZg9cwz2pF61AxAsQsOtfQNW6KG7YTw=";
-    opts.BaseUrl = "https://localhost:8080";
+    opts.BaseUrl = AuthIssuer;
     opts.Scopes = ["admin.users"];
 });
+
+// JwtBearer validates id_tokens issued by Auth.Web. The Authority URL is used to fetch OIDC
+// discovery + JWKS on first use (cached), so no manual key distribution is required.
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = AuthIssuer;
+        // id_token.aud = client_id (OIDC Core §2). access_token.aud differs (by convention
+        // equals resources/scopes), so this audience gate effectively rejects access_tokens.
+        options.Audience = SpaClientId;
+    });
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapPost("/api/users/invite", async (
     HttpContext context,
@@ -50,6 +71,6 @@ app.MapPost("/api/users/invite", async (
         $"&returnUrl={Uri.EscapeDataString(returnUrl)}";
 
     return Results.Json(new { inviteUrl, inviteId, expiresAt = invite.ExpiresAt });
-});
+}).RequireAuthorization();
 
 app.Run();
