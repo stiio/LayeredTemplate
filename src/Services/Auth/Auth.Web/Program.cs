@@ -1,6 +1,7 @@
 using HealthChecks.UI.Client;
 using LayeredTemplate.Auth.Web.Components;
 using LayeredTemplate.Auth.Web.Components.Account;
+using LayeredTemplate.Auth.Web.Infrastructure.Authorization;
 using LayeredTemplate.Auth.Web.Infrastructure.BackgroundTasks;
 using LayeredTemplate.Auth.Web.Infrastructure.Cors;
 using LayeredTemplate.Auth.Web.Infrastructure.Data;
@@ -18,7 +19,6 @@ using LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Identity;
 using Serilog;
 using Serilog.Exceptions;
 using Serilog.Exceptions.Core;
@@ -106,25 +106,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     services.AddCascadingAuthenticationState();
 
-    services.AddAuthentication(options =>
-        {
-            options.DefaultScheme = IdentityConstants.ApplicationScheme;
-            options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-        })
-        .AddGitHub(opts =>
-        {
-            opts.ClientId = configuration["GitHub:ClientId"]!;
-            opts.ClientSecret = configuration["GitHub:ClientSecret"]!;
-            opts.Scope.Add("user:email");
-        })
-        .AddYandex(opts =>
-        {
-            opts.ClientId = configuration["Yandex:ClientId"]!;
-            opts.ClientSecret = configuration["Yandex:ClientSecret"]!;
-            opts.CallbackPath = "/signin-yandex";
-        })
-        .AddIdentityCookies();
-
+    services.AddAppAuthentication(configuration);
     services.AddAppAuthorization();
 
     services.AddHealthChecks();

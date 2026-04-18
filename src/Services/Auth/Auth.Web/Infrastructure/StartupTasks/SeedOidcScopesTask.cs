@@ -27,11 +27,11 @@ public class SeedOidcScopesTask : IStartupTask
     /// </summary>
     private static readonly IReadOnlyList<ScopeSeed> BuiltInScopes =
     [
-        new("openid", "OpenID"),
-        new("profile", "Profile"),
-        new("email", "Email"),
-        new("phone", "Phone"),
-        new("offline_access", "Offline access (refresh tokens)"),
+        new(AppScopes.OpenId, "OpenID"),
+        new(AppScopes.Profile, "Profile"),
+        new(AppScopes.Email, "Email"),
+        new(AppScopes.Phone, "Phone"),
+        new(AppScopes.OfflineAccess, "Offline access (refresh tokens)"),
         new(AppScopes.Roles, "User roles"),
 
         // API scope for Auth.Web's own admin endpoints. Resources make access_token.aud include

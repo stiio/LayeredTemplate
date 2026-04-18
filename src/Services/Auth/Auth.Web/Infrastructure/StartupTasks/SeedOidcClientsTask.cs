@@ -1,4 +1,5 @@
 ﻿using LayeredTemplate.Auth.Web.Infrastructure.Locks;
+using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 using LayeredTemplate.Plugins.StartupRunner.Services;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -51,9 +52,12 @@ public class SeedOidcClientsTask : IStartupTask
                         Permissions.Endpoints.Authorization,
                         Permissions.Endpoints.Token,
                         Permissions.Endpoints.EndSession,
-                        Permissions.Prefixes.Scope + "openid",
-                        Permissions.Prefixes.Scope + "profile",
-                        Permissions.Prefixes.Scope + "email",
+                        Permissions.Prefixes.Scope + AppScopes.OpenId,
+                        Permissions.Prefixes.Scope + AppScopes.Profile,
+                        Permissions.Prefixes.Scope + AppScopes.Email,
+                        Permissions.Prefixes.Scope + AppScopes.Phone,
+                        Permissions.Prefixes.Scope + AppScopes.Roles,
+                        Permissions.Prefixes.Scope + AppScopes.OfflineAccess,
                     },
                     Requirements =
                     {
