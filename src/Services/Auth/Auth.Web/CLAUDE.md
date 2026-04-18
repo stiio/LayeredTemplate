@@ -100,6 +100,10 @@ Migrations/                          — EF миграции (таблица __e
 - Lifetimes: AccessToken = 1h, IdentityToken = 1h, RefreshToken = 30d
 - Registered scopes: `openid`, `profile`, `email`, `phone`, `roles`, `offline_access`, `admin.users` (resource `api://auth-admin`)
 - Server + Validation сосуществуют: `AddValidation(UseLocalServer)` регистрирует Bearer-схему для собственного admin API
+- **Error passthrough** (`EnableErrorPassthrough()`) — OpenIddict-рождённые ошибки валидации (unknown client, invalid scope, redirect_uri mismatch, …) проходят через MVC-пайплайн вместо встроенного plaintext-body. Обработка в `ConnectController`:
+  - `Authorize` / `LogoutGet` (user-facing) → `TryBuildAuthorizeErrorRedirect` редиректит на `/account/authorize_error?error=...&error_description=...&client_id=...` — брендированная Razor-страница [AuthorizeError.razor](Components/Pages/AuthorizeError.razor) (живёт в общем `Components/Pages/` рядом с `Error.razor`/`NotFound.razor`, а не в `Account/Pages/`, т.к. это не часть identity-UI flow)
+  - `Exchange` / `Userinfo` (machine-to-machine) → `TryBuildOAuthErrorJson` отдаёт стандартный RFC 6749 §5.2 JSON (`{error, error_description, error_uri}`), статус 401 для `invalid_client`, иначе 400
+  - Стандартный OAuth flow — когда OpenIddict может вернуть ошибку клиенту через валидный `redirect_uri` — не трогается: error улетает в SPA/клиент стандартным редиректом с error в query, наши fallback'и срабатывают только когда redirect к клиенту невозможен.
 
 ### ConnectController — клеймы и destinations
 

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
@@ -30,6 +31,14 @@ public class ConnectController : Controller
     [HttpPost("~/connect/authorize")]
     public async Task<IActionResult> Authorize()
     {
+        // Error passthrough routes OpenIddict's validation failures (unknown client, invalid scope,
+        // redirect_uri mismatch, …) here instead of rendering its default plaintext body. For a
+        // user-facing endpoint, render a branded error page instead.
+        if (this.TryBuildAuthorizeErrorRedirect(out var errorRedirect))
+        {
+            return errorRedirect;
+        }
+
         var request = this.HttpContext.GetOpenIddictServerRequest() ??
                       throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
@@ -56,6 +65,13 @@ public class ConnectController : Controller
     [HttpPost("~/connect/token")]
     public async Task<IActionResult> Exchange()
     {
+        // Machine-to-machine endpoint: mirror OpenIddict's error as a standard RFC 6749 §5.2 JSON
+        // body so the calling backend library can parse it the same way it would without passthrough.
+        if (this.TryBuildOAuthErrorJson(out var errorJson))
+        {
+            return errorJson;
+        }
+
         var request = this.HttpContext.GetOpenIddictServerRequest() ??
                       throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
@@ -116,6 +132,11 @@ public class ConnectController : Controller
     [HttpGet("~/connect/userinfo")]
     public async Task<IActionResult> Userinfo()
     {
+        if (this.TryBuildOAuthErrorJson(out var errorJson))
+        {
+            return errorJson;
+        }
+
         var result = await this.HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         var userId = result.Principal?.GetClaim(Claims.Subject);
 
@@ -192,6 +213,13 @@ public class ConnectController : Controller
     [HttpGet("~/connect/logout")]
     public async Task<IActionResult> LogoutGet()
     {
+        // End-session is user-facing; use the same branded page as authorize for validation failures
+        // (unknown post_logout_redirect_uri, invalid id_token_hint, …).
+        if (this.TryBuildAuthorizeErrorRedirect(out var errorRedirect))
+        {
+            return errorRedirect;
+        }
+
         var request = this.HttpContext.GetOpenIddictServerRequest() ??
                       throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
@@ -262,6 +290,66 @@ public class ConnectController : Controller
             .ToListAsync();
 
         principal.SetResources(resources);
+    }
+
+    /// <summary>
+    /// User-facing fallback when OpenIddict rejects a request on a passthrough endpoint and can't
+    /// redirect the error back to the client (e.g., unknown <c>client_id</c>, mismatched
+    /// <c>redirect_uri</c>). Produces a redirect to <c>/account/authorize_error</c> with the error
+    /// context preserved in the query string. Returns <c>false</c> if no error was flagged — the
+    /// action should continue with its normal success path.
+    /// </summary>
+    private bool TryBuildAuthorizeErrorRedirect([NotNullWhen(true)] out IActionResult? result)
+    {
+        var response = this.HttpContext.GetOpenIddictServerResponse();
+        if (string.IsNullOrEmpty(response?.Error))
+        {
+            result = null;
+            return false;
+        }
+
+        var query = QueryString.Create(new KeyValuePair<string, string?>[]
+        {
+            new("error", response.Error),
+            new("error_description", response.ErrorDescription),
+            // ClientId is a best-effort display aid — pulled from the parsed request when available.
+            new("client_id", this.HttpContext.GetOpenIddictServerRequest()?.ClientId),
+        }.Where(kv => !string.IsNullOrEmpty(kv.Value)));
+
+        result = this.Redirect($"/account/authorize_error{query}");
+        return true;
+    }
+
+    /// <summary>
+    /// Machine-to-machine fallback when OpenIddict rejects a request on a passthrough endpoint
+    /// (/connect/token, /connect/userinfo). Mirrors the error as a standard RFC 6749 §5.2 JSON body
+    /// so SDK/clients can parse it the same way they would without passthrough enabled.
+    /// </summary>
+    private bool TryBuildOAuthErrorJson([NotNullWhen(true)] out IActionResult? result)
+    {
+        var response = this.HttpContext.GetOpenIddictServerResponse();
+        if (string.IsNullOrEmpty(response?.Error))
+        {
+            result = null;
+            return false;
+        }
+
+        var responseBody = new
+        {
+            error = response.Error,
+            error_description = response.ErrorDescription,
+            error_uri = response.ErrorUri,
+        };
+
+        result = new JsonResult(responseBody)
+        {
+            // invalid_client → 401 per RFC 6749; everything else → 400.
+            StatusCode = response.Error == Errors.InvalidClient
+                ? StatusCodes.Status401Unauthorized
+                : StatusCodes.Status400BadRequest,
+        };
+
+        return true;
     }
 
     /// <summary>

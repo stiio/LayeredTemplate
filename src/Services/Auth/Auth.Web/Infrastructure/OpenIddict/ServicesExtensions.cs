@@ -63,7 +63,14 @@ public static class ServicesExtensions
                     .EnableAuthorizationEndpointPassthrough()
                     .EnableTokenEndpointPassthrough()
                     .EnableUserInfoEndpointPassthrough()
-                    .EnableEndSessionEndpointPassthrough();
+                    .EnableEndSessionEndpointPassthrough()
+                    // Route OpenIddict-detected errors (invalid client, unknown scope, redirect_uri
+                    // mismatch, etc.) through MVC instead of emitting OpenIddict's built-in plaintext
+                    // body. Controller actions on passthrough endpoints must check for
+                    // HttpContext.GetOpenIddictServerResponse()?.Error and handle it — user-facing
+                    // endpoints (authorize, end-session) redirect to a branded page, machine-facing
+                    // ones (token, userinfo) mirror the error as a standard OAuth 2.0 JSON body.
+                    .EnableErrorPassthrough();
             })
             .AddValidation(options =>
             {

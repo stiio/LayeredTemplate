@@ -1,0 +1,41 @@
+@page "/account/authorize_error"
+@layout MainLayout
+
+<PageTitle>Authorization failed</PageTitle>
+
+<div class="card" style="text-align: center;">
+    <h3>Authorization failed</h3>
+    <p>The sign-in request could not be completed.</p>
+
+    @if (!string.IsNullOrEmpty(ErrorDescription))
+    {
+        <p><strong>@ErrorDescription</strong></p>
+    }
+
+    <dl class="meta">
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <dt>Error code</dt>
+            <dd><code>@Error</code></dd>
+        }
+        @if (!string.IsNullOrEmpty(ClientId))
+        {
+            <dt>Client</dt>
+            <dd><code>@ClientId</code></dd>
+        }
+    </dl>
+
+    <p>Please return to the application and try again, or contact the application owner.</p>
+    <p><a href="account/login">Back to login</a></p>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Error { get; set; }
+
+    [SupplyParameterFromQuery(Name = "error_description")]
+    public string? ErrorDescription { get; set; }
+
+    [SupplyParameterFromQuery(Name = "client_id")]
+    public string? ClientId { get; set; }
+}
