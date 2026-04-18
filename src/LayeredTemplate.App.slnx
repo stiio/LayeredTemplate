@@ -15,6 +15,7 @@
     <Project Path="Services/App/App.Web/App.Web.csproj" />
   </Folder>
   <Folder Name="/Services/Auth/">
+    <Project Path="Services/Auth/Auth.ApiClient/Auth.ApiClient.csproj" />
     <Project Path="Services/Auth/Auth.Web/Auth.Web.csproj" />
   </Folder>
   <Folder Name="/Services/OAuthSample/">
