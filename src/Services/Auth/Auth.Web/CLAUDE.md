@@ -53,7 +53,7 @@ Auth.Web/
     │   ├── Entities/SigningCredential.cs — RSA-ключи OpenIddict (зашифрованные)
     │   └── EntityConfigurations/         — OpenIddict + Identity + SigningCredential + DataProtectionKey
     ├── Identity/                    — Roles, Scopes, Policies, Invite token provider
-    │   ├── ServicesExtensions.cs    — AddIdentityCore + AddRoles + AddTokenProvider("Invite") + AddAppAuthorization (Admin policy + scope:admin.users policy)
+    │   ├── ServicesExtensions.cs    — AddIdentityCore + AddRoles + AddTokenProvider("Invite")
     │   ├── AppRoles.cs              — константа "Admin"
     │   ├── AppScopes.cs             — AdminUsers="admin.users", Roles="roles", + AppAuthorizationPolicies.ScopeAdminUsers
     │   └── InviteTokenSettings.cs   — ProviderName/Purpose/Lifespan(30d) для invite-токенов
