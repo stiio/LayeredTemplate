@@ -67,8 +67,6 @@ public record UpdateUserRequest
     public string? NewPassword { get; init; }
 }
 
-public record ErrorResponse(string Error, IReadOnlyList<string>? Details = null);
-
 /// <summary>
 /// One-time token for inviting a newly-provisioned user to set their password and sign in.
 /// The backend composes its own invite email with a link like

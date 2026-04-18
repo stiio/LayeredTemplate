@@ -41,9 +41,12 @@ public class AdminUsersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<UserResponse>> GetByEmail([FromQuery, Required] string email, CancellationToken cancellationToken)
     {
+        // [Required] + [ApiController] already short-circuits empty/missing email into a 400 ValidationProblemDetails;
+        // this extra guard only catches whitespace-only strings which pass [Required].
         if (string.IsNullOrWhiteSpace(email))
         {
-            return this.BadRequest(new ErrorResponse("Query parameter 'email' is required."));
+            this.ModelState.AddModelError(nameof(email), "Query parameter 'email' is required.");
+            return this.ValidationProblem();
         }
 
         var user = await this.userManager.FindByEmailAsync(email);
@@ -61,7 +64,10 @@ public class AdminUsersController : ControllerBase
         var existing = await this.userManager.FindByEmailAsync(request.Email);
         if (existing is not null)
         {
-            return this.Conflict(new ErrorResponse($"A user with email '{request.Email}' already exists."));
+            return this.Problem(
+                title: "Conflict",
+                detail: $"A user with email '{request.Email}' already exists.",
+                statusCode: StatusCodes.Status409Conflict);
         }
 
         var user = new ApplicationUser
@@ -81,7 +87,7 @@ public class AdminUsersController : ControllerBase
 
         if (!createResult.Succeeded)
         {
-            return this.BadRequest(ToError(createResult));
+            return this.IdentityValidationProblem(createResult, passwordField: nameof(CreateUserRequest.Password));
         }
 
         this.logger.LogInformation("Admin API created user {UserId} ({Email}) from client {ClientId}.",
@@ -101,11 +107,13 @@ public class AdminUsersController : ControllerBase
 
         if (request.EmailConfirmed == false)
         {
-            return this.BadRequest(new ErrorResponse("Setting EmailConfirmed to false via API is not supported."));
+            this.ModelState.AddModelError(
+                nameof(UpdateUserRequest.EmailConfirmed),
+                "Setting EmailConfirmed to false via API is not supported.");
+            return this.ValidationProblem();
         }
 
         var clientId = this.HttpContext.User.Identity?.Name;
-
 
         user.EmailConfirmed = request.EmailConfirmed ?? user.EmailConfirmed;
         user.PhoneNumber = request.PhoneNumber ?? user.PhoneNumber;
@@ -116,7 +124,7 @@ public class AdminUsersController : ControllerBase
         var updateUserResult = await this.userManager.UpdateAsync(user);
         if (!updateUserResult.Succeeded)
         {
-            return this.BadRequest(ToError(updateUserResult));
+            return this.IdentityValidationProblem(updateUserResult);
         }
 
         this.logger.LogInformation("Admin API updated user {UserId} from client {ClientId}.", id, clientId);
@@ -136,7 +144,7 @@ public class AdminUsersController : ControllerBase
 
             if (!pwdResult.Succeeded)
             {
-                return this.BadRequest(ToError(pwdResult));
+                return this.IdentityValidationProblem(pwdResult, passwordField: nameof(UpdateUserRequest.NewPassword));
             }
 
             this.logger.LogWarning("Admin API set password for user {UserId} from client {ClientId}.", id, clientId);
@@ -184,7 +192,7 @@ public class AdminUsersController : ControllerBase
         var result = await this.userManager.DeleteAsync(user);
         if (!result.Succeeded)
         {
-            return this.BadRequest(ToError(result));
+            return this.IdentityValidationProblem(result);
         }
 
         this.logger.LogWarning("Admin API deleted user {UserId} from client {ClientId}.",
@@ -205,6 +213,25 @@ public class AdminUsersController : ControllerBase
             Roles: (await this.userManager.GetRolesAsync(user)).ToArray(),
             HasPassword: await this.userManager.HasPasswordAsync(user));
 
-    private static ErrorResponse ToError(IdentityResult result) =>
-        new("Identity error.", result.Errors.Select(e => e.Description).ToList());
+    /// <summary>
+    /// Maps an <see cref="IdentityResult"/> failure to an RFC 7807 <see cref="ValidationProblemDetails"/> (HTTP 400).
+    /// Identity error codes are routed to the request fields users understand (<c>Email</c>, <c>Password</c>/<paramref name="passwordField"/>);
+    /// unrecognised codes are surfaced as top-level errors under the empty key.
+    /// </summary>
+    private ActionResult IdentityValidationProblem(IdentityResult result, string passwordField = nameof(CreateUserRequest.Password))
+    {
+        foreach (var error in result.Errors)
+        {
+            var field = error.Code switch
+            {
+                "DuplicateEmail" or "InvalidEmail" => nameof(CreateUserRequest.Email),
+                "DuplicateUserName" or "InvalidUserName" => nameof(CreateUserRequest.Email),
+                { } code when code.StartsWith("Password", StringComparison.Ordinal) => passwordField,
+                _ => string.Empty,
+            };
+            this.ModelState.AddModelError(field, error.Description);
+        }
+
+        return this.ValidationProblem();
+    }
 }

@@ -97,12 +97,15 @@ internal sealed class AuthUsersClient : IAuthUsersClient
             return;
         }
 
-        ServerError? error = null;
-        if (string.Equals(response.Content.Headers.ContentType?.MediaType, "application/json", StringComparison.OrdinalIgnoreCase))
+        ProblemPayload? problem = null;
+        var contentType = response.Content.Headers.ContentType?.MediaType;
+        // ASP.NET Core returns ProblemDetails as application/problem+json; be lenient and also accept application/json.
+        if (string.Equals(contentType, "application/problem+json", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(contentType, "application/json", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
-                error = await response.Content.ReadFromJsonAsync<ServerError>(cancellationToken);
+                problem = await response.Content.ReadFromJsonAsync<ProblemPayload>(cancellationToken);
             }
             catch
             {
@@ -110,12 +113,24 @@ internal sealed class AuthUsersClient : IAuthUsersClient
             }
         }
 
+        // Message preference: detail > title > reason phrase > generic status. `detail` is per-occurrence,
+        // `title` is the problem-type summary — either is suitable for Exception.Message.
+        var message = problem?.Detail
+            ?? problem?.Title
+            ?? response.ReasonPhrase
+            ?? $"Auth API returned {(int)response.StatusCode}.";
+
         throw new AuthApiException(
             response.StatusCode,
-            error?.Error ?? response.ReasonPhrase ?? $"Auth API returned {(int)response.StatusCode}.",
-            error?.Details);
+            message,
+            title: problem?.Title,
+            detail: problem?.Detail,
+            errors: problem?.Errors);
     }
 
-    /// <summary>Internal mirror of Auth.Web's <c>ErrorResponse</c> DTO.</summary>
-    private sealed record ServerError(string? Error, IReadOnlyList<string>? Details);
+    /// <summary>Internal mirror of RFC 7807 <c>ProblemDetails</c> / <c>ValidationProblemDetails</c>.</summary>
+    private sealed record ProblemPayload(
+        string? Title,
+        string? Detail,
+        IReadOnlyDictionary<string, string[]>? Errors);
 }
