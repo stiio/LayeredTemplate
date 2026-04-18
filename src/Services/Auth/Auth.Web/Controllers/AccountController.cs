@@ -78,8 +78,6 @@ public class AccountController : Controller
             personalData.Add($"{login.LoginProvider} external login provider key", login.ProviderKey);
         }
 
-        personalData.Add("Authenticator Key", (await this.userManager.GetAuthenticatorKeyAsync(user))!);
-
         return this.File(
             JsonSerializer.SerializeToUtf8Bytes(personalData),
             "application/json",

@@ -69,7 +69,6 @@ public partial class ForgotPassword : ComponentBase
             new Dictionary<string, object?> { ["code"] = code, ["email"]  = WebUtility.UrlEncode(user.Email) });
 
         await this.EmailSender.SendPasswordResetLinkAsync(user, this.Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
-        this.Logger.LogInformation("Callback url: {callbackUrl}", callbackUrl);
 
         this.RedirectManager.RedirectTo("account/forgot_password_confirmation");
     }
