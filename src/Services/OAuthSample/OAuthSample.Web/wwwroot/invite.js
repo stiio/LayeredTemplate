@@ -38,6 +38,8 @@ sendBtn.addEventListener('click', async () => {
         const data = await res.json();
         linkField.value = data.inviteUrl;
         resultBlock.style.display = 'block';
+        const inviteIdSpan = document.getElementById('invite-id-value');
+        if (inviteIdSpan) inviteIdSpan.textContent = data.inviteId;
         showStatus(`Invite created. Expires ${new Date(data.expiresAt).toLocaleString()}.`);
     } catch (e) {
         showStatus('Request failed: ' + e.message, true);

@@ -9,17 +9,23 @@
         .celebrate .emoji { font-size: 72px; line-height: 1; margin-bottom: 16px; }
         .celebrate h2 { font-size: 28px; margin-bottom: 8px; }
         .celebrate p { color: #5e5d59; margin: 8px 0; }
+        .invite-id { font-family: monospace; font-size: 12px; color: #87867f; }
+        .loader { text-align: center; padding: 40px; color: #87867f; }
     </style>
 </head>
 <body>
-    <div class="card celebrate">
+    <div id="loading" class="card loader">Signing you in…</div>
+
+    <div id="complete" class="card celebrate" style="display: none;">
         <div class="emoji">🎉</div>
         <h2>Welcome aboard!</h2>
-        <p>Your account has been set up successfully.</p>
-        <p>You can now sign in to the app with the credentials you just chose.</p>
+        <p id="user-info"></p>
+        <p class="invite-id">Invite ID: <span id="invite-id-display"></span></p>
         <p style="margin-top: 24px;">
-            <a href="/" class="btn-login" style="display: inline-block; text-decoration: none;">Go to login</a>
+            <a href="/" class="btn-login" style="display: inline-block; text-decoration: none;">Go to the app</a>
         </p>
     </div>
+
+    <script type="module" src="invite-complete.js"></script>
 </body>
 </html>

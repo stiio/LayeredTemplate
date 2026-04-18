@@ -32,11 +32,16 @@ app.MapPost("/api/users/invite", async (
 
     var invite = await authClient.CreateInviteTokenAsync(user.Id);
 
+    // Correlates this invite end-to-end — flows through Auth.Web's accept_invite → SPA redirect →
+    // OIDC login → finally surfaces on invite-complete. Backend-generated so the SPA can't forge it;
+    // later a real invite entity can replace the plain GUID.
+    var inviteId = Guid.CreateVersion7().ToString();
+
     // returnUrl points back to this SPA — must be in Auth.Web's CorsSettings.AllowedOrigins
     // for AcceptInvite to follow it (otherwise falls back to /account/manage on Auth.Web).
     var req = context.Request;
     var selfOrigin = $"{req.Scheme}://{req.Host}";
-    var returnUrl = $"{selfOrigin}/invite-complete.html";
+    var returnUrl = $"{selfOrigin}/invite-complete.html?inviteId={inviteId}";
 
     var inviteUrl =
         $"{authOptions.Value.BaseUrl.TrimEnd('/')}/account/accept_invite" +
@@ -44,7 +49,7 @@ app.MapPost("/api/users/invite", async (
         $"&code={Uri.EscapeDataString(invite.Token)}" +
         $"&returnUrl={Uri.EscapeDataString(returnUrl)}";
 
-    return Results.Json(new { inviteUrl, expiresAt = invite.ExpiresAt });
+    return Results.Json(new { inviteUrl, inviteId, expiresAt = invite.ExpiresAt });
 });
 
 app.Run();

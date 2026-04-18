@@ -33,9 +33,12 @@
                 <button class="btn-action" id="copy">Copy</button>
             </div>
             <p class="muted" style="margin-top: 8px;">
+                Invite ID: <code id="invite-id-value"></code>
+            </p>
+            <p class="muted" style="margin-top: 8px;">
                 Open in an incognito window to simulate the invitee.
-                After setting a password, you will land on
-                <code>/invite-complete.html</code>.
+                After setting a password they'll be redirected back, auto-signed-in via OIDC, and
+                land on <code>/invite-complete.html?inviteId=…</code>.
             </p>
         </div>
     </div>
