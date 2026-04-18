@@ -1,0 +1,50 @@
+@page "/account/logout_confirmation"
+
+<PageTitle>Sign out</PageTitle>
+
+<div class="card" style="text-align: center;">
+    <h3>Sign out?</h3>
+    <p>Do you want to sign out of your account?</p>
+
+    @* Plain HTML form posts directly to OpenIddict's logout endpoint.
+       OIDC params are preserved in hidden inputs so post_logout_redirect_uri / state / etc.
+       keep working if the RP originally passed them. *@
+    <form action="/connect/logout" method="post" style="margin-top: 16px;">
+        @if (!string.IsNullOrEmpty(PostLogoutRedirectUri))
+        {
+            <input type="hidden" name="post_logout_redirect_uri" value="@PostLogoutRedirectUri" />
+        }
+        @if (!string.IsNullOrEmpty(IdTokenHint))
+        {
+            <input type="hidden" name="id_token_hint" value="@IdTokenHint" />
+        }
+        @if (!string.IsNullOrEmpty(State))
+        {
+            <input type="hidden" name="state" value="@State" />
+        }
+        @if (!string.IsNullOrEmpty(ClientId))
+        {
+            <input type="hidden" name="client_id" value="@ClientId" />
+        }
+
+        <button type="submit" class="btn-danger btn-block">Sign out</button>
+    </form>
+
+    <div style="margin-top: 12px;">
+        <a href="account/manage" class="btn btn-default btn-block">Cancel</a>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "post_logout_redirect_uri")]
+    private string? PostLogoutRedirectUri { get; set; }
+
+    [SupplyParameterFromQuery(Name = "id_token_hint")]
+    private string? IdTokenHint { get; set; }
+
+    [SupplyParameterFromQuery(Name = "state")]
+    private string? State { get; set; }
+
+    [SupplyParameterFromQuery(Name = "client_id")]
+    private string? ClientId { get; set; }
+}

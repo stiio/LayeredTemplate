@@ -176,8 +176,28 @@ public class ConnectController(
     }
 
     [HttpGet("~/connect/logout")]
+    public async Task<IActionResult> LogoutGet()
+    {
+        var request = this.HttpContext.GetOpenIddictServerRequest() ??
+                      throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
+
+        // If the RP passed post_logout_redirect_uri, OpenIddict has already validated it against
+        // the client's registered logout URIs (and validated id_token_hint if present). That's
+        // enough to treat the request as legitimate — skip confirmation and log out silently.
+        if (!string.IsNullOrEmpty(request.PostLogoutRedirectUri))
+        {
+            return await this.PerformLogoutAsync();
+        }
+
+        // No trust signal → show confirmation page to prevent nuisance CSRF
+        // (e.g. <img src="/connect/logout"> on an attacker's site).
+        return this.Redirect($"/account/logout_confirmation{this.HttpContext.Request.QueryString}");
+    }
+
     [HttpPost("~/connect/logout")]
-    public async Task<IActionResult> Logout()
+    public Task<IActionResult> LogoutPost() => this.PerformLogoutAsync();
+
+    private async Task<IActionResult> PerformLogoutAsync()
     {
         await signInManager.SignOutAsync();
 
