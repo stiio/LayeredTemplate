@@ -38,6 +38,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\Plugins\Plugins.AssemblyExtensions\Plugins.AssemblyExtensions.csproj" />
       <ProjectReference Include="..\..\Plugins\Plugins.Http.Extensions\Plugins.Http.Extensions.csproj" />
+      <ProjectReference Include="..\..\Plugins\Plugins.PhoneHelpers\Plugins.PhoneHelpers.csproj" />
       <ProjectReference Include="..\..\Plugins\Plugins.StartupRunner\Plugins.StartupRunner.csproj" />
     </ItemGroup>
 

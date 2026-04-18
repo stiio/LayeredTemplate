@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using LayeredTemplate.Plugins.PhoneHelpers.Attributes;
 
 namespace LayeredTemplate.Auth.Web.Controllers.Api.Admin;
 
@@ -24,6 +25,7 @@ public record CreateUserRequest
 
     [Phone]
     [MaxLength(20)]
+    [NormalizedPhone]
     public string? PhoneNumber { get; init; }
 
     public bool PhoneNumberConfirmed { get; init; }
@@ -48,6 +50,7 @@ public record UpdateUserRequest
     /// <summary>Set to change the user's phone. PhoneNumberConfirmed is reset to false.</summary>
     [Phone]
     [MaxLength(20)]
+    [NormalizedPhone]
     public string? PhoneNumber { get; init; }
 
     public bool? PhoneNumberConfirmed { get; init; }

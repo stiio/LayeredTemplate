@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.Auth.Web.Components.Account;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
+using LayeredTemplate.Plugins.PhoneHelpers.Attributes;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 
@@ -77,14 +78,6 @@ public partial class Create : ComponentBase
 
     private sealed class InputModel
     {
-        // Blazor SSR binds an empty form field to "" (not null) and validators like [Phone] /
-        // [StringLength(MinimumLength=...)] fail on "". Normalize in the setter so optional fields
-        // left blank become null and pass validation.
-        private string? firstName;
-        private string? lastName;
-        private string? phoneNumber;
-        private string? password;
-
         [Required]
         [EmailAddress]
         [MaxLength(128)]
@@ -93,31 +86,32 @@ public partial class Create : ComponentBase
         [MaxLength(100)]
         public string? FirstName
         {
-            get => this.firstName;
-            set => this.firstName = string.IsNullOrWhiteSpace(value) ? null : value;
+            get;
+            set => field = string.IsNullOrWhiteSpace(value) ? null : value;
         }
 
         [MaxLength(100)]
         public string? LastName
         {
-            get => this.lastName;
-            set => this.lastName = string.IsNullOrWhiteSpace(value) ? null : value;
+            get;
+            set => field = string.IsNullOrWhiteSpace(value) ? null : value;
         }
 
         [Phone]
         [MaxLength(20)]
+        [NormalizedPhone]
         public string? PhoneNumber
         {
-            get => this.phoneNumber;
-            set => this.phoneNumber = string.IsNullOrWhiteSpace(value) ? null : value;
+            get;
+            set => field = string.IsNullOrWhiteSpace(value) ? null : value;
         }
 
         [DataType(DataType.Password)]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be 6-100 characters.")]
         public string? Password
         {
-            get => this.password;
-            set => this.password = string.IsNullOrWhiteSpace(value) ? null : value;
+            get;
+            set => field = string.IsNullOrWhiteSpace(value) ? null : value;
         }
 
         public bool EmailConfirmed { get; set; } = true;

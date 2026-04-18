@@ -129,12 +129,6 @@ public partial class Edit : ComponentBase
 
     private sealed class InputModel
     {
-        // Blazor SSR binds empty form fields to "" (not null), which breaks [Phone] on empty input.
-        // Normalize optional strings so blanks become null and pass validation.
-        private string? phoneNumber;
-        private string? firstName;
-        private string? lastName;
-
         [Required]
         [EmailAddress]
         [MaxLength(128)]
@@ -146,8 +140,8 @@ public partial class Edit : ComponentBase
         [MaxLength(20)]
         public string? PhoneNumber
         {
-            get => this.phoneNumber;
-            set => this.phoneNumber = string.IsNullOrWhiteSpace(value) ? null : value;
+            get;
+            set => field = string.IsNullOrWhiteSpace(value) ? null : value;
         }
 
         public bool PhoneNumberConfirmed { get; set; }
@@ -155,15 +149,15 @@ public partial class Edit : ComponentBase
         [MaxLength(100)]
         public string? FirstName
         {
-            get => this.firstName;
-            set => this.firstName = string.IsNullOrWhiteSpace(value) ? null : value;
+            get;
+            set => field = string.IsNullOrWhiteSpace(value) ? null : value;
         }
 
         [MaxLength(100)]
         public string? LastName
         {
-            get => this.lastName;
-            set => this.lastName = string.IsNullOrWhiteSpace(value) ? null : value;
+            get;
+            set => field = string.IsNullOrWhiteSpace(value) ? null : value;
         }
     }
 }

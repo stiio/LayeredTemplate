@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.Options.Models;
 using LayeredTemplate.Auth.Web.Infrastructure.Sms.Services;
+using LayeredTemplate.Plugins.PhoneHelpers.Attributes;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
@@ -181,7 +182,12 @@ public partial class EditPhone : ComponentBase
     {
         /// <summary>Passed via hidden input to preserve phone across form submit.</summary>
         [MaxLength(20)]
-        public string? PhoneNumber { get; set; }
+        [NormalizedPhone]
+        public string? PhoneNumber
+        {
+            get;
+            set => field = string.IsNullOrWhiteSpace(value) ? null : value;
+        }
 
         [Required]
         [Display(Name = "Verification code")]
