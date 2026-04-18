@@ -1,0 +1,51 @@
+@page "/account/accept_invite"
+
+<PageTitle>Accept invitation</PageTitle>
+
+<StatusMessage Message="@message" />
+
+<div class="card">
+    @switch (state)
+    {
+        case InviteState.Invalid:
+            <h3 style="text-align: center;">Invite link is invalid or expired</h3>
+            <p>This invitation link can no longer be used. It may have already been consumed or expired.</p>
+            <hr />
+            <div style="text-align: center;">
+                <p>Already have an account? <a href="account/login">Sign in</a></p>
+                <p>Forgot your password? <a href="account/forgot_password">Reset password</a></p>
+            </div>
+            break;
+
+        case InviteState.AlreadyActive:
+            <h3 style="text-align: center;">Account already set up</h3>
+            <p>Your account is already active. Sign in to continue.</p>
+            <a href="@loginUrl" class="btn-primary btn-block">Sign in</a>
+            break;
+
+        case InviteState.NeedsPassword:
+            <h3 style="text-align: center;">Welcome! Set your password</h3>
+            <p>Choose a password to finish setting up your account.</p>
+
+            <EditForm Model="Input" method="post" FormName="accept-invite" OnValidSubmit="OnSetPasswordAsync">
+                <DataAnnotationsValidator />
+
+                <div class="form-group">
+                    <label class="form-label" for="Input.Password">Password</label>
+                    <InputText @bind-Value="Input.Password" id="Input.Password" name="Input.Password" type="password"
+                               class="form-input" autocomplete="new-password" />
+                    <ValidationMessage For="() => Input.Password" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="Input.ConfirmPassword">Confirm password</label>
+                    <InputText @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" name="Input.ConfirmPassword" type="password"
+                               class="form-input" autocomplete="new-password" />
+                    <ValidationMessage For="() => Input.ConfirmPassword" />
+                </div>
+
+                <button type="submit" class="btn-primary btn-block">Set password and continue</button>
+            </EditForm>
+            break;
+    }
+</div>

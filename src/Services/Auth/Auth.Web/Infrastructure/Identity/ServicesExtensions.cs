@@ -10,6 +10,12 @@ public static class ServicesExtensions
 {
     public static IdentityBuilder AddIdentityServices(this IServiceCollection services)
     {
+        // Long-lived token provider for invitation links (separate from default reset tokens
+        // so we can keep password-reset TTL short while invites stay valid for weeks).
+        services.Configure<DataProtectionTokenProviderOptions>(
+            InviteTokenSettings.ProviderName,
+            o => o.TokenLifespan = InviteTokenSettings.Lifespan);
+
         return services.AddIdentityCore<ApplicationUser>(options =>
             {
                 options.SignIn.RequireConfirmedAccount = true;
@@ -26,7 +32,8 @@ public static class ServicesExtensions
             .AddRoles<ApplicationRole>()
             .AddEntityFrameworkStores<AuthDbContext>()
             .AddSignInManager()
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            .AddTokenProvider<DataProtectorTokenProvider<ApplicationUser>>(InviteTokenSettings.ProviderName);
     }
 
     public static void AddAppAuthorization(this IServiceCollection services)

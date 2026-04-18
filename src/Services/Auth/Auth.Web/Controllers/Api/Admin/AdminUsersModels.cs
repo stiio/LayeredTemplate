@@ -46,3 +46,13 @@ public class UpdateUserRequest
 }
 
 public record ErrorResponse(string Error, IReadOnlyList<string>? Details = null);
+
+/// <summary>
+/// One-time token for inviting a newly-provisioned user to set their password and sign in.
+/// The backend composes its own invite email with a link like
+/// <c>{AuthWeb}/account/accept_invite?userId={UserId}&amp;code={Token}&amp;returnUrl=...</c>.
+/// </summary>
+public record InviteTokenResponse(
+    string UserId,
+    string Token,
+    DateTimeOffset ExpiresAt);

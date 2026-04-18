@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
 using LayeredTemplate.Auth.Web.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using OpenIddict.Validation.AspNetCore;
 
 namespace LayeredTemplate.Auth.Web.Controllers.Api.Admin;
@@ -146,6 +148,33 @@ public class AdminUsersController : ControllerBase
         }
 
         return this.Ok(await this.ToResponseAsync(user));
+    }
+
+    [HttpPost("{id}/invite-token")]
+    public async Task<IActionResult> CreateInviteToken(string id, CancellationToken cancellationToken)
+    {
+        var user = await this.userManager.FindByIdAsync(id);
+        if (user is null)
+        {
+            return this.NotFound();
+        }
+
+        var token = await this.userManager.GenerateUserTokenAsync(
+            user,
+            InviteTokenSettings.ProviderName,
+            InviteTokenSettings.Purpose);
+
+        var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+        this.logger.LogInformation(
+            "Admin API issued invite token for user {UserId} from client {ClientId}.",
+            id,
+            this.HttpContext.User.Identity?.Name);
+
+        return this.Ok(new InviteTokenResponse(
+            UserId: user.Id,
+            Token: encoded,
+            ExpiresAt: DateTimeOffset.UtcNow + InviteTokenSettings.Lifespan));
     }
 
     [HttpDelete("{id}")]
