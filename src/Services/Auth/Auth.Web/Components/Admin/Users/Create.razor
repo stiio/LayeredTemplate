@@ -30,7 +30,7 @@
         <div class="form-group">
             <label class="form-label" for="@Input.PhoneNumber">Phone</label>
             <InputText @bind-Value="Input.PhoneNumber" name="Input.PhoneNumber" class="form-input"
-                       placeholder="+1234567890" />
+                       placeholder="+1 415 555 1234" data-phone-input="" data-phone-default-country="US" />
             <ValidationMessage For="() => Input.PhoneNumber" />
         </div>
 

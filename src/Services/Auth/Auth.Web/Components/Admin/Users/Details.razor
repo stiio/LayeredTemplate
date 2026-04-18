@@ -45,7 +45,7 @@ else if (view is not null)
         <div class="form-group">
             <label class="form-label">Phone</label>
             <div class="field-row">
-                <input type="text" value="@(view.PhoneNumber ?? "Not set")" disabled class="form-input" />
+                <input type="text" value="@(view.PhoneNumber ?? "Not set")" disabled class="form-input" data-phone-display />
                 <span class="@(view.PhoneConfirmed ? "status-verified" : "status-unverified")">
                     @(view.PhoneConfirmed ? "\u2713" : "\u2717")
                 </span>

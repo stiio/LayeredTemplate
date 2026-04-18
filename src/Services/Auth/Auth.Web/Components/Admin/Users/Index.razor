@@ -66,7 +66,7 @@ else
                         else
                         {
                             <span class="cell-with-status">
-                                @u.PhoneNumber
+                                <span data-phone-display>@u.PhoneNumber</span>
                                 <span class="@(u.PhoneNumberConfirmed ? "status-verified" : "status-unverified")">
                                     @(u.PhoneNumberConfirmed ? "\u2713" : "\u2717")
                                 </span>

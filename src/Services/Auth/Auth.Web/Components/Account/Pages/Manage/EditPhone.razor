@@ -14,7 +14,7 @@
             <div class="form-group">
                 <label class="form-label" for="@PhoneInput.PhoneNumber">Phone number</label>
                 <InputText @bind-Value="PhoneInput.PhoneNumber" name="PhoneInput.PhoneNumber" class="form-input"
-                           placeholder="+1234567890" data-phone-prefix="" />
+                           placeholder="+1 415 555 1234" data-phone-input="" data-phone-default-country="US" />
                 <ValidationMessage For="() => PhoneInput.PhoneNumber" />
             </div>
             <button type="submit" class="btn-primary btn-block">@(IsPhoneConfirmationEnabled ? "Send code" : "Save")</button>

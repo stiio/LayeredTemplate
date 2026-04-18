@@ -41,7 +41,7 @@
     <div class="form-group">
         <label class="form-label">Phone</label>
         <div class="field-row">
-            <input type="text" value="@(phoneNumber ?? "Not set")" disabled class="form-input" />
+            <input type="text" value="@(phoneNumber ?? "Not set")" disabled class="form-input" data-phone-display />
             @if (IsPhoneConfirmationEnabled)
             {
                 <span class="@(isPhoneConfirmed ? "status-verified" : "status-unverified")">
