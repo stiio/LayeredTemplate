@@ -27,19 +27,19 @@ public class AdminUsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
+    public async Task<ActionResult<UserResponse>> GetById(string id, CancellationToken cancellationToken)
     {
         var user = await this.userManager.FindByIdAsync(id);
         if (user is null)
         {
-            return this.NotFound();
+            return this.BadRequest(new ErrorResponse("User not found."));
         }
 
-        return this.Ok(await this.ToResponseAsync(user));
+        return await this.ToResponseAsync(user);
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetByEmail([FromQuery, Required] string email, CancellationToken cancellationToken)
+    public async Task<ActionResult<UserResponse>> GetByEmail([FromQuery, Required] string email, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(email))
         {
@@ -49,14 +49,14 @@ public class AdminUsersController : ControllerBase
         var user = await this.userManager.FindByEmailAsync(email);
         if (user is null)
         {
-            return this.NotFound();
+            return this.BadRequest(new ErrorResponse("User not found."));
         }
 
         return this.Ok(await this.ToResponseAsync(user));
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<UserResponse>> Create([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
     {
         var existing = await this.userManager.FindByEmailAsync(request.Email);
         if (existing is not null)
@@ -70,6 +70,9 @@ public class AdminUsersController : ControllerBase
             Email = request.Email,
             EmailConfirmed = request.EmailConfirmed,
             PhoneNumber = request.PhoneNumber,
+            PhoneNumberConfirmed = request.PhoneNumberConfirmed,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
         };
 
         var createResult = string.IsNullOrEmpty(request.Password)
@@ -88,12 +91,12 @@ public class AdminUsersController : ControllerBase
     }
 
     [HttpPatch("{id}")]
-    public async Task<IActionResult> Update(string id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<UserResponse>> Update(string id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var user = await this.userManager.FindByIdAsync(id);
         if (user is null)
         {
-            return this.NotFound();
+            return this.BadRequest(new ErrorResponse("User not found."));
         }
 
         if (request.EmailConfirmed == false)
@@ -103,28 +106,20 @@ public class AdminUsersController : ControllerBase
 
         var clientId = this.HttpContext.User.Identity?.Name;
 
-        if (request.EmailConfirmed == true && !user.EmailConfirmed)
-        {
-            user.EmailConfirmed = true;
-            var update = await this.userManager.UpdateAsync(user);
-            if (!update.Succeeded)
-            {
-                return this.BadRequest(ToError(update));
-            }
 
-            this.logger.LogWarning("Admin API confirmed email for user {UserId} from client {ClientId}.", id, clientId);
+        user.EmailConfirmed = request.EmailConfirmed ?? user.EmailConfirmed;
+        user.PhoneNumber = request.PhoneNumber ?? user.PhoneNumber;
+        user.PhoneNumberConfirmed = request.PhoneNumberConfirmed ?? user.PhoneNumberConfirmed;
+        user.FirstName = request.FirstName ?? user.FirstName;
+        user.LastName = request.LastName ?? user.LastName;
+
+        var updateUserResult = await this.userManager.UpdateAsync(user);
+        if (!updateUserResult.Succeeded)
+        {
+            return this.BadRequest(ToError(updateUserResult));
         }
 
-        if (request.PhoneNumber is not null)
-        {
-            var set = await this.userManager.SetPhoneNumberAsync(user, request.PhoneNumber);
-            if (!set.Succeeded)
-            {
-                return this.BadRequest(ToError(set));
-            }
-
-            this.logger.LogInformation("Admin API updated phone for user {UserId} from client {ClientId}.", id, clientId);
-        }
+        this.logger.LogInformation("Admin API updated user {UserId} from client {ClientId}.", id, clientId);
 
         if (request.NewPassword is not null)
         {
@@ -151,12 +146,12 @@ public class AdminUsersController : ControllerBase
     }
 
     [HttpPost("{id}/invite-token")]
-    public async Task<IActionResult> CreateInviteToken(string id, CancellationToken cancellationToken)
+    public async Task<ActionResult<InviteTokenResponse>> CreateInviteToken(string id, CancellationToken cancellationToken)
     {
         var user = await this.userManager.FindByIdAsync(id);
         if (user is null)
         {
-            return this.NotFound();
+            return this.BadRequest(new ErrorResponse("User not found."));
         }
 
         var token = await this.userManager.GenerateUserTokenAsync(
@@ -183,7 +178,7 @@ public class AdminUsersController : ControllerBase
         var user = await this.userManager.FindByIdAsync(id);
         if (user is null)
         {
-            return this.NotFound();
+            return this.BadRequest(new ErrorResponse("User not found."));
         }
 
         var result = await this.userManager.DeleteAsync(user);
@@ -205,6 +200,9 @@ public class AdminUsersController : ControllerBase
             EmailConfirmed: user.EmailConfirmed,
             PhoneNumber: user.PhoneNumber,
             PhoneNumberConfirmed: user.PhoneNumberConfirmed,
+            FirstName: user.FirstName,
+            LastName: user.LastName,
+            Roles: (await this.userManager.GetRolesAsync(user)).ToArray(),
             HasPassword: await this.userManager.HasPasswordAsync(user));
 
     private static ErrorResponse ToError(IdentityResult result) =>

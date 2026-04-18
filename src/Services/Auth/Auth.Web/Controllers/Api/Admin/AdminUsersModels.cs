@@ -8,41 +8,60 @@ public record UserResponse(
     bool EmailConfirmed,
     string? PhoneNumber,
     bool PhoneNumberConfirmed,
-    bool HasPassword);
+    string? FirstName,
+    string? LastName,
+    bool HasPassword,
+    string[] Roles);
 
-public class CreateUserRequest
+public record CreateUserRequest
 {
     [Required]
     [EmailAddress]
     [MaxLength(128)]
-    public string Email { get; set; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+
+    public bool EmailConfirmed { get; init; }
+
+    [Phone]
+    [MaxLength(20)]
+    public string? PhoneNumber { get; init; }
+
+    public bool PhoneNumberConfirmed { get; init; }
+
+    [MaxLength(100)]
+    public string? FirstName { get; init; }
+
+    [MaxLength(100)]
+    public string? LastName { get; init; }
 
     /// <summary>Optional — omit for external-login-only accounts.</summary>
     [MinLength(6)]
     [MaxLength(100)]
-    public string? Password { get; set; }
-
-    public bool EmailConfirmed { get; set; }
-
-    [Phone]
-    [MaxLength(20)]
-    public string? PhoneNumber { get; set; }
+    public string? Password { get; init; }
 }
 
-public class UpdateUserRequest
+public record UpdateUserRequest
 {
     /// <summary>Only <c>true</c> is meaningful — admin confirms email. Omit or <c>null</c> to leave as-is; <c>false</c> is rejected.</summary>
-    public bool? EmailConfirmed { get; set; }
+    public bool? EmailConfirmed { get; init; }
 
     /// <summary>Set to change the user's phone. PhoneNumberConfirmed is reset to false.</summary>
     [Phone]
     [MaxLength(20)]
-    public string? PhoneNumber { get; set; }
+    public string? PhoneNumber { get; init; }
+
+    public bool? PhoneNumberConfirmed { get; init; }
+
+    [MaxLength(100)]
+    public string? FirstName { get; init; }
+
+    [MaxLength(100)]
+    public string? LastName { get; init; }
 
     /// <summary>Set to replace the user's password manually. Must pass Identity password policy.</summary>
     [MinLength(6)]
     [MaxLength(100)]
-    public string? NewPassword { get; set; }
+    public string? NewPassword { get; init; }
 }
 
 public record ErrorResponse(string Error, IReadOnlyList<string>? Details = null);
