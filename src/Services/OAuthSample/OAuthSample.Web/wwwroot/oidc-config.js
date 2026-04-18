@@ -9,7 +9,11 @@ export const config = {
     redirect_uri: clientOrigin + '/callback.html',
     post_logout_redirect_uri: clientOrigin + '/index.html',
     response_type: 'code',
-    scope: 'openid profile email offline_access',
+    // openid           — triggers id_token issuance (required)
+    // profile / email  — gate name / given_name / family_name / email / email_verified in both tokens
+    // roles            — gate role claim (custom scope; backend reads it from access_token)
+    // offline_access   — requests a refresh_token
+    scope: 'openid profile email roles offline_access',
 };
 
 export const mgr = new UserManager(config);

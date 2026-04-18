@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 
 const string AuthIssuer = "https://localhost:8080";
-const string SpaClientId = "default_client";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,19 +14,25 @@ builder.Services.AddAuthApiClient(builder.Configuration, opts =>
     opts.ClientId = "backend";
     opts.ClientSecret = "+qZW6uP+RmhkCZg9cwz2pF61AxAsQsOtfQNW6KG7YTw=";
     opts.BaseUrl = AuthIssuer;
-    opts.Scopes = ["admin.users"];
+    opts.Scopes = ["auth/admin.users"];
 });
 
-// JwtBearer validates id_tokens issued by Auth.Web. The Authority URL is used to fetch OIDC
+// JwtBearer validates access_tokens issued by Auth.Web. The Authority URL is used to fetch OIDC
 // discovery + JWKS on first use (cached), so no manual key distribution is required.
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = AuthIssuer;
-        // id_token.aud = client_id (OIDC Core §2). access_token.aud differs (by convention
-        // equals resources/scopes), so this audience gate effectively rejects access_tokens.
-        options.Audience = SpaClientId;
+
+        // RFC 9068 — OpenIddict tags access_tokens with typ=at+jwt. Constraining ValidTypes
+        // ensures an id_token (typ=JWT) accidentally sent in the Authorization header is rejected.
+        options.TokenValidationParameters.ValidTypes = ["at+jwt"];
+
+        // Audience validation is off in this demo because no resource URI is registered for
+        // the scopes the SPA requests. In production, associate an API scope with a resource
+        // (see SeedOidcScopesTask in Auth.Web) and set ValidAudience = "api://oauth-sample".
+        options.TokenValidationParameters.ValidateAudience = false;
     });
 
 builder.Services.AddAuthorization();

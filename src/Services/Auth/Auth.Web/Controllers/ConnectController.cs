@@ -236,32 +236,37 @@ public class ConnectController(
     }
 
     /// <summary>
-    /// Decides which tokens each claim ends up in. Access token always carries identity claims
-    /// (so downstream APIs can authorize), id_token only carries claims for scopes the client
-    /// actually requested — per OIDC Core §5.4.
+    /// Decides which tokens each claim ends up in.
+    /// Per OIDC Core §5.4: identity claims are emitted only when the corresponding scope was
+    /// granted. When it is, we include the claim in BOTH access_token and id_token — so backends
+    /// can authorize on them without a /connect/userinfo roundtrip, and SPAs can show them in UI.
+    /// <para>
+    /// This keeps access_token lean: client that asked only for <c>openid</c> gets an AT with
+    /// just <c>sub</c>; asking for <c>profile email roles</c> adds only those claim families.
+    /// </para>
     /// </summary>
     private static IEnumerable<string> ResolveDestinations(Claim claim) => claim.Type switch
     {
+        // sub is the stable identifier — always in both tokens (required by OIDC Core §2).
         Claims.Subject =>
             [Destinations.AccessToken, Destinations.IdentityToken],
 
-        Claims.Name or Claims.GivenName or Claims.FamilyName =>
-            WithIdTokenIfScoped(claim, Scopes.Profile),
+        Claims.Name or Claims.GivenName or Claims.FamilyName
+            when claim.Subject!.HasScope(Scopes.Profile)
+            => [Destinations.AccessToken, Destinations.IdentityToken],
 
-        Claims.Email or Claims.EmailVerified =>
-            WithIdTokenIfScoped(claim, Scopes.Email),
+        Claims.Email or Claims.EmailVerified
+            when claim.Subject!.HasScope(Scopes.Email)
+            => [Destinations.AccessToken, Destinations.IdentityToken],
 
-        Claims.PhoneNumber or Claims.PhoneNumberVerified =>
-            WithIdTokenIfScoped(claim, Scopes.Phone),
+        Claims.PhoneNumber or Claims.PhoneNumberVerified
+            when claim.Subject!.HasScope(Scopes.Phone)
+            => [Destinations.AccessToken, Destinations.IdentityToken],
 
-        Claims.Role =>
-            WithIdTokenIfScoped(claim, AppScopes.Roles),
+        Claims.Role when claim.Subject!.HasScope(AppScopes.Roles)
+            => [Destinations.AccessToken, Destinations.IdentityToken],
 
-        _ => [Destinations.AccessToken],
+        // Unknown / ungranted — don't emit to either token.
+        _ => [],
     };
-
-    private static IEnumerable<string> WithIdTokenIfScoped(Claim claim, string scope) =>
-        claim.Subject!.HasScope(scope)
-            ? [Destinations.AccessToken, Destinations.IdentityToken]
-            : [Destinations.AccessToken];
 }

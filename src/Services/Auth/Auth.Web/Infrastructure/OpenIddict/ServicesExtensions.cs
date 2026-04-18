@@ -33,16 +33,11 @@ public static class ServicesExtensions
                     .AllowClientCredentialsFlow()
                     .RequireProofKeyForCodeExchange();
 
-                if (env.IsDevelopment() || env.IsStaging())
-                {
-                    options.DisableAccessTokenEncryption();
-                }
+                options.DisableAccessTokenEncryption();
 
                 options.SetAccessTokenLifetime(TimeSpan.FromHours(1))
                     .SetIdentityTokenLifetime(TimeSpan.FromHours(1))
                     .SetRefreshTokenLifetime(TimeSpan.FromDays(30));
-
-                options.RegisterScopes("openid", "profile", "email", "phone", AppScopes.Roles, AppScopes.AdminUsers);
 
                 options.UseAspNetCore()
                     .EnableAuthorizationEndpointPassthrough()
@@ -55,6 +50,7 @@ public static class ServicesExtensions
                 // Auth.Web validates its own tokens (same signing/encryption keys).
                 options.UseLocalServer();
                 options.UseAspNetCore();
+                options.AddAudiences("api://auth-admin");
             });
     }
 

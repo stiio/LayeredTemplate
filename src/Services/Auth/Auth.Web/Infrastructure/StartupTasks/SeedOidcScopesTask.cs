@@ -11,15 +11,37 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 /// </summary>
 public class SeedOidcScopesTask : IStartupTask
 {
-    private static readonly IReadOnlyList<(string Name, string DisplayName)> BuiltInScopes =
+    /// <summary>
+    /// <para>Built-in scopes that every instance must have.</para>
+    /// <para>
+    /// <b>Resources</b> matter for microservices: when a scope has resources attached, every
+    /// access_token issued with that scope carries the resource URI in <c>aud</c>. The downstream
+    /// service then configures <c>ValidAudience = "api://my-service"</c> in JwtBearer, so tokens
+    /// intended for other services are rejected.
+    /// </para>
+    /// <para>
+    /// OIDC-standard identity scopes (openid/profile/email/phone/roles/offline_access) are not
+    /// tied to a resource — they describe the user, not an API. Custom API scopes should name
+    /// their resource explicitly (see <c>AppScopes.AdminUsers</c> below for the template pattern).
+    /// </para>
+    /// </summary>
+    private static readonly IReadOnlyList<ScopeSeed> BuiltInScopes =
     [
-        ("openid", "OpenID"),
-        ("profile", "Profile"),
-        ("email", "Email"),
-        ("phone", "Phone"),
-        ("offline_access", "Offline access (refresh tokens)"),
-        (AppScopes.Roles, "User roles"),
-        (AppScopes.AdminUsers, "Admin: manage users"),
+        new("openid", "OpenID"),
+        new("profile", "Profile"),
+        new("email", "Email"),
+        new("phone", "Phone"),
+        new("offline_access", "Offline access (refresh tokens)"),
+        new(AppScopes.Roles, "User roles"),
+
+        // API scope for Auth.Web's own admin endpoints. Resources make access_token.aud include
+        // this URI, matching the validation handler configured in JwtBearer on admin controllers.
+        new(AppScopes.AdminUsers, "Admin: manage users", "api://auth-web"),
+
+        // Future API scopes example — each service gets its own resource URI:
+        // new("app/all.read",  "Read from App",   "api://app-web"),
+        // new("app/all.write", "Modify App data", "api://app-web"),
+        // new("reports/all.read",   "Access reports",  "api://reports-web"),
     ];
 
     private readonly IOpenIddictScopeManager scopeManager;
@@ -45,16 +67,32 @@ public class SeedOidcScopesTask : IStartupTask
             timeout: TimeSpan.FromSeconds(60),
             cancellationToken: cancellationToken);
 
-        foreach (var (name, displayName) in BuiltInScopes)
+        foreach (var seed in BuiltInScopes)
         {
-            if (await this.scopeManager.FindByNameAsync(name, cancellationToken) is null)
+            if (await this.scopeManager.FindByNameAsync(seed.Name, cancellationToken) is not null)
             {
-                await this.scopeManager.CreateAsync(
-                    new OpenIddictScopeDescriptor { Name = name, DisplayName = displayName },
-                    cancellationToken);
-
-                this.logger.LogInformation("Seeded OIDC scope {Scope}.", name);
+                continue;
             }
+
+            var descriptor = new OpenIddictScopeDescriptor
+            {
+                Name = seed.Name,
+                DisplayName = seed.DisplayName,
+            };
+
+            foreach (var resource in seed.Resources)
+            {
+                descriptor.Resources.Add(resource);
+            }
+
+            await this.scopeManager.CreateAsync(descriptor, cancellationToken);
+
+            this.logger.LogInformation(
+                "Seeded OIDC scope {Scope} (resources: {Resources}).",
+                seed.Name,
+                seed.Resources.Length == 0 ? "none" : string.Join(", ", seed.Resources));
         }
     }
+
+    private sealed record ScopeSeed(string Name, string DisplayName, params string[] Resources);
 }

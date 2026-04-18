@@ -46,7 +46,7 @@ sendBtn.addEventListener('click', async () => {
 
     // Re-read user — token in sessionStorage might have expired between page load and submit.
     const user = await mgr.getUser();
-    if (!user || user.expired || !user.id_token) {
+    if (!user || user.expired || !user.access_token) {
         showStatus('Your session expired. <a href="/invite.html">Reload</a>.', true);
         return;
     }
@@ -59,13 +59,13 @@ sendBtn.addEventListener('click', async () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + user.id_token,
+                'Authorization': 'Bearer ' + user.access_token,
             },
             body: JSON.stringify({ email }),
         });
 
         if (res.status === 401) {
-            showStatus('Unauthorized — your id_token is invalid or expired. <a href="/invite.html">Reload</a>.', true);
+            showStatus('Unauthorized — your access_token is invalid or expired. <a href="/invite.html">Reload</a>.', true);
             return;
         }
         if (!res.ok) {

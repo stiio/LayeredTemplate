@@ -98,21 +98,59 @@ Migrations/                          — EF миграции (таблица __e
 - Flows: **AuthorizationCode + RefreshToken + ClientCredentials**, **PKCE required** для AuthCode
 - Access token encryption отключён (`DisableAccessTokenEncryption()`) — токены читаемы как JWT, для дебага
 - Lifetimes: AccessToken = 1h, IdentityToken = 1h, RefreshToken = 30d
-- Registered scopes: `openid`, `profile`, `email`, `phone`, `roles`, `admin.users`
+- Registered scopes: `openid`, `profile`, `email`, `phone`, `roles`, `offline_access`, `admin.users` (resource `api://auth-admin`)
 - Server + Validation сосуществуют: `AddValidation(UseLocalServer)` регистрирует Bearer-схему для собственного admin API
 
 ### ConnectController — клеймы и destinations
 
 - `BuildUserIdentityAsync(user)` — единственное место, где собираются клеймы (sub, name, given_name, family_name, email, email_verified, phone_number, phone_number_verified, role×N). Используется и в `Authorize`, и в auth_code/refresh_token ветке `Exchange`.
-- `ResolveDestinations(claim)` — single source of truth для маршрутизации клеймов:
+- `ResolveDestinations(claim)` — single source of truth для маршрутизации клеймов. **Per OIDC Core §5.4: клеймы эмитятся только при наличии соответствующего scope**, и когда эмитятся — идут в ОБА токена (backend'ы читают из access_token, SPA — из id_token):
   - `sub` → всегда в AT+IT
-  - `name`/`given_name`/`family_name` → AT всегда, IT если scope `profile`
-  - `email`/`email_verified` → AT всегда, IT если scope `email`
-  - `phone_number`/`phone_number_verified` → AT всегда, IT если scope `phone`
-  - `role` → AT всегда, IT если scope `roles`
+  - `name`/`given_name`/`family_name` → AT+IT только при scope `profile`
+  - `email`/`email_verified` → AT+IT только при scope `email`
+  - `phone_number`/`phone_number_verified` → AT+IT только при scope `phone`
+  - `role` → AT+IT только при scope `roles`
+  - остальные → никуда (не эмитим)
+- Токен клиента, запросившего только `openid`, содержит лишь `sub` — минимальный footprint.
 - `Userinfo` честно смотрит на `principal.HasScope(...)`, возвращает только разрешённое
 - `Exchange` обрабатывает три grant: `client_credentials` (sub=client_id), `authorization_code`, `refresh_token`
 - **Logout**: GET с непустым `post_logout_redirect_uri` (OpenIddict валидирует его перед контроллером) → silent logout + редирект. GET без параметров → редирект на `/account/logout_confirmation` (защита от nuisance-CSRF). POST → всегда silent logout.
+
+### Access token формат и валидация для resource-серверов
+
+- **JWT, не encrypted** (`DisableAccessTokenEncryption()` в server options). Любой backend с доступом к JWKS может валидировать самостоятельно — без introspection roundtrip.
+- **JWT header `typ=at+jwt`** (RFC 9068). Resource-серверы должны выставлять `ValidTypes = ["at+jwt"]` в JwtBearer — это отсекает id_token, случайно посланный в Authorization header.
+- **Identity claims в AT гейтятся по scope** (см. `ResolveDestinations` выше). Backend читает нужное напрямую из токена — `HttpContext.User.FindFirstValue(...)`.
+
+### Resource-based audience для микросервисов
+
+`OpenIddictScopeDescriptor.Resources` на каждом API-скоупе → OpenIddict включает `api://...` URI в `aud` access_token'а. Каждый микросервис в JwtBearer настраивает `ValidAudience = "api://my-service"` → tokens для других сервисов отклоняются.
+
+Правила:
+- OIDC-identity скоупы (`openid`, `profile`, `email`, `phone`, `roles`, `offline_access`) — **без resources**. Описывают юзера, не API.
+- Кастомные API-скоупы — **с resources**. Пример в [SeedOidcScopesTask](Infrastructure/StartupTasks/SeedOidcScopesTask.cs): `admin.users` имеет resource `api://auth-admin`. Закомментированы примеры `app.read` / `reports`.
+
+Чтобы добавить новый микросервис:
+1. В админке создать scope с именем `<service>.<action>` (или через seed-task).
+2. Назначить scope resource `api://<service>` (через admin UI или сидом).
+3. Клиент (SPA) запрашивает scope в authorize.
+4. Resource-сервер в JwtBearer: `ValidAudience = "api://<service>"`, `ValidTypes = ["at+jwt"]`, `Authority = <Auth.Web URL>`.
+
+### Introspection — опциональный путь
+
+OpenIddict server экспортит `/connect/introspect`, но в шаблоне не используется. Нужен только если требуется **real-time revocation** (отозвать AT до его natural expiry): backend POSTит токен + свои client_id/secret → Auth возвращает `{ active, sub, scope, ... }`. Цена — +round-trip на каждый запрос (митигируется локальным кешем на TTL).
+
+Для включения на resource-server стороне:
+```csharp
+.AddValidation(options => {
+    options.SetIssuer("https://auth/");
+    options.UseIntrospection().SetClientId("...").SetClientSecret("...");
+    options.UseSystemNetHttp();
+    options.UseAspNetCore();
+});
+```
+
+Для обычных бизнес-сервисов (нет требований к мгновенному отзыву, 1h TTL access_token ок) — **JWT-валидация через JWKS** правильнее: stateless, без дополнительной зависимости на Auth при каждом запросе.
 
 ## Identity / безопасность
 
