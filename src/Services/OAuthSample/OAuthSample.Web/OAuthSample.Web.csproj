@@ -4,4 +4,8 @@
         <RootNamespace>LayeredTemplate.OAuthSample.Web</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\Auth\Auth.ApiClient\Auth.ApiClient.csproj" />
+    </ItemGroup>
+
 </Project>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Invite User</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .field { margin: 16px 0; }
+        .field label { display: block; margin-bottom: 6px; font-size: 13px; color: #5e5d59; }
+        .field input { width: 100%; padding: 8px 12px; border: 1px solid #e8e6dc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .link-row { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; }
+        .link-row textarea { flex: 1; height: 72px; font-family: monospace; font-size: 12px; padding: 8px; border: 1px solid #e8e6dc; border-radius: 6px; resize: vertical; box-sizing: border-box; }
+        .muted { color: #87867f; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <h2>Invite a User</h2>
+    <p class="muted"><a href="/">← Back to login</a></p>
+
+    <div class="card">
+        <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="name@example.com" autocomplete="off" />
+        </div>
+        <button class="btn-login" id="send">Create invite</button>
+
+        <div id="status-area" style="margin-top: 12px;"></div>
+
+        <div id="result" style="display:none; margin-top: 20px;">
+            <p class="muted">Share this link with the user. It expires in 30 days; a second click after acceptance will fail.</p>
+            <div class="link-row">
+                <textarea id="link" readonly></textarea>
+                <button class="btn-action" id="copy">Copy</button>
+            </div>
+            <p class="muted" style="margin-top: 8px;">
+                Open in an incognito window to simulate the invitee.
+                After setting a password, you will land on
+                <code>/invite-complete.html</code>.
+            </p>
+        </div>
+    </div>
+
+    <script type="module" src="invite.js"></script>
+</body>
+</html>

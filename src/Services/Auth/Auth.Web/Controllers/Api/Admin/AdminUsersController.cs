@@ -32,7 +32,7 @@ public class AdminUsersController : ControllerBase
         var user = await this.userManager.FindByIdAsync(id);
         if (user is null)
         {
-            return this.BadRequest(new ErrorResponse("User not found."));
+            return this.NotFound();
         }
 
         return await this.ToResponseAsync(user);
@@ -49,7 +49,7 @@ public class AdminUsersController : ControllerBase
         var user = await this.userManager.FindByEmailAsync(email);
         if (user is null)
         {
-            return this.BadRequest(new ErrorResponse("User not found."));
+            return this.NotFound();
         }
 
         return this.Ok(await this.ToResponseAsync(user));
@@ -96,7 +96,7 @@ public class AdminUsersController : ControllerBase
         var user = await this.userManager.FindByIdAsync(id);
         if (user is null)
         {
-            return this.BadRequest(new ErrorResponse("User not found."));
+            return this.NotFound();
         }
 
         if (request.EmailConfirmed == false)
@@ -151,7 +151,7 @@ public class AdminUsersController : ControllerBase
         var user = await this.userManager.FindByIdAsync(id);
         if (user is null)
         {
-            return this.BadRequest(new ErrorResponse("User not found."));
+            return this.NotFound();
         }
 
         var token = await this.userManager.GenerateUserTokenAsync(
@@ -178,7 +178,7 @@ public class AdminUsersController : ControllerBase
         var user = await this.userManager.FindByIdAsync(id);
         if (user is null)
         {
-            return this.BadRequest(new ErrorResponse("User not found."));
+            return this.NotFound();
         }
 
         var result = await this.userManager.DeleteAsync(user);
