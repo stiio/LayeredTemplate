@@ -16,7 +16,9 @@ public class SeedOidcScopesTask : IStartupTask
         ("openid", "OpenID"),
         ("profile", "Profile"),
         ("email", "Email"),
+        ("phone", "Phone"),
         ("offline_access", "Offline access (refresh tokens)"),
+        (AppScopes.Roles, "User roles"),
         (AppScopes.AdminUsers, "Admin: manage users"),
     ];
 

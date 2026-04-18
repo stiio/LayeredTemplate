@@ -42,7 +42,7 @@ public static class ServicesExtensions
                     .SetIdentityTokenLifetime(TimeSpan.FromHours(1))
                     .SetRefreshTokenLifetime(TimeSpan.FromDays(30));
 
-                options.RegisterScopes("openid", "profile", "email", AppScopes.AdminUsers);
+                options.RegisterScopes("openid", "profile", "email", "phone", AppScopes.Roles, AppScopes.AdminUsers);
 
                 options.UseAspNetCore()
                     .EnableAuthorizationEndpointPassthrough()
