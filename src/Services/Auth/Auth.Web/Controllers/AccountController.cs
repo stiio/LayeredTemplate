@@ -8,13 +8,22 @@ using Microsoft.AspNetCore.Mvc;
 namespace LayeredTemplate.Auth.Web.Controllers;
 
 [Route("account")]
-public class AccountController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager) : Controller
+public class AccountController : Controller
 {
+    private readonly SignInManager<ApplicationUser> signInManager;
+    private readonly UserManager<ApplicationUser> userManager;
+
+    public AccountController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager)
+    {
+        this.signInManager = signInManager;
+        this.userManager = userManager;
+    }
+
     [HttpPost("logout")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout(string? returnUrl = null)
     {
-        await signInManager.SignOutAsync();
+        await this.signInManager.SignOutAsync();
         return this.LocalRedirect(returnUrl ?? "~/account/login");
     }
 
@@ -23,7 +32,7 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
     public IActionResult ExternalLogin(string provider, string? returnUrl = null)
     {
         var redirectUrl = $"/account/external_login_callback?returnUrl={Uri.EscapeDataString(returnUrl ?? "/account/manage")}";
-        var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+        var properties = this.signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
         return this.Challenge(properties, provider);
     }
 
@@ -35,10 +44,10 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
         await this.HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
         var redirectUrl = "/account/manage/connected_accounts?handler=link_callback";
-        var properties = signInManager.ConfigureExternalAuthenticationProperties(
+        var properties = this.signInManager.ConfigureExternalAuthenticationProperties(
             provider,
             redirectUrl,
-            userManager.GetUserId(this.User));
+            this.userManager.GetUserId(this.User));
         return this.Challenge(properties, provider);
     }
 
@@ -46,10 +55,10 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
     [HttpPost("manage/download_personal_data")]
     public async Task<IActionResult> DownloadPersonalData()
     {
-        var user = await userManager.GetUserAsync(this.User);
+        var user = await this.userManager.GetUserAsync(this.User);
         if (user is null)
         {
-            return this.NotFound($"Unable to load user with ID '{userManager.GetUserId(this.User)}'.");
+            return this.NotFound($"Unable to load user with ID '{this.userManager.GetUserId(this.User)}'.");
         }
 
         var personalData = new Dictionary<string, string>();
@@ -63,13 +72,13 @@ public class AccountController(SignInManager<ApplicationUser> signInManager, Use
             personalData.Add(prop.Name, prop.GetValue(user)?.ToString() ?? "null");
         }
 
-        var logins = await userManager.GetLoginsAsync(user);
+        var logins = await this.userManager.GetLoginsAsync(user);
         foreach (var login in logins)
         {
             personalData.Add($"{login.LoginProvider} external login provider key", login.ProviderKey);
         }
 
-        personalData.Add("Authenticator Key", (await userManager.GetAuthenticatorKeyAsync(user))!);
+        personalData.Add("Authenticator Key", (await this.userManager.GetAuthenticatorKeyAsync(user))!);
 
         return this.File(
             JsonSerializer.SerializeToUtf8Bytes(personalData),

@@ -1,5 +1,5 @@
-using LayeredTemplate.Auth.Web.Infrastructure.Identity;
 using LayeredTemplate.Auth.Web.Infrastructure.Locks;
+using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 using LayeredTemplate.Plugins.StartupRunner.Services;
 using OpenIddict.Abstractions;
 
@@ -36,12 +36,12 @@ public class SeedOidcScopesTask : IStartupTask
 
         // API scope for Auth.Web's own admin endpoints. Resources make access_token.aud include
         // this URI, matching the validation handler configured in JwtBearer on admin controllers.
-        new(AppScopes.AdminUsers, "Admin: manage users", "api://auth-web"),
+        new(AppScopes.AdminUsers, "Admin: manage users", AppResources.ApiAuthWeb),
 
         // Future API scopes example — each service gets its own resource URI:
         // new("app/all.read",  "Read from App",   "api://app-web"),
         // new("app/all.write", "Modify App data", "api://app-web"),
-        // new("reports/all.read",   "Access reports",  "api://reports-web"),
+        // new("reports/all",   "Access reports",  "api://reports-web"),
     ];
 
     private readonly IOpenIddictScopeManager scopeManager;

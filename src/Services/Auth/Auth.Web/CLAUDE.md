@@ -128,10 +128,10 @@ Migrations/                          — EF миграции (таблица __e
 
 Правила:
 - OIDC-identity скоупы (`openid`, `profile`, `email`, `phone`, `roles`, `offline_access`) — **без resources**. Описывают юзера, не API.
-- Кастомные API-скоупы — **с resources**. Пример в [SeedOidcScopesTask](Infrastructure/StartupTasks/SeedOidcScopesTask.cs): `admin.users` имеет resource `api://auth-admin`. Закомментированы примеры `app.read` / `reports`.
+- Кастомные API-скоупы — **с resources**. Пример в [SeedOidcScopesTask](Infrastructure/StartupTasks/SeedOidcScopesTask.cs): `auth/admin.users` имеет resource `api://auth-web`. Закомментированы примеры `app/all.read` / `reports/all`.
 
 Чтобы добавить новый микросервис:
-1. В админке создать scope с именем `<service>.<action>` (или через seed-task).
+1. В админке создать scope с именем `<service>/<action>` (или через seed-task).
 2. Назначить scope resource `api://<service>` (через admin UI или сидом).
 3. Клиент (SPA) запрашивает scope в authorize.
 4. Resource-сервер в JwtBearer: `ValidAudience = "api://<service>"`, `ValidTypes = ["at+jwt"]`, `Authority = <Auth.Web URL>`.

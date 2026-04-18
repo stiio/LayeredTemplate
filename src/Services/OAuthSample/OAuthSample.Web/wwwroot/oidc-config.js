@@ -13,7 +13,7 @@ export const config = {
     // profile / email  — gate name / given_name / family_name / email / email_verified in both tokens
     // roles            — gate role claim (custom scope; backend reads it from access_token)
     // offline_access   — requests a refresh_token
-    scope: 'openid profile email roles offline_access',
+    scope: 'profile email phone roles offline_access',
 };
 
 export const mgr = new UserManager(config);

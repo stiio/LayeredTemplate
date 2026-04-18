@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
-using LayeredTemplate.Auth.Web.Infrastructure.Identity;
+using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -11,10 +11,21 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace LayeredTemplate.Auth.Web.Controllers;
 
-public class ConnectController(
-    UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager) : Controller
+public class ConnectController : Controller
 {
+    private readonly UserManager<ApplicationUser> userManager;
+    private readonly SignInManager<ApplicationUser> signInManager;
+    private readonly IOpenIddictScopeManager scopeManager;
+
+    public ConnectController(UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        IOpenIddictScopeManager scopeManager)
+    {
+        this.userManager = userManager;
+        this.signInManager = signInManager;
+        this.scopeManager = scopeManager;
+    }
+
     [HttpGet("~/connect/authorize")]
     [HttpPost("~/connect/authorize")]
     public async Task<IActionResult> Authorize()
@@ -22,7 +33,7 @@ public class ConnectController(
         var request = this.HttpContext.GetOpenIddictServerRequest() ??
                       throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
-        var user = await userManager.GetUserAsync(this.User);
+        var user = await this.userManager.GetUserAsync(this.User);
         if (user is null)
         {
             var returnUrl = this.Request.PathBase + this.Request.Path + QueryString.Create(
@@ -36,6 +47,7 @@ public class ConnectController(
         var identity = await this.BuildUserIdentityAsync(user);
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(request.GetScopes());
+        await this.AttachResourcesAsync(principal);
         principal.SetDestinations(ResolveDestinations);
 
         return this.SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -61,6 +73,7 @@ public class ConnectController(
 
             var principal = new ClaimsPrincipal(identity);
             principal.SetScopes(request.GetScopes());
+            await this.AttachResourcesAsync(principal);
 
             return this.SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
@@ -70,7 +83,7 @@ public class ConnectController(
             var result = await this.HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             var userId = result.Principal?.GetClaim(Claims.Subject);
 
-            var user = await userManager.FindByIdAsync(userId!);
+            var user = await this.userManager.FindByIdAsync(userId!);
             if (user is null)
             {
                 return this.Forbid(
@@ -85,6 +98,7 @@ public class ConnectController(
             var identity = await this.BuildUserIdentityAsync(user);
             var principal = new ClaimsPrincipal(identity);
             principal.SetScopes(result.Principal!.GetScopes());
+            await this.AttachResourcesAsync(principal);
             principal.SetDestinations(ResolveDestinations);
 
             return this.SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -105,7 +119,7 @@ public class ConnectController(
         var result = await this.HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         var userId = result.Principal?.GetClaim(Claims.Subject);
 
-        var user = await userManager.FindByIdAsync(userId!);
+        var user = await this.userManager.FindByIdAsync(userId!);
         if (user is null)
         {
             return this.Challenge(
@@ -125,7 +139,7 @@ public class ConnectController(
 
         if (principal.HasScope(Scopes.Profile))
         {
-            var userName = await userManager.GetUserNameAsync(user);
+            var userName = await this.userManager.GetUserNameAsync(user);
             if (!string.IsNullOrEmpty(userName))
             {
                 claims[Claims.Name] = userName;
@@ -144,7 +158,7 @@ public class ConnectController(
 
         if (principal.HasScope(Scopes.Email))
         {
-            var email = await userManager.GetEmailAsync(user);
+            var email = await this.userManager.GetEmailAsync(user);
             if (!string.IsNullOrEmpty(email))
             {
                 claims[Claims.Email] = email;
@@ -165,7 +179,7 @@ public class ConnectController(
 
         if (principal.HasScope(AppScopes.Roles))
         {
-            var roles = await userManager.GetRolesAsync(user);
+            var roles = await this.userManager.GetRolesAsync(user);
             if (roles.Count > 0)
             {
                 claims[Claims.Role] = roles.ToArray();
@@ -199,7 +213,7 @@ public class ConnectController(
 
     private async Task<IActionResult> PerformLogoutAsync()
     {
-        await signInManager.SignOutAsync();
+        await this.signInManager.SignOutAsync();
 
         return this.SignOut(
             authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
@@ -218,21 +232,36 @@ public class ConnectController(
             Claims.Name,
             Claims.Role);
 
-        identity.SetClaim(Claims.Subject, await userManager.GetUserIdAsync(user));
-        identity.SetClaim(Claims.Name, await userManager.GetUserNameAsync(user));
+        identity.SetClaim(Claims.Subject, await this.userManager.GetUserIdAsync(user));
+        identity.SetClaim(Claims.Name, await this.userManager.GetUserNameAsync(user));
         identity.SetClaim(Claims.GivenName, user.FirstName);
         identity.SetClaim(Claims.FamilyName, user.LastName);
-        identity.SetClaim(Claims.Email, await userManager.GetEmailAsync(user));
+        identity.SetClaim(Claims.Email, await this.userManager.GetEmailAsync(user));
         identity.SetClaim(Claims.EmailVerified, user.EmailConfirmed);
         identity.SetClaim(Claims.PhoneNumber, user.PhoneNumber);
         identity.SetClaim(Claims.PhoneNumberVerified, user.PhoneNumberConfirmed);
 
-        foreach (var role in await userManager.GetRolesAsync(user))
+        foreach (var role in await this.userManager.GetRolesAsync(user))
         {
             identity.AddClaim(new Claim(Claims.Role, role));
         }
 
         return identity;
+    }
+
+    /// <summary>
+    /// Reads the resources (API URIs) registered for each granted scope and attaches them to the
+    /// principal. OpenIddict uses these to populate <c>aud</c> in the access_token — resource
+    /// servers validate <c>aud</c> against their own identifier (<c>api://...</c>) to reject
+    /// tokens meant for other services. Without this call, <c>aud</c> is omitted entirely.
+    /// </summary>
+    private async Task AttachResourcesAsync(ClaimsPrincipal principal)
+    {
+        var resources = await this.scopeManager
+            .ListResourcesAsync(principal.GetScopes())
+            .ToListAsync();
+
+        principal.SetResources(resources);
     }
 
     /// <summary>

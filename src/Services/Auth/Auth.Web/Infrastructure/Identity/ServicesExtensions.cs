@@ -1,5 +1,6 @@
 ﻿using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
+using LayeredTemplate.Auth.Web.Infrastructure.OpenIddict;
 using Microsoft.AspNetCore.Identity;
 using OpenIddict.Abstractions;
 using OpenIddict.Validation.AspNetCore;

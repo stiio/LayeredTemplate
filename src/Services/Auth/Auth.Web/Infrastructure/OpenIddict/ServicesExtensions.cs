@@ -1,5 +1,4 @@
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Contexts;
-using LayeredTemplate.Auth.Web.Infrastructure.Identity;
 using LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.Extensions.Options;
@@ -50,7 +49,7 @@ public static class ServicesExtensions
                 // Auth.Web validates its own tokens (same signing/encryption keys).
                 options.UseLocalServer();
                 options.UseAspNetCore();
-                options.AddAudiences("api://auth-admin");
+                options.AddAudiences(AppResources.ApiAuthWeb);
             });
     }
 
