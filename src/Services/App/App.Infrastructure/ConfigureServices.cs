@@ -1,10 +1,10 @@
 ﻿using LayeredTemplate.App.Application.Common.Services;
 using LayeredTemplate.App.Application.Features.Users.Services;
+using LayeredTemplate.App.Infrastructure.Authorization;
 using LayeredTemplate.App.Infrastructure.Data;
-using LayeredTemplate.App.Infrastructure.Extensions;
-using LayeredTemplate.App.Infrastructure.Mocks.Services;
-using LayeredTemplate.App.Infrastructure.Services.Common;
-using LayeredTemplate.App.Infrastructure.Services.Users;
+using LayeredTemplate.App.Infrastructure.Email;
+using LayeredTemplate.App.Infrastructure.Locks;
+using LayeredTemplate.App.Infrastructure.Users.Services;
 using LayeredTemplate.App.Shared;
 using LayeredTemplate.App.Shared.Constants;
 using LayeredTemplate.Plugins.StartupRunner;

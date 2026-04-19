@@ -1,7 +1,7 @@
 ﻿using System.Net.Http.Headers;
 using System.Text.Json;
 using LayeredTemplate.App.Domain.Entities;
-using LayeredTemplate.App.Infrastructure.Mocks.Authentication;
+using LayeredTemplate.App.Infrastructure.Authorization.Mocks;
 using LayeredTemplate.App.Shared.Authorization;
 
 namespace LayeredTemplate.Tests.App.Integration.Utils;

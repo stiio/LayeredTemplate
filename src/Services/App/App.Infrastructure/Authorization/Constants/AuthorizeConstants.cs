@@ -1,4 +1,4 @@
-﻿namespace LayeredTemplate.App.Infrastructure.Authorization;
+﻿namespace LayeredTemplate.App.Infrastructure.Authorization.Constants;
 
 public static class AuthorizeConstants
 {
@@ -11,6 +11,6 @@ public static class AuthorizeConstants
 
     public static class Roles
     {
-        public const string Administrator = "Administrator";
+        public const string Admin = "Admin";
     }
 }

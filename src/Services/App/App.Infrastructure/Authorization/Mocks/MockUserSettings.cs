@@ -1,4 +1,4 @@
-﻿namespace LayeredTemplate.App.Infrastructure.Mocks.Authentication;
+﻿namespace LayeredTemplate.App.Infrastructure.Authorization.Mocks;
 
 internal class MockUserSettings
 {

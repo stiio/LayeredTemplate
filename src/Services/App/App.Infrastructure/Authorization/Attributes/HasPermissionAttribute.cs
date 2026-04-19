@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using LayeredTemplate.App.Domain.ValueTypes;
+using LayeredTemplate.App.Infrastructure.Authorization.Constants;
 using Microsoft.AspNetCore.Authorization;
 
 namespace LayeredTemplate.App.Infrastructure.Authorization.Attributes;

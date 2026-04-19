@@ -5,7 +5,7 @@ using Medallion.Threading;
 using Medallion.Threading.Postgres;
 using Microsoft.Extensions.Configuration;
 
-namespace LayeredTemplate.App.Infrastructure.Services.Common;
+namespace LayeredTemplate.App.Infrastructure.Locks;
 
 internal class PostgresLockProvider : ILockProvider
 {

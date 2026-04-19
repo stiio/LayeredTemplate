@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
-namespace LayeredTemplate.App.Infrastructure.Services.Common;
+namespace LayeredTemplate.App.Infrastructure.Email;
 
 internal class EmailSender : IEmailSender
 {

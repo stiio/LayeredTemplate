@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace LayeredTemplate.App.Infrastructure.Mocks.Authentication;
+namespace LayeredTemplate.App.Infrastructure.Authorization.Mocks;
 
 internal class MockAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {

@@ -1,4 +1,5 @@
-﻿using LayeredTemplate.App.Shared.Authorization;
+﻿using LayeredTemplate.App.Infrastructure.Authorization.Constants;
+using LayeredTemplate.App.Shared.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 

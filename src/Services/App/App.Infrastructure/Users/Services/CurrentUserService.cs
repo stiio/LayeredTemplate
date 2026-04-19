@@ -3,7 +3,7 @@ using LayeredTemplate.App.Application.Features.Users.Services;
 using LayeredTemplate.App.Shared.Authorization;
 using Microsoft.AspNetCore.Http;
 
-namespace LayeredTemplate.App.Infrastructure.Services.Users;
+namespace LayeredTemplate.App.Infrastructure.Users.Services;
 
 internal class CurrentUserService : ICurrentUserService
 {

@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using LayeredTemplate.App.Application.Common.Services;
 
-namespace LayeredTemplate.App.Infrastructure.Mocks.Services;
+namespace LayeredTemplate.App.Infrastructure.Email;
 
 internal class EmailSenderMock : IEmailSender
 {
