@@ -2,7 +2,7 @@
 using System.Text.Json;
 using LayeredTemplate.App.Domain.Entities;
 using LayeredTemplate.App.Infrastructure.Mocks.Authentication;
-using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
+using LayeredTemplate.App.Shared.Authorization;
 
 namespace LayeredTemplate.Tests.App.Integration.Utils;
 

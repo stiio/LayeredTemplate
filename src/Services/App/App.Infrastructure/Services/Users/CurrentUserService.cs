@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 using LayeredTemplate.App.Application.Features.Users.Services;
-using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
+using LayeredTemplate.App.Shared.Authorization;
 using Microsoft.AspNetCore.Http;
 
 namespace LayeredTemplate.App.Infrastructure.Services.Users;

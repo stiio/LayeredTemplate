@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Plugins\Plugins.Authorization.Abstractions\Plugins.Authorization.Abstractions.csproj" />
     <ProjectReference Include="..\..\Plugins\Plugins.SharedExtensions\Plugins.SharedExtensions.csproj" />
   </ItemGroup>
 

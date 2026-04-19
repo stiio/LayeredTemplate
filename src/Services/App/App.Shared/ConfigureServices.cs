@@ -1,8 +1,8 @@
-﻿using LayeredTemplate.Plugins.Options.Models;
+﻿using LayeredTemplate.App.Shared.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace LayeredTemplate.Plugins.Options;
+namespace LayeredTemplate.App.Shared;
 
 public static class ConfigureServices
 {

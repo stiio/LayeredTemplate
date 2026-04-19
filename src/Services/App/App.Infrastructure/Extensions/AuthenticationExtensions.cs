@@ -1,5 +1,5 @@
 ﻿using LayeredTemplate.App.Infrastructure.Mocks.Authentication;
-using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
+using LayeredTemplate.App.Shared.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

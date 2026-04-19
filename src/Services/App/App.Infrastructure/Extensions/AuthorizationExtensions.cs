@@ -1,7 +1,5 @@
 ﻿using System.Reflection;
 using LayeredTemplate.App.Infrastructure.Authorization.PolicyProviders;
-using LayeredTemplate.App.Infrastructure.Services.Common;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,7 +9,6 @@ internal static class AuthorizationExtensions
 {
     public static void ConfigureAuthorization(this IServiceCollection services)
     {
-        services.AddScoped<IClaimsTransformation, AppClaimTransformation>();
         services.AddTransient<IAuthorizationPolicyProvider, CustomAuthorizationPolicyProvider>();
 
         services.AddAuthorization(opts =>

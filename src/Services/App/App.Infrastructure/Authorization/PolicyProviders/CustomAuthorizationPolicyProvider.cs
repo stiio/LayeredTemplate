@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
+﻿using LayeredTemplate.App.Shared.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 

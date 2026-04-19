@@ -1,4 +1,4 @@
-﻿namespace LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
+﻿namespace LayeredTemplate.App.Shared.Authorization;
 
 public static class AppAuthenticationSchemes
 {

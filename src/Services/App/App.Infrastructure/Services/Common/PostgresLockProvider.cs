@@ -1,6 +1,6 @@
 ﻿using LayeredTemplate.App.Application.Common.Models;
 using LayeredTemplate.App.Application.Common.Services;
-using LayeredTemplate.Plugins.Options.Constants;
+using LayeredTemplate.App.Shared.Constants;
 using Medallion.Threading;
 using Medallion.Threading.Postgres;
 using Microsoft.Extensions.Configuration;

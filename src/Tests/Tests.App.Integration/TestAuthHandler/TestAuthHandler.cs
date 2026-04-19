@@ -2,7 +2,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using LayeredTemplate.App.Infrastructure.Mocks.Authentication;
-using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
+using LayeredTemplate.App.Shared.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -39,9 +39,9 @@ public class TestAuthHandler : AuthenticationHandler<TestAuthAuthenticationOptio
 
         var claims = new[]
         {
-            new Claim(TokenKeys.UserId, mockUser.Id!),
-            new Claim(TokenKeys.Email, mockUser.Email!),
-            new Claim(TokenKeys.Phone, mockUser.Phone ?? string.Empty),
+            new Claim(AppClaims.UserId, mockUser.Id!),
+            new Claim(AppClaims.Email, mockUser.Email!),
+            new Claim(AppClaims.Phone, mockUser.Phone ?? string.Empty),
         };
 
         var identity = new ClaimsIdentity(claims, AppAuthenticationSchemes.Bearer);

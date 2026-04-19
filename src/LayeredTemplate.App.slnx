@@ -12,6 +12,7 @@
     <Project Path="Services/App/App.Domain/App.Domain.csproj" />
     <Project Path="Services/App/App.Infrastructure.Data/App.Infrastructure.Data.csproj" />
     <Project Path="Services/App/App.Infrastructure/App.Infrastructure.csproj" />
+    <Project Path="Services/App/App.Shared/App.Shared.csproj" />
     <Project Path="Services/App/App.Web/App.Web.csproj" />
   </Folder>
   <Folder Name="/Services/Auth/">
@@ -23,12 +24,10 @@
   </Folder>
   <Folder Name="/Services/Plugins/">
     <Project Path="Services/Plugins/Plugins.AssemblyExtensions/Plugins.AssemblyExtensions.csproj" />
-    <Project Path="Services/Plugins/Plugins.Authorization.Abstractions/Plugins.Authorization.Abstractions.csproj" />
     <Project Path="Services/Plugins/Plugins.Http.Extensions/Plugins.Http.Extensions.csproj" />
     <Project Path="Services/Plugins/Plugins.JsonMultipart.Abstractions/Plugins.JsonMultipart.Abstractions.csproj" />
     <Project Path="Services/Plugins/Plugins.JsonMultipart/Plugins.JsonMultipart.csproj" />
     <Project Path="Services/Plugins/Plugins.Logging.HttpClientLog/Plugins.Logging.HttpClientLog.csproj" />
-    <Project Path="Services/Plugins/Plugins.Options/Plugins.Options.csproj" />
     <Project Path="Services/Plugins/Plugins.PhoneHelpers/Plugins.PhoneHelpers.csproj" />
     <Project Path="Services/Plugins/Plugins.SharedExtensions/Plugins.SharedExtensions.csproj" />
     <Project Path="Services/Plugins/Plugins.StartupRunner/Plugins.StartupRunner.csproj" />

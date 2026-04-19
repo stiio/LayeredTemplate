@@ -1,5 +1,5 @@
 ﻿using System.Security.Claims;
-using LayeredTemplate.Plugins.Authorization.Abstractions.Constants;
+using LayeredTemplate.App.Shared.Authorization;
 using LayeredTemplate.Plugins.Http.Extensions;
 using Serilog;
 

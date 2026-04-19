@@ -1,4 +1,4 @@
-﻿namespace LayeredTemplate.Plugins.Options.Models;
+﻿namespace LayeredTemplate.App.Shared.Options;
 
 public class SmtpSettings
 {
