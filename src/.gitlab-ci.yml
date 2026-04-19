@@ -6,7 +6,18 @@ stages:
   - backend-deploy-aws
   - backend-deploy-aws-ecs
 
+  - deps-update
+
 include:
+  # Scheduled dependency bumps — triggered by GitLab Schedules, see Pipelines/deps-update.yml.
+  - local: 'Pipelines/deps-update.yml'
+    inputs:
+      project_path: Services/Plugins/Plugins.PhoneHelpers
+      package_name: libphonenumber-csharp
+      target_branch: dev
+      job_suffix: '-phone-helpers'
+
+
   - local: 'Pipelines/backend-deploy.yml'
     inputs:
       environment: backend-staging

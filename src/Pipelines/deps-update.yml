@@ -1,0 +1,76 @@
+spec:
+  inputs:
+    # Path to the project directory (the .csproj lives inside) — e.g. "Services/Plugins/Plugins.PhoneHelpers".
+    project_path:
+    # NuGet package ID to bump — e.g. "libphonenumber-csharp".
+    package_name:
+    # Branch to push the version-bump commit to. Keep it unprotected so the CI token can push.
+    target_branch:
+      default: dev
+    # Distinct suffix for the job name when the same template is included multiple times.
+    job_suffix:
+      default: ''
+
+---
+
+# Reusable job that bumps a NuGet package to its latest stable version and pushes the
+# updated .csproj to `target_branch`. Designed to be triggered by a GitLab Schedule.
+#
+# Required CI/CD variables (set in project settings → CI/CD → Variables):
+#   DEPS_UPDATE_TOKEN  - a GitLab project/group access token with scope `write_repository`,
+#                        authorised to push to `target_branch` (masked; NOT protected so that
+#                        non-protected `dev` branch pushes work).
+#
+# Trigger: create a scheduled pipeline (Build → Pipeline schedules) on the branch where
+# this .gitlab-ci.yml lives, cron cadence of your choice (e.g. daily at 04:00 UTC).
+#
+# Behaviour:
+#   1. Check current version of <package_name> in <project_path>/*.csproj.
+#   2. Run `dotnet add package` to pull the latest stable version (no --prerelease).
+#   3. If no change — exit 0 quietly. If changed — build the whole solution to verify the
+#      bump doesn't break consumers, then commit + push to <target_branch>.
+#   4. `-o ci.skip` on push avoids triggering a dependent pipeline on the dep-bump commit
+#      itself (the next human push will run CI normally).
+deps-update$[[ inputs.job_suffix ]]:
+  stage: deps-update
+  image: mcr.microsoft.com/dotnet/sdk:10.0-alpine
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: "1"
+  script:
+    # `git` is bundled with the SDK image but we're explicit here — `apk add` is a no-op if already present.
+    - apk add --no-cache git
+    - git config user.email "ci-bot@layeredtemplate.local"
+    - git config user.name "Dependency Updater"
+    - git remote set-url origin "https://oauth2:${DEPS_UPDATE_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    - git fetch --depth=1 origin "$[[ inputs.target_branch ]]"
+    - git checkout "$[[ inputs.target_branch ]]"
+
+    # Capture the current pinned version BEFORE we touch the csproj.
+    - CSPROJ=$(find "$[[ inputs.project_path ]]" -maxdepth 1 -name '*.csproj' | head -1)
+    - test -n "$CSPROJ" || { echo "No .csproj found under $[[ inputs.project_path ]]"; exit 1; }
+    - OLD=$(sed -nE "s/.*\"$[[ inputs.package_name ]]\"[[:space:]]+Version=\"([^\"]+)\".*/\1/p" "$CSPROJ" | head -1)
+    - test -n "$OLD" || { echo "Package $[[ inputs.package_name ]] not found in $CSPROJ"; exit 1; }
+    - echo "Current version of $[[ inputs.package_name ]]:$OLD"
+
+    # Bump to latest stable. `dotnet add package` (no --version, no --prerelease) picks the
+    # highest stable release from the configured NuGet sources.
+    - dotnet add "$CSPROJ" package "$[[ inputs.package_name ]]"
+    - NEW=$(sed -nE "s/.*\"$[[ inputs.package_name ]]\"[[:space:]]+Version=\"([^\"]+)\".*/\1/p" "$CSPROJ" | head -1)
+    - echo "Latest stable version:$NEW"
+
+    - |
+      if [ "$OLD" = "$NEW" ]; then
+        echo "Already up to date — nothing to commit."
+        exit 0
+      fi
+
+    # Sanity-build the whole solution: catches cases where the new version broke a consumer
+    # (e.g. a method removed from a public API) even if the plugin itself still compiles.
+    - dotnet build LayeredTemplate.App.slnx -c Release --nologo
+
+    - git add "$CSPROJ"
+    - git commit -m "chore(deps) - bump $[[ inputs.package_name ]] from $OLD to $NEW"
+    - git push origin "HEAD:$[[ inputs.target_branch ]]" -o ci.skip
