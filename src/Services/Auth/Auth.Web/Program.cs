@@ -126,7 +126,7 @@ void ConfigureMiddleware(WebApplication app, IWebHostEnvironment env)
 {
     app.UseForwardedHeaders();
     app.UseCors();
-
+    
     app.UseRequestLogging();
 
     app.UseExceptionHandler("/error", createScopeForErrors: true);

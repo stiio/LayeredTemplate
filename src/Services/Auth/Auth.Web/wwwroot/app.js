@@ -48,6 +48,9 @@ document.addEventListener('click', function (e) {
 // libphonenumber-js/mobile is ~85KB gzipped — not worth pulling on Login/Register/Admin-apps
 // etc. where there are no phone inputs. We scan the DOM once for markers and only then import;
 // the browser caches the module after first visit, so subsequent pages pay nothing.
+//
+// Loaded from esm.sh CDN. When tightening CSP (removing 'unsafe-*' and limiting script-src to
+// 'self'), switch to a self-hosted bundle — see README §6.5 "JavaScript assets" for the recipe.
 if (document.querySelector('input[data-phone-input], [data-phone-display]')) {
     import('https://esm.sh/libphonenumber-js@1.11.14/mobile')
         .then(setupPhoneFormatting)

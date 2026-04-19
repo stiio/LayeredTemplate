@@ -4,12 +4,15 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <base href="/"/>
-    <link rel="stylesheet" href="app.css"/>
-    <link rel="icon" type="image/png" href="favicon.png"/>
+    @* @Assets[...] emits a fingerprinted URL (e.g. app.css?v=AbCdEf) so MapStaticAssets can send
+       Cache-Control: max-age=31536000, immutable. Hardcoded paths bypass fingerprinting and get
+       Cache-Control: no-cache — a 304 round-trip per page load. *@
+    <link rel="stylesheet" href="@Assets["app.css"]"/>
+    <link rel="icon" type="image/png" href="@Assets["favicon.png"]"/>
     <HeadOutlet/>
 </head>
 <body>
     <Routes/>
-    <script type="module" src="app.js"></script>
+    <script type="module" src="@Assets["app.js"]"></script>
 </body>
 </html>
