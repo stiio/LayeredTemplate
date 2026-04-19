@@ -51,6 +51,13 @@
     <Folder Include="Conventions\" />
   </ItemGroup>
 
+
+    <ItemGroup>
+        <Content Include="..\..\..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
+    </ItemGroup>
+
   <Target Name="AddOpenApiXmlDocs" AfterTargets="ResolveReferences">
     <ItemGroup>
       <AdditionalFiles
