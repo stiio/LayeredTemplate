@@ -1,6 +1,4 @@
-﻿using System.Security.Claims;
-
-namespace LayeredTemplate.App.Shared.Authorization;
+﻿namespace LayeredTemplate.App.Shared.Authorization;
 
 public static class AppClaims
 {
