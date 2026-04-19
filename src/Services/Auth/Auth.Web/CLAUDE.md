@@ -119,6 +119,7 @@ Migrations/                          — EF миграции (таблица __e
 - `Userinfo` честно смотрит на `principal.HasScope(...)`, возвращает только разрешённое
 - `Exchange` обрабатывает три grant: `client_credentials` (sub=client_id), `authorization_code`, `refresh_token`
 - **Logout**: GET с непустым `post_logout_redirect_uri` (OpenIddict валидирует его перед контроллером) → silent logout + редирект. GET без параметров → редирект на `/account/logout_confirmation` (защита от nuisance-CSRF). POST → всегда silent logout.
+- **External IdP hint** (`identity_provider=<scheme>`): если клиент добавляет этот параметр к `/connect/authorize` и значение совпадает с зарегистрированным external scheme (`GitHub` / `Yandex` — case-insensitive), `Authorize` **пропускает login-страницу** и сразу делает `Challenge(scheme)` с `returnUrl` обратно на текущий `/connect/authorize`. После external-callback'а юзер подписан cookie'ю, попадает снова на authorize и flow завершается как обычно. Конвенция позаимствована у Keycloak (`kc_idp_hint`) и AWS Cognito (`identity_provider`). Пример из SPA (oidc-client-ts): `mgr.signinRedirect({ extraQueryParams: { identity_provider: 'GitHub' } })`. Если hint неизвестен — просто игнорируется, обычный flow через `/account/login`.
 
 ### Access token формат и валидация для resource-серверов
 

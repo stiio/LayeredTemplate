@@ -48,6 +48,20 @@ public class ConnectController : Controller
             var returnUrl = this.Request.PathBase + this.Request.Path + QueryString.Create(
                 this.Request.HasFormContentType ? this.Request.Form.ToList() : this.Request.Query.ToList());
 
+            // Optional IdP hint: if the client passes `identity_provider=<scheme>` (e.g. "GitHub"),
+            // and <scheme> matches a registered external provider, skip the /account/login form
+            // entirely and kick off the external challenge directly. Once the provider calls
+            // /account/external_login_callback, the user is signed in and redirected back here —
+            // at which point the cookie is set and the normal OIDC flow completes on a second pass.
+            // Convention borrowed from Keycloak's `kc_idp_hint` and AWS Cognito's `identity_provider`.
+            var canonicalProvider = await this.ResolveExternalProviderAsync((string?)request["identity_provider"]);
+            if (canonicalProvider is not null)
+            {
+                var callbackUrl = $"/account/external_login_callback?returnUrl={Uri.EscapeDataString(returnUrl)}";
+                var properties = this.signInManager.ConfigureExternalAuthenticationProperties(canonicalProvider, callbackUrl);
+                return this.Challenge(properties, canonicalProvider);
+            }
+
             return this.Challenge(
                 new AuthenticationProperties { RedirectUri = returnUrl },
                 IdentityConstants.ApplicationScheme);
@@ -290,6 +304,24 @@ public class ConnectController : Controller
             .ToListAsync();
 
         principal.SetResources(resources);
+    }
+
+    /// <summary>
+    /// Resolves an external-login provider hint to its canonical registered scheme name, or
+    /// <c>null</c> if the hint is empty or doesn't match any configured provider. Matching is
+    /// case-insensitive (accept <c>github</c> / <c>GitHub</c> / <c>GITHUB</c> from the client).
+    /// </summary>
+    private async Task<string?> ResolveExternalProviderAsync(string? hint)
+    {
+        if (string.IsNullOrWhiteSpace(hint))
+        {
+            return null;
+        }
+
+        var schemes = await this.signInManager.GetExternalAuthenticationSchemesAsync();
+        return schemes
+            .FirstOrDefault(s => string.Equals(s.Name, hint, StringComparison.OrdinalIgnoreCase))?
+            .Name;
     }
 
     /// <summary>

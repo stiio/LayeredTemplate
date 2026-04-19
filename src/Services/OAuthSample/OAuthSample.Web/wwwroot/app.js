@@ -65,6 +65,13 @@ document.getElementById('login').addEventListener('click', () => {
     mgr.signinRedirect();
 });
 
+// Shortcut: skip the Auth.Web login form and go straight to the GitHub external flow.
+// The `identity_provider` parameter rides on the /connect/authorize request; Auth.Web
+// recognises it and issues the external Challenge directly (see ConnectController.Authorize).
+document.getElementById('login-github').addEventListener('click', () => {
+    mgr.signinRedirect({ extraQueryParams: { identity_provider: 'GitHub' } });
+});
+
 // --- Refresh Token ---
 
 document.getElementById('refresh').addEventListener('click', async () => {
