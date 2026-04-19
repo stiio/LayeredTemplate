@@ -11,19 +11,21 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 ///
 /// Should run under a distributed lock in multi-instance deployments.
 ///
-/// Key lifecycle (RotationIntervalDays=90, KeyLifetimeDays=180):
-///   Day 0:   Key A created (expires day 180)
-///   Day 50:  Restart. Key A age 50 &lt; 90 → no rotation
-///   Day 100: Restart. Key A age 100 &gt; 90 → Key B created (expires day 280). Key A still decrypts.
-///   Day 150: Restart. Key B age 50 &lt; 90 → no rotation
-///   Day 200: Restart. Key B age 100 &gt; 90 → Key C created (expires day 380). Key A expired, Key B still decrypts.
+/// Key lifecycle (RotationIntervalDays=320, KeyLifetimeDays=360):
+///   Day 0:   Key A created (expires day 360)
+///   Day 200: Restart. Key A age 200 &lt; 320 → no rotation
+///   Day 325: Restart. Key A age 325 &gt; 320 → Key B created (expires day 685). Key A still decrypts until day 360.
+///   Day 500: Restart. Key B age 175 &lt; 320 → no rotation
+///   Day 650: Restart. Key B age 325 &gt; 320 → Key C created (expires day 1010). Key A long gone, Key B still decrypts until day 685.
+/// Overlap window between rotation (320d) and lifetime (360d) is 40 days — the service must be
+/// restarted at least once in that window for the successor key to land before the current one expires.
 ///
 /// AutoGenerateKeys is disabled in KeyManagementOptions, so no keys are created at runtime.
 /// </summary>
 public class RotateDataProtectionKeysTask : IStartupTask
 {
     private const int KeyLifetimeDays = 360;
-    private const int RotationIntervalDays = 180;
+    private const int RotationIntervalDays = 320;
 
     private readonly IKeyManager keyManager;
     private readonly ILogger<RotateDataProtectionKeysTask> logger;

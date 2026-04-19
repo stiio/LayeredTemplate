@@ -59,8 +59,8 @@ Same process exposes both roles — browser-flow (authorize/login/etc.) and toke
 | Material | Lifetime | Rotation | Storage | Notes |
 |---|---|---|---|---|
 | **DataProtection master certificate (X509)** | **Manual** — set by ops | **Manual** | `DataProtectionSettings.CertificateBase64` (env / secrets store) | **Wraps DP keys at rest.** If missing, DP keys are written to DB in plaintext XML. **Required in production.** |
-| **DataProtection keys** | 360 days | 180 days (automatic via `RotateDataProtectionKeysTask` at each startup under advisory lock) | `data_protection_keys` table (wrapped by master cert) | Used for cookies + all Identity tokens + signing-key-at-rest encryption |
-| **OpenIddict signing/encryption RSA keys** | 180 days max age | 90 days (`RotateSigningKeysTask`) | `signing_credentials` table, key material DP-protected | RSA-2048. Both old and new key live in JWKS during overlap window |
+| **DataProtection keys** | 360 days | 320 days (automatic via `RotateDataProtectionKeysTask` at each startup under advisory lock) | `data_protection_keys` table (wrapped by master cert) | Used for cookies + all Identity tokens + signing-key-at-rest encryption. Rotation (320d) and lifetime (360d) overlap by 40d — long enough for a routine restart to mint the successor key before the current one expires, but requires the service to be actually restarted within that window |
+| **OpenIddict signing/encryption RSA keys** | 180 days max age | 140 days (`RotateSigningKeysTask`) | `signing_credentials` table, key material DP-protected | RSA-2048. Both old and new key live in JWKS during the 40-day overlap window (140…180d) |
 | **Identity password/email/reset tokens** | ≤1h (Identity defaults) | N/A — derived from DP keys | Stateless | Security-stamp rotation invalidates older tokens |
 | **Invite tokens** | 30 days | N/A — derived from DP keys, single-use | Stateless | `DataProtectorTokenProvider<ApplicationUser>("Invite")` |
 | **Access tokens (JWT)** | 1 hour | N/A — minted on-demand | Stateless (JWT) | `typ=at+jwt`, `aud` = resource URI from scope |
@@ -75,13 +75,13 @@ Same process exposes both roles — browser-flow (authorize/login/etc.) and toke
                    ▼                                              │
      ┌──────────────────────────┐    ┌────────────────────────┐   │
      │ DataProtection keys      │◄───│ RotateDataProtection-  │   │
-     │ (DB, wrapped by X509)    │    │ KeysTask (180d / 360d) │   │
+     │ (DB, wrapped by X509)    │    │ KeysTask (320d / 360d) │   │
      └──────────────┬───────────┘    └────────────────────────┘   │
                     │ protect/unprotect                           │
                     ▼                                             │
      ┌──────────────────────────┐    ┌────────────────────────┐   │
      │ OpenIddict signing keys  │◄───│ RotateSigningKeysTask  │   │
-     │ (DB, DP-encrypted)       │    │ (90d / 180d)           │───┘
+     │ (DB, DP-encrypted)       │    │ (140d / 180d)          │───┘
      └──────────────┬───────────┘    └────────────────────────┘
                     │ sign
                     ▼
@@ -196,8 +196,8 @@ Image runs as non-root (`USER app`). Ports 8080 (HTTP) / 8081 (HTTPS) exposed; H
 |---|---|---|---|
 | 10 | `RunMigrationsTask` | `Database.MigrateAsync()` | Hard fail — pod won't start |
 | 15 | `SeedAdminRoleTask` | Create `Admin` role; create user from `InitialAdminUser:Email` if missing; assign role | Log error; continue |
-| 20 | `RotateDataProtectionKeysTask` | Rotate if newest key > 180d; create one if none | Hard fail if DB unreachable |
-| 30 | `RotateSigningKeysTask` | Rotate RSA 2048 signing + encryption keys (90d); load all valid keys into in-memory `SigningKeyStore` | Hard fail |
+| 20 | `RotateDataProtectionKeysTask` | Rotate if newest key > 320d; create one if none | Hard fail if DB unreachable |
+| 30 | `RotateSigningKeysTask` | Rotate RSA 2048 signing + encryption keys (140d); load all valid keys into in-memory `SigningKeyStore` | Hard fail |
 | 35 | `SeedOidcScopesTask` | Seed `openid` / `profile` / `email` / `phone` / `roles` / `offline_access` / `auth/admin.users` | Log error; continue |
 | 40 | `SeedOidcClientsTask` | **Development only** — seeds `default_client` (public, PKCE) | Dev only |
 
@@ -369,11 +369,11 @@ These are design choices; change only if your threat model requires it:
 | Decision | Rationale | Change when |
 |---|---|---|
 | Access tokens NOT encrypted (`DisableAccessTokenEncryption`) | Stateless JWT validation via JWKS in downstream microservices without Auth.Web roundtrip | You need to hide claims from transport-layer inspectors |
-| Signing RSA-2048 | Widely interoperable; 90-day rotation caps exposure | Move to RSA-3072 / EdDSA for long-horizon deployments |
+| Signing RSA-2048 | Widely interoperable; 140-day rotation caps exposure | Move to RSA-3072 / EdDSA for long-horizon deployments |
 | Auto-migrate on startup | Simplifies single-instance ops | You need strict zero-downtime — split into dedicated job |
 | Account lockout disabled | Avoids lockout-based DoS | You prefer lockout over rate limiting |
 | No real SMS provider | Template ships only `MockSmsSender`; phone confirmation off by default | You need phone MFA — wire a provider + set `IsPhoneConfirmationEnabled=true` |
-| DP keys 180d/360d (vs ASP.NET default 90d/90d) | Reduces key-rotation churn | Tighten if key compromise is a top risk |
+| DP keys 320d/360d (vs ASP.NET default 90d/90d) | Reduces key-rotation churn; assumes service is restarted at least every ~40 days (CI/CD cadence) so the successor key lands within the overlap | Tighten if key compromise is a top risk or deploys are rarer than monthly |
 
 ---
 

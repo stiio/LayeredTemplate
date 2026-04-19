@@ -14,10 +14,12 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 /// <summary>
 /// Rotates OpenIddict signing and encryption keys on application startup.
 ///
-/// Key lifecycle (default 90-day rotation, 180-day max age):
+/// Key lifecycle (default 140-day rotation, 180-day max age):
 ///   Day 0:   Key A created (active)
-///   Day 90:  Key A still valid, Key B created (active). Both in JWKS.
-///   Day 180: Key A removed. Key B active, Key C created.
+///   Day 140: Key A still valid, Key B created (active). Both in JWKS.
+///   Day 180: Key A removed. Key B active, Key C created on the next restart past day 280.
+/// Overlap window between rotation (140d) and max age (180d) is 40 days — the service must be
+/// restarted at least once in that window so Key B exists before Key A is evicted.
 ///
 /// Keys older than <see cref="MaxKeyAgeDays"/> are deleted.
 /// A new key is created if no key exists or all keys are older than <see cref="RotationIntervalDays"/>.
@@ -27,7 +29,7 @@ namespace LayeredTemplate.Auth.Web.Infrastructure.StartupTasks;
 /// </summary>
 public class RotateSigningKeysTask : IStartupTask
 {
-    private const int RotationIntervalDays = 90;
+    private const int RotationIntervalDays = 140;
     private const int MaxKeyAgeDays = 180;
     private const string SigningPurpose = "signing";
     private const string EncryptionPurpose = "encryption";

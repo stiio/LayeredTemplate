@@ -83,8 +83,8 @@ Migrations/                          — EF миграции (таблица __e
 |-------|------|-----------|
 | 10 | `RunMigrationsTask` | `Database.MigrateAsync()` |
 | 15 | `SeedAdminRoleTask` | Создаёт роль `Admin`; если `InitialAdminUser:Email` задан и юзера нет — создаёт его (EmailConfirmed=true); назначает роль `Admin` |
-| 20 | `RotateDataProtectionKeysTask` | DP-ключ rotation 180d, lifetime 360d |
-| 30 | `RotateSigningKeysTask` | RSA signing/encryption ключи rotation 90d, maxAge 180d; заполняет `SigningKeyStore` |
+| 20 | `RotateDataProtectionKeysTask` | DP-ключ rotation 320d, lifetime 360d |
+| 30 | `RotateSigningKeysTask` | RSA signing/encryption ключи rotation 140d, maxAge 180d; заполняет `SigningKeyStore` |
 | 35 | `SeedOidcScopesTask` | Сид скоупов: openid/profile/email/phone/offline_access/roles/admin.users |
 | 40 | `SeedOidcClientsTask` | Только в `env.IsDevelopment()` — сид `default_client` (public, PKCE) |
 
