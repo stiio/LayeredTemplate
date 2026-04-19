@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.Auth.Web.Components.Account;
 using LayeredTemplate.Auth.Web.Infrastructure.Data.Entities;
+using LayeredTemplate.Plugins.PhoneHelpers.Attributes;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 
@@ -136,7 +137,7 @@ public partial class Edit : ComponentBase
 
         public bool EmailConfirmed { get; set; }
 
-        [Phone]
+        [NormalizedPhone]
         [MaxLength(20)]
         public string? PhoneNumber
         {

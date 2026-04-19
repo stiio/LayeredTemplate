@@ -172,10 +172,14 @@ public partial class EditPhone : ComponentBase
     private sealed class PhoneInputModel
     {
         [Required]
-        [Phone]
+        [NormalizedPhone]
         [MaxLength(20)]
         [Display(Name = "Phone number")]
-        public string? PhoneNumber { get; set; }
+        public string? PhoneNumber
+        {
+            get;
+            set => field = string.IsNullOrWhiteSpace(value) ? null : value;
+        }
     }
 
     private sealed class CodeInputModel
