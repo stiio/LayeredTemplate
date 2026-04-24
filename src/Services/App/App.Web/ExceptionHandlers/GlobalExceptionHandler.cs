@@ -27,6 +27,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         this.HandleException(exception, problemDetails);
 
+        httpContext.Response.StatusCode = problemDetails.Status ?? 500;
         await this.problemDetailsService.TryWriteAsync(new ProblemDetailsContext()
         {
             HttpContext = httpContext,

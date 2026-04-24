@@ -18,6 +18,7 @@ public static class ConfigureServices
         {
             opts.Assemblies = [typeof(InfoGetRequest)];
             opts.PipelineBehaviors = [typeof(ValidationBehaviour<,>)];
+            opts.ServiceLifetime = ServiceLifetime.Scoped;
         });
     }
 }
