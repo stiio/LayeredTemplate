@@ -8,11 +8,6 @@
   </Folder>
   <Folder Name="/Services/" />
   <Folder Name="/Services/App/">
-    <Project Path="Services/App/App.Application/App.Application.csproj" />
-    <Project Path="Services/App/App.Domain/App.Domain.csproj" />
-    <Project Path="Services/App/App.Infrastructure.Data/App.Infrastructure.Data.csproj" />
-    <Project Path="Services/App/App.Infrastructure/App.Infrastructure.csproj" />
-    <Project Path="Services/App/App.Shared/App.Shared.csproj" />
     <Project Path="Services/App/App.Web/App.Web.csproj" />
   </Folder>
   <Folder Name="/Services/Auth/">

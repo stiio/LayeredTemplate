@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.App.Shared.Authorization;
+﻿using LayeredTemplate.App.Shared.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 

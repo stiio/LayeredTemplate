@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.App.Infrastructure.Data.Context;
+using LayeredTemplate.App.Shared.Db;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,7 +10,7 @@ internal static class DataSeeder
     {
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         dbContext.Database.Migrate();
 

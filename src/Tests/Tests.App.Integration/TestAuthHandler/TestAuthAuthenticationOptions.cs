@@ -1,4 +1,4 @@
-﻿using LayeredTemplate.App.Shared.Authorization;
+﻿using LayeredTemplate.App.Shared.Auth;
 using Microsoft.AspNetCore.Authentication;
 
 namespace LayeredTemplate.Tests.App.Integration.TestAuthHandler;

@@ -1,20 +1,28 @@
 using System.Reflection;
+using System.Text.Json.Serialization;
+using FluentValidation;
 using HealthChecks.UI.Client;
-using LayeredTemplate.App.Application;
-using LayeredTemplate.App.Infrastructure;
-using LayeredTemplate.App.Web.Extensions;
+using LayeredTemplate.App.Setup;
+using LayeredTemplate.App.Setup.Json;
+using LayeredTemplate.App.Setup.OpenApi;
+using LayeredTemplate.App.Shared.Infrastructure.Email;
+using LayeredTemplate.App.Shared.Infrastructure.Locks;
+using LayeredTemplate.App.Shared.Options;
+using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http.Json;
 using Serilog;
 using Serilog.Exceptions;
 using Serilog.Exceptions.Core;
 using Serilog.Exceptions.EntityFrameworkCore.Destructurers;
 using Serilog.Formatting.Json;
 
+// ----- Bootstrap Serilog before host construction so startup errors are captured. -----
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console(new JsonFormatter())
     .Enrich
     .WithExceptionDetails(new DestructuringOptionsBuilder()
-        .WithDestructurers(new[] { new DbUpdateExceptionDestructurer() }))
+        .WithDestructurers([new DbUpdateExceptionDestructurer()]))
     .Enrich.FromLogContext()
     .CreateLogger();
 
@@ -22,37 +30,100 @@ Log.Information("Starting up");
 
 try
 {
-    // register minimal required services for generate openapi document on build.
+    // Special-case for `dotnet GetDocument.Insider` (Microsoft.Extensions.ApiDescription.Server) —
+    // it spins up the host to generate OpenAPI documents at build time, doesn't need DB/Auth/etc.
     if (Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider")
     {
-        var builder = WebApplication.CreateBuilder(args);
-        ConfigureSerilog(builder.Host);
-        builder.Services.ConfigureControllers(builder.Configuration);
-        builder.Services.ConfigureOpenApi();
-        builder.Services.AddEndpointsApiExplorer();
-        var webApplication = builder.Build();
-        webApplication.UseConfiguredOpenApi();
-        webApplication.UseRequestLogging();
-        webApplication.Run();
+        var minimalBuilder = WebApplication.CreateBuilder(args);
+        minimalBuilder.Host.ConfigureAppSerilog();
+        minimalBuilder.Services.AddAppOpenApi();
+        minimalBuilder.Services.AddEndpointsApiExplorer();
+        ConfigureJson(minimalBuilder.Services);
+        var minimalApp = minimalBuilder.Build();
+        minimalApp.UseAppOpenApi();
+        minimalApp.UseAppRequestLogging();
+        // Still need endpoints to be in the route table for docs to discover them, but they
+        // won't actually serve — `GetDocument.Insider` only walks the description provider.
+        minimalApp.MapAllEndpoints();
+        minimalApp.Run();
+        return;
+    }
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    // ---- Configuration ----
+    builder.Configuration
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+        .AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true)
+        .AddEnvironmentVariables()
+        .AddEnvironmentVariablesFromJsonVariables();
+
+    // ---- Logging ----
+    builder.Host.ConfigureAppSerilog();
+
+    // ---- Services ----
+    var services = builder.Services;
+    var config = builder.Configuration;
+
+    services.AddPluginStartupRunner();
+
+    services.Configure<AppSettings>(config.GetSection(nameof(AppSettings)));
+    services.Configure<SmtpSettings>(config.GetSection(nameof(SmtpSettings)));
+
+    services.AddAppDb(config);
+    services.AddAppAuth(config);
+    services.AddAppProblemDetails();
+
+    services.AddSingleton<ILockProvider, PostgresLockProvider>();
+    services.AddHttpContextAccessor();
+    services.AddScoped<LayeredTemplate.App.Shared.Auth.ICurrentUser, LayeredTemplate.App.Shared.Auth.CurrentUser>();
+
+    if (config.GetValue<bool>("MOCK_EMAIL_SENDER"))
+    {
+        services.AddScoped<IEmailSender, EmailSenderMock>();
     }
     else
     {
-        var builder = WebApplication.CreateBuilder(args);
-
-        ConfigureSerilog(builder.Host);
-
-        ConfigureConfiguration(builder.Configuration, builder.Environment);
-
-        ConfigureServices(builder.Services, builder.Configuration, builder.Environment);
-
-        var webApplication = builder.Build();
-
-        ConfigureMiddleware(webApplication, webApplication.Environment);
-
-        ConfigureEndpoints(webApplication);
-
-        webApplication.Run();
+        services.AddScoped<IEmailSender, EmailSender>();
     }
+
+    services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly(), includeInternalTypes: true, lifetime: ServiceLifetime.Singleton);
+
+    services.AddEndpointsApiExplorer();
+    services.AddAppOpenApi();
+
+    ConfigureJson(services);
+
+    services.AddHealthChecks();
+
+    services.Configure<HostOptions>(options =>
+    {
+        options.ShutdownTimeout = TimeSpan.FromMinutes(1);
+    });
+
+    // ---- Pipeline ----
+    var app = builder.Build();
+
+    if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
+    {
+        app.UseDeveloperExceptionPage();
+        app.UseAppOpenApi();
+    }
+
+    app.UseAppRequestLogging();
+    app.UseExceptionHandler();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.MapAllEndpoints();
+    app.MapHealthChecks("/health", new HealthCheckOptions
+    {
+        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
+    });
+
+    app.Run();
 }
 catch (Exception e)
 {
@@ -64,68 +135,18 @@ finally
     Log.CloseAndFlush();
 }
 
-void ConfigureConfiguration(ConfigurationManager configuration, IWebHostEnvironment env)
+return;
+
+static void ConfigureJson(IServiceCollection services)
 {
-    configuration.AddJsonFile("appsettings.json", false, true) // load base settings
-        .AddJsonFile($"appsettings.{env.EnvironmentName}.json", true, true) // load environment settings
-        .AddJsonFile($"appsettings.local.json", true, true) // load environment settings
-        .AddEnvironmentVariables()
-        .AddEnvironmentVariablesFromJsonVariables();
-}
-
-void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
-{
-    services.AddInfrastructureServices(configuration, env);
-    services.AddApplicationServices(configuration);
-
-    services.ConfigureControllers(configuration);
-    services.ConfigureOpenApi();
-    services.AddEndpointsApiExplorer();
-
-    services.AddHttpClient();
-    services.AddHttpContextAccessor();
-    services.AddHealthChecks();
-}
-
-void ConfigureMiddleware(WebApplication app, IWebHostEnvironment env)
-{
-    if (env.IsDevelopment() || env.IsStaging())
+    services.Configure<JsonOptions>(opts =>
     {
-        app.UseDeveloperExceptionPage();
-        app.UseConfiguredOpenApi();
-    }
-
-    app.UseRequestLogging();
-    app.UseExceptionHandler();
-    app.UseRouting();
-
-    app.UseAuthentication();
-    app.UseAuthorization();
-}
-
-void ConfigureEndpoints(IEndpointRouteBuilder app)
-{
-    app.MapControllers();
-    app.MapHealthChecks("/health", new HealthCheckOptions()
-    {
-        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
+        opts.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        opts.SerializerOptions.Converters.Add(new DateTimeJsonConverter());
+        opts.SerializerOptions.Converters.Add(new DateOnlyJsonConverter());
+        opts.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 }
 
-void ConfigureSerilog(IHostBuilder host)
-{
-    host.UseSerilog((context, services, configuration) =>
-    {
-        configuration
-            .ReadFrom.Configuration(context.Configuration)
-            .ReadFrom.Services(services)
-            .Enrich
-            .WithExceptionDetails(new DestructuringOptionsBuilder()
-                .WithDestructurers(new[] { new DbUpdateExceptionDestructurer() }))
-            .Enrich.FromLogContext();
-    });
-}
-
-public partial class Program
-{
-}
+#pragma warning disable SA1402
+public partial class Program;

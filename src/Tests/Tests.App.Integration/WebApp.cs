@@ -1,17 +1,14 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Mime;
-using LayeredTemplate.App.Domain.Entities;
-using LayeredTemplate.App.Infrastructure.Data;
-using LayeredTemplate.App.Infrastructure.Data.Context;
+using LayeredTemplate.App.Features.Users;
 using LayeredTemplate.Tests.App.Integration.TestAuthHandler;
 using LayeredTemplate.Tests.App.Integration.Utils;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -43,14 +40,11 @@ public class WebApp : WebApplicationFactory<Program>, IAsyncLifetime
     {
         var client = this.CreateClient();
         TestAuthUtils.AddToken(client, user);
-
         return client;
     }
 
-    protected override IWebHostBuilder? CreateWebHostBuilder()
-    {
-        return base.CreateWebHostBuilder()?.UseEnvironment("Test");
-    }
+    protected override IWebHostBuilder? CreateWebHostBuilder() =>
+        base.CreateWebHostBuilder()?.UseEnvironment("Test");
 
     protected override void ConfigureClient(HttpClient client)
     {
@@ -60,14 +54,19 @@ public class WebApp : WebApplicationFactory<Program>, IAsyncLifetime
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Override the production DB connection string with the test container's via a
+        // configuration overlay — simpler than swapping DbContextOptions in the service
+        // collection, and avoids issues with DbContextPool internals.
+        builder.ConfigureAppConfiguration((_, config) =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:AppWriteDbConnection"] = this.postgreSqlTestContainer.GetConnectionString(),
+            });
+        });
+
         builder.ConfigureTestServices(services =>
         {
-            // test db
-            services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
-
-            services.RegisterDbContext(this.postgreSqlTestContainer.GetConnectionString());
-
-            // --
             services.AddAuthentication()
                 .AddScheme<TestAuthAuthenticationOptions, TestAuthHandler.TestAuthHandler>(TestAuthAuthenticationOptions.DefaultScheme, _ => { });
 

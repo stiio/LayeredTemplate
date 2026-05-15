@@ -1,8 +1,8 @@
 ﻿using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using LayeredTemplate.App.Infrastructure.Authorization.Mocks;
-using LayeredTemplate.App.Shared.Authorization;
+using LayeredTemplate.App.Shared.Auth;
+using LayeredTemplate.App.Shared.Auth.MockAuth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
