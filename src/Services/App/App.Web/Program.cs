@@ -36,7 +36,7 @@ try
     if (Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider")
     {
         var minimalBuilder = WebApplication.CreateBuilder(args);
-        minimalBuilder.Host.ConfigureAppSerilog();
+        ConfigureSerilog(minimalBuilder.Host);
         minimalBuilder.Services.AddAppOpenApi();
         // Plugin's OpenAPI transformers also need to be registered here — without this, multipart
         // endpoints generate without the `application/json` encoding hint on JSON-typed parts.
@@ -44,7 +44,7 @@ try
         // Feature services must also be registered so Minimal API can infer DI-bound parameters
         // when building the route table for the description provider. Without this, endpoints
         // accepting feature services fail with "Failure to infer one or more parameters".
-        minimalBuilder.Services.AddFeatureServices(minimalBuilder.Environment);
+        minimalBuilder.Services.AddFeatureServices(minimalBuilder.Configuration, minimalBuilder.Environment);
         minimalBuilder.Services.AddEndpointsApiExplorer();
         ConfigureJson(minimalBuilder.Services);
         var minimalApp = minimalBuilder.Build();
@@ -56,39 +56,63 @@ try
         minimalApp.Run();
         return;
     }
+    else
+    {
+        var builder = WebApplication.CreateBuilder(args);
 
-    var builder = WebApplication.CreateBuilder(args);
+        ConfigureSerilog(builder.Host);
 
-    // ---- Configuration ----
-    builder.Configuration
-        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-        .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
-        .AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true)
+        ConfigureConfiguration(builder.Configuration, builder.Environment);
+
+        ConfigureServices(builder.Services, builder.Configuration, builder.Environment);
+
+        var webApplication = builder.Build();
+
+        ConfigureMiddleware(webApplication, webApplication.Environment);
+
+        ConfigureEndpoints(webApplication);
+
+        webApplication.Run();
+    }
+}
+catch (Exception e)
+{
+    Log.Fatal(e, "Unhandled exception");
+}
+finally
+{
+    Log.Information("Shut down complete");
+    Log.CloseAndFlush();
+}
+
+return;
+
+void ConfigureConfiguration(ConfigurationManager configuration, IWebHostEnvironment env)
+{
+    configuration.AddJsonFile("appsettings.json", false, true) // load base settings
+        .AddJsonFile($"appsettings.{env.EnvironmentName}.json", true, true) // load environment settings
+        .AddJsonFile($"appsettings.local.json", true, true) // load environment settings
         .AddEnvironmentVariables()
         .AddEnvironmentVariablesFromJsonVariables();
+}
 
-    // ---- Logging ----
-    builder.Host.ConfigureAppSerilog();
-
-    // ---- Services ----
-    var services = builder.Services;
-    var config = builder.Configuration;
-
+void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
+{
     services.AddPluginStartupRunner();
     services.AddPluginJsonMultipart();
 
-    services.Configure<AppSettings>(config.GetSection(nameof(AppSettings)));
-    services.Configure<SmtpSettings>(config.GetSection(nameof(SmtpSettings)));
+    services.Configure<AppSettings>(configuration.GetSection(nameof(AppSettings)));
+    services.Configure<SmtpSettings>(configuration.GetSection(nameof(SmtpSettings)));
 
-    services.AddAppDb(config);
-    services.AddAppAuth(config);
+    services.AddAppDb(configuration);
+    services.AddAppAuth(configuration);
     services.AddAppProblemDetails();
 
     services.AddSingleton<ILockProvider, PostgresLockProvider>();
     services.AddHttpContextAccessor();
     services.AddScoped<LayeredTemplate.App.Shared.Auth.ICurrentUser, LayeredTemplate.App.Shared.Auth.CurrentUser>();
 
-    if (config.GetValue<bool>("MOCK_EMAIL_SENDER"))
+    if (configuration.GetValue<bool>("MOCK_EMAIL_SENDER"))
     {
         services.AddScoped<IEmailSender, EmailSenderMock>();
     }
@@ -114,14 +138,13 @@ try
     // Walk the assembly for IFeatureServices implementers and register feature-internal services.
     // Called LAST so feature registrations may override anything registered above (typical for
     // testing-style decorators / wrappers).
-    services.AddFeatureServices(builder.Environment);
+    services.AddFeatureServices(configuration, env);
+}
 
-    // ---- Pipeline ----
-    var app = builder.Build();
-
+void ConfigureMiddleware(WebApplication app, IWebHostEnvironment env)
+{
     if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
     {
-        app.UseDeveloperExceptionPage();
         app.UseAppOpenApi();
     }
 
@@ -130,28 +153,18 @@ try
 
     app.UseAuthentication();
     app.UseAuthorization();
+}
 
+void ConfigureEndpoints(IEndpointRouteBuilder app)
+{
     app.MapAllEndpoints();
     app.MapHealthChecks("/health", new HealthCheckOptions
     {
         ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
     });
-
-    app.Run();
-}
-catch (Exception e)
-{
-    Log.Fatal(e, "Unhandled exception");
-}
-finally
-{
-    Log.Information("Shut down complete");
-    Log.CloseAndFlush();
 }
 
-return;
-
-static void ConfigureJson(IServiceCollection services)
+void ConfigureJson(IServiceCollection services)
 {
     services.Configure<JsonOptions>(opts =>
     {
@@ -159,6 +172,20 @@ static void ConfigureJson(IServiceCollection services)
         opts.SerializerOptions.Converters.Add(new DateTimeJsonConverter());
         opts.SerializerOptions.Converters.Add(new DateOnlyJsonConverter());
         opts.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    });
+}
+
+void ConfigureSerilog(IHostBuilder host)
+{
+    host.UseSerilog((context, services, configuration) =>
+    {
+        configuration
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich
+            .WithExceptionDetails(new DestructuringOptionsBuilder()
+                .WithDestructurers(new[] { new DbUpdateExceptionDestructurer() }))
+            .Enrich.FromLogContext();
     });
 }
 

@@ -10,17 +10,6 @@ namespace LayeredTemplate.App.Setup;
 
 public static class ConfigureSerilog
 {
-    public static void ConfigureAppSerilog(this IHostBuilder host) =>
-        host.UseSerilog((context, services, configuration) =>
-        {
-            configuration
-                .ReadFrom.Configuration(context.Configuration)
-                .ReadFrom.Services(services)
-                .Enrich.WithExceptionDetails(new DestructuringOptionsBuilder()
-                    .WithDestructurers([new DbUpdateExceptionDestructurer()]))
-                .Enrich.FromLogContext();
-        });
-
     public static IApplicationBuilder UseAppRequestLogging(this IApplicationBuilder app) =>
         app.UseSerilogRequestLogging(opts =>
         {

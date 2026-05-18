@@ -30,7 +30,7 @@ public static class FeatureDiscovery
     /// <see cref="IFeatureServices.ConfigureServices"/> on every type in the assembly that
     /// implements <see cref="IFeatureServices"/>. Call before <c>builder.Build()</c>.
     /// </summary>
-    public static IServiceCollection AddFeatureServices(this IServiceCollection services, IHostEnvironment env)
+    public static IServiceCollection AddFeatureServices(this IServiceCollection services, IConfiguration configuration, IHostEnvironment env)
     {
         var isDev = env.IsDevelopment();
 
