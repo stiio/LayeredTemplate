@@ -436,7 +436,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateTodoListRequest"
+                "$ref": "#/components/schemas/UpdateTodoListBody"
               }
             }
           },
@@ -1215,7 +1215,7 @@
         ],
         "type": "string"
       },
-      "UpdateTodoListRequest": {
+      "UpdateTodoListBody": {
         "required": [
           "name"
         ],

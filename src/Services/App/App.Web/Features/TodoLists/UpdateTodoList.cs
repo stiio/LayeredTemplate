@@ -9,6 +9,15 @@ public static class UpdateTodoList
 {
     public sealed class Request
     {
+        [FromRoute]
+        public Guid Id { get; set; }
+
+        [Required, FromBody]
+        public Body Body { get; set; } = null!;
+    }
+
+    public sealed class Body
+    {
         [Required]
         public string Name { get; set; } = null!;
 
@@ -18,15 +27,14 @@ public static class UpdateTodoList
     public static void Configure(RouteGroupBuilder group) =>
         group.MapPut("/{id:guid}", Handle)
             .WithName(nameof(UpdateTodoList))
-            .WithSummary("Update TodoList")
-            .WithValidation<Request>();
+            .WithSummary("Update TodoList");
 
-    public static TodoListDto Handle(Guid id, [FromBody] Request request) =>
+    public static TodoListDto Handle([AsParameters] Request request) =>
         new()
         {
-            Id = id,
-            Name = request.Name,
-            Description = request.Description,
+            Id = request.Id,
+            Name = request.Body.Name,
+            Description = request.Body.Description,
             CreatedAt = DateTime.UtcNow,
         };
 }
