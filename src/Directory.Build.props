@@ -14,4 +14,56 @@
 		<InternalsVisibleTo Include="Tests.App.Integration" />
 	</ItemGroup>
 
+	<!--
+		File nesting convention (works in Rider + VS via MSBuild metadata):
+		any `Foo.Bar.cs` whose `Foo.cs` sibling actually exists in the same folder gets
+		<DependentUpon>Foo.cs</DependentUpon> applied automatically, so the IDE tree shows
+		it as a child of `Foo.cs`.
+
+		Used for the endpoint-split pattern — see
+		Features/TodoLists/SearchTodoLists.{cs,Request.cs,Response.cs}.
+
+		Existence check is critical: without it the target would also fire on Blazor
+		code-behind files (Foo.razor.cs) and try to point them at a non-existent Foo.cs,
+		overriding the Razor SDK's own nesting (which targets Foo.razor as the parent).
+		The Exists() guard skips files whose computed parent isn't on disk.
+	-->
+	<!--
+		Defaults so the second-pass Condition below can safely reference these metadata
+		on every Compile item (MSB4096 otherwise: "item does not specify a value for
+		metadata"). Stage 1 of the target only sets them for files with a dot in the name.
+	-->
+	<ItemDefinitionGroup>
+		<Compile>
+			<_NestingParent />
+			<_NestingParentAbs />
+		</Compile>
+	</ItemDefinitionGroup>
+
+	<Target Name="ConfigureFileNesting" BeforeTargets="BeforeCompile">
+		<ItemGroup>
+			<!--
+				Two-stage to keep the Condition simple — MSBuild's condition parser doesn't like
+				multiple %(Filename) references combined with nested function calls.
+				Stage 1: compute candidate parent filename + absolute path as item metadata.
+			-->
+			<Compile Update="@(Compile)"
+			         Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Filename)', '^[^.]+\..+$'))">
+				<_NestingParent>$([System.Text.RegularExpressions.Regex]::Replace('%(Filename)', '\..*$', '')).cs</_NestingParent>
+				<_NestingParentAbs>%(RootDir)%(Directory)$([System.Text.RegularExpressions.Regex]::Replace('%(Filename)', '\..*$', '')).cs</_NestingParentAbs>
+			</Compile>
+
+			<!--
+				Stage 2: apply DependentUpon only if the candidate parent actually exists.
+				The Exists() guard prevents wrongly attaching `Foo.cs` as parent of Blazor
+				code-behind files (Foo.razor.cs) — they have their own Razor SDK nesting
+				targeting Foo.razor as parent.
+			-->
+			<Compile Update="@(Compile)"
+			         Condition="'%(_NestingParent)' != '' AND Exists('%(_NestingParentAbs)')">
+				<DependentUpon>%(_NestingParent)</DependentUpon>
+			</Compile>
+		</ItemGroup>
+	</Target>
+
 </Project>
