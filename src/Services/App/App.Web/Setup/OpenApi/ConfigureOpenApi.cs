@@ -95,6 +95,10 @@ public static class ConfigureOpenApi
         opts.AddOperationTransformer<AuthOperationTransformer>();
         opts.AddOperationTransformer<CamelCaseParametersTransformer>();
         opts.AddOperationTransformer<AsParametersRequiredFixer>();
+        // Multipart body normalization runs LAST — flattens Minimal API's allOf-of-singletons
+        // composition and camelCases property names / required entries / encoding keys after the
+        // earlier transformers have finished mutating the schema.
+        opts.AddOperationTransformer<MultipartBodyFlattenTransformer>();
 
         opts.AddSchemaTransformer<StringEnumSchemaTransformer>();
         opts.AddSchemaTransformer<DateTimeSchemaTransformer>();

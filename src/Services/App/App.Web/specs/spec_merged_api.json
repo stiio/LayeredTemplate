@@ -290,30 +290,18 @@
             "multipart/form-data": {
               "schema": {
                 "required": [
-                  "File",
-                  "IsDraft",
+                  "file",
+                  "isDraft",
                   "body"
                 ],
                 "type": "object",
-                "allOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "File": {
-                        "$ref": "#/components/schemas/IFormFile"
-                      }
-                    }
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "IsDraft": {
-                        "type": "boolean"
-                      }
-                    }
-                  }
-                ],
                 "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  },
+                  "isDraft": {
+                    "type": "boolean"
+                  },
                   "body": {
                     "$ref": "#/components/schemas/CreateTodoListFileBody"
                   }
