@@ -70,7 +70,7 @@ internal sealed class MultiPartJsonOperationTransformer : IOpenApiOperationTrans
 
                 if (schemaId is not null)
                 {
-                    context.Document.Components ??= new OpenApiComponents();
+                    context.Document!.Components ??= new OpenApiComponents();
                     context.Document.Components.Schemas ??= new Dictionary<string, IOpenApiSchema>();
                     context.Document.Components.Schemas.TryAdd(schemaId, generated);
 

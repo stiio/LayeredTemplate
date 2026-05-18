@@ -20,6 +20,21 @@ public static class CreateTodoListFile
         public string? Description { get; set; }
     }
 
+    public sealed class Request
+    {
+        [FromQuery]
+        public string? Q { get; set; }
+
+        [Required]
+        public Body Body { get; set; } = null!;
+
+        [Required]
+        public IFormFile File { get; set; } = null!;
+
+        [FromForm, Required]
+        public bool IsDraft { get; set; }
+    }
+
     public static void Configure(RouteGroupBuilder group) =>
         group.MapPost("/file", Handle)
             .WithName(nameof(CreateTodoListFile))
@@ -30,14 +45,12 @@ public static class CreateTodoListFile
     // `file` natively (IFormFile auto-bound from multipart), `isDraft` via [FromForm].
     // No wrapping Request DTO — each binding source is explicit at the call site.
     public static TodoListDto Handle(
-        Body body,
-        IFormFile file,
-        [FromForm] bool isDraft) =>
+        [AsParameters] Request request) =>
         new()
         {
             Id = Guid.NewGuid(),
-            Name = body.Name,
-            Description = body.Description,
+            Name = request.Body.Name,
+            Description = request.Body.Description,
             CreatedAt = DateTime.UtcNow,
         };
 }

@@ -276,13 +276,20 @@
         ],
         "summary": "Create TodoList from file (multipart + JSON example)",
         "operationId": "CreateTodoListFile",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "multipart/form-data": {
               "schema": {
                 "required": [
-                  "file",
-                  "isDraft",
                   "body"
                 ],
                 "type": "object",
@@ -290,7 +297,7 @@
                   {
                     "type": "object",
                     "properties": {
-                      "file": {
+                      "File": {
                         "$ref": "#/components/schemas/IFormFile"
                       }
                     }
@@ -298,7 +305,7 @@
                   {
                     "type": "object",
                     "properties": {
-                      "isDraft": {
+                      "IsDraft": {
                         "type": "boolean"
                       }
                     }
