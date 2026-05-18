@@ -1,6 +1,7 @@
 using System.Data;
 using System.Reflection;
 using Dapper;
+using LayeredTemplate.App.Features.Users;
 using LayeredTemplate.App.Shared.Errors;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -10,25 +11,36 @@ using Npgsql;
 namespace LayeredTemplate.App.Shared.Db;
 
 /// <summary>
-/// Application's single <see cref="DbContext"/>. Declared as <c>partial</c> so each feature can
-/// declare its own <see cref="DbSet{TEntity}"/> in a partial file inside the feature folder
-/// (see <c>Features/Users/_DbContext.cs</c> etc.). This keeps a feature's DB surface visible
-/// inside its own slice rather than buried in a shared "god" class.
+/// Application's single <see cref="DbContext"/>. All <see cref="DbSet{TEntity}"/> declarations
+/// live here; EF type configurations are auto-discovered from <c>Features/&lt;X&gt;/_DbConfig.cs</c>
+/// files via <see cref="ModelBuilder.ApplyConfigurationsFromAssembly"/> in <see cref="OnModelCreating"/>.
 /// </summary>
 /// <remarks>
-/// SaveChangesAsync catches Postgres-specific FK/unique violation SQLSTATE codes and translates
-/// them into domain exceptions (<see cref="ForeignKeyViolationException"/>, <see cref="AlreadyExistsException"/>)
-/// so callers can pattern-match on intent instead of digging through inner exception chains.
+/// <para>Adding a new persisted entity:
+/// <list type="number">
+/// <item>Declare the entity in <c>Features/&lt;Foo&gt;/_Entities.cs</c>.</item>
+/// <item>Add an <c>IEntityTypeConfiguration&lt;Foo&gt;</c> in <c>Features/&lt;Foo&gt;/_DbConfig.cs</c>
+///   for any non-convention mappings.</item>
+/// <item>Add the corresponding <c>DbSet</c> property to this file.</item>
+/// </list>
+/// Step 3 is the only edit to a shared file — a single one-line touchpoint per feature.</para>
 ///
-/// Dapper helpers are exposed for raw SQL queries that go through EF's connection — the in-flight
-/// transaction (if any) is wired through so EF + Dapper share a transactional context.
+/// <para><see cref="SaveChangesAsync"/> catches Postgres-specific FK/unique violation SQLSTATE
+/// codes and translates them into domain exceptions
+/// (<see cref="ForeignKeyViolationException"/>, <see cref="AlreadyExistsException"/>) so callers
+/// can pattern-match on intent instead of digging through inner exception chains.</para>
+///
+/// <para>Dapper helpers are exposed for raw SQL queries that go through EF's connection — the
+/// in-flight transaction (if any) is wired through so EF + Dapper share a transactional context.</para>
 /// </remarks>
-public partial class AppDbContext : DbContext, IDataProtectionKeyContext
+public sealed class AppDbContext : DbContext, IDataProtectionKeyContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
     {
     }
+
+    public DbSet<User> Users { get; set; } = null!;
 
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 

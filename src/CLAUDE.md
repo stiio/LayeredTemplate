@@ -40,6 +40,7 @@ App.Web/
 │   │   └── RunMigrationsTask.cs   — startup task под advisory lock
 │   ├── Endpoints/
 │   │   ├── IEndpoint.cs           — `static abstract void Map(IEndpointRouteBuilder)`
+│   │   ├── IFeatureServices.cs    — `static abstract void ConfigureServices(IServiceCollection)`
 │   │   └── DevOnlyAttribute.cs
 │   ├── Errors/
 │   │   ├── Exceptions.cs          — AppMessage/NotFound/AccessDenied/Validation/Domain hierarchy
@@ -58,16 +59,19 @@ App.Web/
 │   ├── Users/
 │   │   ├── _Routes.cs
 │   │   ├── _Entities.cs           — User entity
-│   │   ├── _DbContext.cs          — partial AppDbContext { DbSet<User> }
-│   │   ├── _DbConfig.cs           — IEntityTypeConfiguration<User>
+│   │   ├── _DbConfig.cs           — IEntityTypeConfiguration<User> (auto-discovered)
 │   │   ├── GetCurrentUser.cs
 │   │   ├── SendUserEmailCode.cs
 │   │   ├── VerifyUserEmailCode.cs
 │   │   └── Models/CurrentUserDto.cs
 │   ├── TodoLists/
-│   │   ├── _Routes.cs
+│   │   ├── _Routes.cs             — IEndpoint + IFeatureServices (registers ITodoListRatingService)
 │   │   ├── CreateTodoList.cs, GetTodoList.cs, UpdateTodoList.cs, DeleteTodoList.cs
 │   │   ├── SearchTodoLists.cs, ListTodoListItems.cs, CreateTodoListItems.cs
+│   │   ├── CreateTodoListFile.cs, DownloadTodoListFile.cs — multipart + JSON demo
+│   │   ├── RateTodoList.cs        — consumes ITodoListRatingService via DI
+│   │   ├── Services/
+│   │   │   └── TodoListRatingService.cs — feature-internal service
 │   │   └── Models/TodoListDto.cs  — DTOs + polymorphic Items + enums
 │   └── _Dev/                      — /api/dev/* (DevOnly, есть только в Development)
 │       ├── _Routes.cs
@@ -81,8 +85,9 @@ App.Web/
 
 - **Vertical Slice** — фича = папка под `Features/`. Все слои фичи (entity, DbConfig, DTO, endpoint) собраны вместе. Кросс-фичевый код только в `Shared/`.
 - **Minimal API endpoints** — каждый endpoint = статический класс с `Configure(RouteGroupBuilder)` и `Handle(...)`. Никаких контроллеров, Mediator'а, request handler'ов.
-- **`IEndpoint` discovery** — каждая фича имеет `_Routes.cs` с `IEndpoint`-маркером. `Program.cs` вызывает `app.MapAllEndpoints()` — рефлексия находит всё в сборке.
-- **Per-feature partial DbContext** — DbSets фичи объявлены в `Features/<Feature>/_DbContext.cs` через `public partial class AppDbContext`. EF-конфигурация в `_DbConfig.cs` рядом.
+- **`IEndpoint` / `IFeatureServices` discovery** — каждая фича имеет `_Routes.cs` с `IEndpoint`-маркером (роуты) и/или `IFeatureServices` (DI-регистрация). `Program.cs` вызывает `services.AddFeatureServices(env)` ДО `builder.Build()` и `app.MapAllEndpoints()` ПОСЛЕ — рефлексия находит реализации в сборке. Фича может иметь оба, один из них, или ни одного.
+- **Feature-internal services** — живут в `Features/<Foo>/Services/<Service>.cs` (interface + impl в одном файле). Регистрируются через `IFeatureServices.ConfigureServices` на `_Routes.cs` фичи. Пример: `Features/TodoLists/Services/TodoListRatingService.cs` + потребление в `RateTodoList.Handle`. Если сервис используется несколькими фичами — переезжает в `Shared/Infrastructure/`.
+- **DbContext** — все `DbSet<T>` собраны в `Shared/Db/AppDbContext.cs`. EF-конфигурации (`IEntityTypeConfiguration<T>`) автодискаверятся из `Features/<X>/_DbConfig.cs` через `ApplyConfigurationsFromAssembly`. Добавление новой сущности: `_Entities.cs` + `_DbConfig.cs` в фиче + одна строка DbSet в общий DbContext.
 - **Endpoint filters для cross-cutting** — `WithValidation<T>()` валидирует FluentValidation'ом, бросает `AppValidationException`. `GlobalExceptionHandler` мапит в RFC 7807.
 - **Версионирование sparse** — endpoint живёт в одной версии. `/api/v1/...` для текущей; когда появляется breaking change, делается `XxxV2.cs` и регистрируется в новой `MapGroup("/api/v2/...")`. Endpoints без изменений остаются только в v1, не дублируются.
 - **OpenAPI naming** — endpoint class = operationId (e.g. `CreateTodoList`). Nested types (`CreateTodoList.Request`) → schema `CreateTodoListRequest` через `CreateSchemaReferenceId` callback в `ConfigureOpenApi.cs`.
@@ -145,9 +150,11 @@ docker-compose -f docker-compose.yml up
 ## Что важно помнить при правках App.Web
 
 1. **Добавление фичи** — создать `Features/<Feature>/_Routes.cs` (с `IEndpoint`) + один-два endpoint-файла. Discovery подхватит без правок в `Program.cs`.
-2. **Добавление таблицы** — entity в `_Entities.cs`, partial DbSet в `_DbContext.cs`, EF mapping в `_DbConfig.cs`. Затем `dotnet ef migrations add`.
-3. **Версионирование** — v2 endpoint = новый файл `XxxV2.cs`. Регистрируется только в новой группе `/api/v2/...`. Старые остаются в v1.
-4. **Dev endpoint'ы** — `Features/_Dev/` для cross-cutting, `_File.cs` в обычной фиче для feature-specific. `[DevOnly]` на классе `IEndpoint` — discovery пропустит вне Development.
-5. **Кросс-фичевая модель** — добавлять в `Shared/` только если она реально шарится. Иначе оставлять в фиче, даже если другая фича могла бы её использовать (DRY < локальная связность).
-6. **Не вешать `///`-комментарии на свойства дженерик-классов в App.Web.** Source-gen `Microsoft.AspNetCore.OpenApi.SourceGenerators` 10.0.x падает с `duplicate key` при попытке закешировать такие комментарии (только если тип в **текущей** компиляции; для referenced-сборок через `.xml` всё работает). Конкретно: `Sorting<TFields>.Column` — без XML-doc. Если нужно описание поля — добавляй его на point-of-use, например, на свойство `SearchTodoLists.Request.Sorting`. Когда баг в SDK починят, ограничение снимется.
-7. **Multipart + JSON-поля** — для endpoint'ов вида `[FromJson] Body + IFormFile File` (документ JSON в одной multipart-части, файл во второй) используется `Plugins.JsonMultipart`. DTO декларируется как `: IJsonMultipartRequest<Request>` — это CRTP-интерфейс, который через DIM подключает `BindAsync` (minimal API custom binding) и `PopulateMetadata` (OpenAPI multipart hint). Пример в [Features/TodoLists/CreateTodoListFile.cs](Services/App/App.Web/Features/TodoLists/CreateTodoListFile.cs). OpenAPI получает корректную схему: `multipart/form-data` content type, `encoding.<field>.contentType: application/json` для JSON-частей, `IFormFile` сериализуется как `type: string, format: binary`.
+2. **Добавление таблицы** — entity в `Features/<Foo>/_Entities.cs`, EF mapping в `Features/<Foo>/_DbConfig.cs` (автодискаверится), одна строка `DbSet<Foo>` в `Shared/Db/AppDbContext.cs`. Затем `dotnet ef migrations add`.
+3. **Добавление сервиса фичи** — `Features/<Foo>/Services/<Service>.cs` (interface + impl). Если у фичи ещё нет регистрации — `_Routes.cs` дополнительно реализует `IFeatureServices` и вызывает `services.AddScoped<IFoo, Foo>()` в `ConfigureServices`. Discovery подхватит.
+4. **Версионирование** — v2 endpoint = новый файл `XxxV2.cs`. Регистрируется только в новой группе `/api/v2/...`. Старые остаются в v1.
+5. **Dev endpoint'ы** — `Features/_Dev/` для cross-cutting, `_File.cs` в обычной фиче для feature-specific. `[DevOnly]` на классе `IEndpoint` — discovery пропустит вне Development.
+6. **Кросс-фичевая модель** — добавлять в `Shared/` только если она реально шарится. Иначе оставлять в фиче, даже если другая фича могла бы её использовать (DRY < локальная связность).
+7. **Не вешать `///`-комментарии на свойства дженерик-классов в App.Web.** Source-gen `Microsoft.AspNetCore.OpenApi.SourceGenerators` 10.0.x падает с `duplicate key` при попытке закешировать такие комментарии (только если тип в **текущей** компиляции; для referenced-сборок через `.xml` всё работает). Конкретно: `Sorting<TFields>.Column` — без XML-doc. Если нужно описание поля — добавляй его на point-of-use, например, на свойство `SearchTodoLists.Request.Sorting`. Когда баг в SDK починят, ограничение снимется.
+8. **Multipart + JSON-поля** — для endpoint'ов вида `[FromJson] Body + IFormFile File` (документ JSON в одной multipart-части, файл во второй) используется `Plugins.JsonMultipart`. DTO декларируется как `: IJsonMultipartRequest<Request>` — это CRTP-интерфейс, который через DIM подключает `BindAsync` (minimal API custom binding) и `PopulateMetadata` (OpenAPI multipart hint). Пример в [Features/TodoLists/CreateTodoListFile.cs](Services/App/App.Web/Features/TodoLists/CreateTodoListFile.cs). OpenAPI получает корректную схему: `multipart/form-data` content type, `encoding.<field>.contentType: application/json` для JSON-частей, `IFormFile` сериализуется как `type: string, format: binary`.
+9. **Регистрация feature services и endpoints в `GetDocument.Insider`-ветке Program.cs.** При добавлении нового плагина с DI-сервисами или OpenAPI-трансформером нужно повторить регистрацию в минимальной ветке для build-time doc generation (`if (Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider")`). Без этого spec собирается с неполной информацией ИЛИ minimal API ругается "Failure to infer one or more parameters" если endpoint потребляет нерегистрированный сервис.

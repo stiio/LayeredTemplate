@@ -41,6 +41,10 @@ try
         // Plugin's OpenAPI transformers also need to be registered here — without this, multipart
         // endpoints generate without the `application/json` encoding hint on JSON-typed parts.
         minimalBuilder.Services.AddPluginJsonMultipart();
+        // Feature services must also be registered so Minimal API can infer DI-bound parameters
+        // when building the route table for the description provider. Without this, endpoints
+        // accepting feature services fail with "Failure to infer one or more parameters".
+        minimalBuilder.Services.AddFeatureServices(minimalBuilder.Environment);
         minimalBuilder.Services.AddEndpointsApiExplorer();
         ConfigureJson(minimalBuilder.Services);
         var minimalApp = minimalBuilder.Build();
@@ -106,6 +110,11 @@ try
     {
         options.ShutdownTimeout = TimeSpan.FromMinutes(1);
     });
+
+    // Walk the assembly for IFeatureServices implementers and register feature-internal services.
+    // Called LAST so feature registrations may override anything registered above (typical for
+    // testing-style decorators / wrappers).
+    services.AddFeatureServices(builder.Environment);
 
     // ---- Pipeline ----
     var app = builder.Build();
