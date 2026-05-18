@@ -12,6 +12,8 @@ public sealed class TodoListsRoutes : IEndpoint
 
         SearchTodoLists.Configure(v1);
         CreateTodoList.Configure(v1);
+        CreateTodoListFile.Configure(v1);
+        DownloadTodoListFile.Configure(v1);
         GetTodoList.Configure(v1);
         UpdateTodoList.Configure(v1);
         DeleteTodoList.Configure(v1);

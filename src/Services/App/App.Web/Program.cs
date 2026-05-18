@@ -8,6 +8,7 @@ using LayeredTemplate.App.Setup.OpenApi;
 using LayeredTemplate.App.Shared.Infrastructure.Email;
 using LayeredTemplate.App.Shared.Infrastructure.Locks;
 using LayeredTemplate.App.Shared.Options;
+using LayeredTemplate.Plugins.JsonMultipart;
 using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Json;
@@ -37,6 +38,9 @@ try
         var minimalBuilder = WebApplication.CreateBuilder(args);
         minimalBuilder.Host.ConfigureAppSerilog();
         minimalBuilder.Services.AddAppOpenApi();
+        // Plugin's OpenAPI transformers also need to be registered here — without this, multipart
+        // endpoints generate without the `application/json` encoding hint on JSON-typed parts.
+        minimalBuilder.Services.AddPluginJsonMultipart();
         minimalBuilder.Services.AddEndpointsApiExplorer();
         ConfigureJson(minimalBuilder.Services);
         var minimalApp = minimalBuilder.Build();
@@ -67,6 +71,7 @@ try
     var config = builder.Configuration;
 
     services.AddPluginStartupRunner();
+    services.AddPluginJsonMultipart();
 
     services.Configure<AppSettings>(config.GetSection(nameof(AppSettings)));
     services.Configure<SmtpSettings>(config.GetSection(nameof(SmtpSettings)));

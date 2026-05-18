@@ -269,6 +269,101 @@
         }
       }
     },
+    "/api/v1/todo_lists/file": {
+      "post": {
+        "tags": [
+          "TodoLists"
+        ],
+        "summary": "Create TodoList from file (multipart + JSON example)",
+        "operationId": "CreateTodoListFile",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTodoListFileRequest"
+              },
+              "encoding": {
+                "body": {
+                  "contentType": "application/json"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "TodoLists"
+        ],
+        "summary": "Download TodoList file (example)",
+        "operationId": "DownloadTodoListFile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileContentHttpResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/todo_lists/{id}": {
       "get": {
         "tags": [
@@ -632,6 +727,39 @@
         },
         "description": "Extends RFC 7807 ProblemDetails with an app-specific AppErrorType? AppProblemDetails.ErrorType\r\nenum and field-level Dictionary&lt;string, string[]&gt;? AppProblemDetails.Errors dictionary (matches\r\nIDictionary&lt;string, string[]&gt; ValidationProblemDetails.Errors shape so clients can use the same parser)."
       },
+      "CreateTodoListFileBody": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "CreateTodoListFileRequest": {
+        "required": [
+          "body",
+          "file"
+        ],
+        "type": "object",
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/CreateTodoListFileBody"
+          },
+          "file": {
+            "$ref": "#/components/schemas/IFormFile"
+          }
+        },
+        "description": "Demonstrates the multipart-with-JSON pattern. IJsonMultipartRequest&lt;TSelf&gt;\r\nwires up `BindAsync` (custom Minimal API binding) and OpenAPI metadata so the request\r\nis described as `multipart/form-data` with the Body Request.Body part carrying its\r\ncontent as `application/json`."
+      },
       "CreateTodoListRequest": {
         "required": [
           "name"
@@ -705,6 +833,63 @@
         ],
         "type": "string"
       },
+      "EntityTagHeaderValue": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "$ref": "#/components/schemas/StringSegment"
+          },
+          "isWeak": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FileContentHttpResult": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string"
+          },
+          "fileDownloadName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lastModified": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "entityTag": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EntityTagHeaderValue"
+              }
+            ]
+          },
+          "enableRangeProcessing": {
+            "type": "boolean"
+          },
+          "fileLength": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "fileContents": {
+            "$ref": "#/components/schemas/ReadOnlyMemoryOfbyte"
+          }
+        }
+      },
       "GetInfoResponse": {
         "type": "object",
         "properties": {
@@ -720,6 +905,10 @@
             "description": "Informational assembly version."
           }
         }
+      },
+      "IFormFile": {
+        "type": "string",
+        "format": "binary"
       },
       "PaginationRequest": {
         "required": [
@@ -795,6 +984,9 @@
           }
         }
       },
+      "ReadOnlyMemoryOfbyte": {
+        "type": "string"
+      },
       "SearchTodoListsRequest": {
         "type": "object",
         "properties": {
@@ -865,6 +1057,42 @@
           },
           "direction": {
             "$ref": "#/components/schemas/DirectionType"
+          }
+        }
+      },
+      "StringSegment": {
+        "type": "object",
+        "properties": {
+          "buffer": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "offset": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "length": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "value": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hasValue": {
+            "type": "boolean"
           }
         }
       },

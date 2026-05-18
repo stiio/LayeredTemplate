@@ -110,7 +110,7 @@ App.Web/
 | **Plugins.AssemblyExtensions** | `GetBuildDate()`, `GetVersion()` из метаданных сборки |
 | **Plugins.Authorization.Abstractions** | Константы: AuthenticationSchemes, Claims, Permissions, TokenKeys |
 | **Plugins.Http.Extensions** | HttpContext-расширения (`GetRequestIp` и др.) |
-| **Plugins.JsonMultipart** + Abstractions | Model binder и OpenAPI-трансформер для multipart/form-data с JSON-полями (MVC only — НЕ работает с minimal API из-за разных биндеров) |
+| **Plugins.JsonMultipart** + Abstractions | Minimal-API биндер + OpenAPI-трансформеры для multipart/form-data с JSON-полями. DTO декларируется как `IJsonMultipartRequest<TSelf>`, JSON-поля помечаются `[FromJson]`, файловые поля — обычным `IFormFile` |
 | **Plugins.Logging.HttpClientLog** | DelegatingHandler для логирования HttpClient с маскировкой |
 | **Plugins.PhoneHelpers** | libphonenumber-csharp wrappers + DataAnnotations |
 | **Plugins.SharedExtensions** | TypeExtensions, EnumerableExtensions |
@@ -150,4 +150,4 @@ docker-compose -f docker-compose.yml up
 4. **Dev endpoint'ы** — `Features/_Dev/` для cross-cutting, `_File.cs` в обычной фиче для feature-specific. `[DevOnly]` на классе `IEndpoint` — discovery пропустит вне Development.
 5. **Кросс-фичевая модель** — добавлять в `Shared/` только если она реально шарится. Иначе оставлять в фиче, даже если другая фича могла бы её использовать (DRY < локальная связность).
 6. **Не вешать `///`-комментарии на свойства дженерик-классов в App.Web.** Source-gen `Microsoft.AspNetCore.OpenApi.SourceGenerators` 10.0.x падает с `duplicate key` при попытке закешировать такие комментарии (только если тип в **текущей** компиляции; для referenced-сборок через `.xml` всё работает). Конкретно: `Sorting<TFields>.Column` — без XML-doc. Если нужно описание поля — добавляй его на point-of-use, например, на свойство `SearchTodoLists.Request.Sorting`. Когда баг в SDK починят, ограничение снимется.
-7. **File upload endpoints удалены** — `Plugins.JsonMultipart` через `[FromJson]` нужен `IModelBinder` (MVC), а minimal API такой не использует. Когда понадобится — переписать на `IFormCollection` или явный JSON-параметр + `IFormFile`.
+7. **Multipart + JSON-поля** — для endpoint'ов вида `[FromJson] Body + IFormFile File` (документ JSON в одной multipart-части, файл во второй) используется `Plugins.JsonMultipart`. DTO декларируется как `: IJsonMultipartRequest<Request>` — это CRTP-интерфейс, который через DIM подключает `BindAsync` (minimal API custom binding) и `PopulateMetadata` (OpenAPI multipart hint). Пример в [Features/TodoLists/CreateTodoListFile.cs](Services/App/App.Web/Features/TodoLists/CreateTodoListFile.cs). OpenAPI получает корректную схему: `multipart/form-data` content type, `encoding.<field>.contentType: application/json` для JSON-частей, `IFormFile` сериализуется как `type: string, format: binary`.

@@ -9,6 +9,7 @@ internal class ConfigureOpenApiOptions : IConfigureNamedOptions<OpenApiOptions>
     public void Configure(string? name, OpenApiOptions options)
     {
         options.AddOperationTransformer<MultiPartJsonOperationTransformer>();
+        options.AddSchemaTransformer<FormFileSchemaTransformer>();
     }
 
     public void Configure(OpenApiOptions options)
