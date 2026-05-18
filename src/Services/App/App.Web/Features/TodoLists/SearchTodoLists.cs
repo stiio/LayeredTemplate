@@ -4,32 +4,21 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.App.Features.TodoLists;
 
-public static class SearchTodoLists
+/// <summary>
+/// Demonstrates the "endpoint split into partial files" convention used when an endpoint outgrows
+/// a single file (~150+ lines, ≥3 nested types). The outer class is marked <c>partial</c>; nested
+/// types live in sibling files named <c>SearchTodoLists.&lt;Part&gt;.cs</c>
+/// (see <see cref="Request"/>, <see cref="Response"/>). Configure + Handle stay here as the
+/// endpoint's "entry surface".
+/// </summary>
+/// <remarks>
+/// Why partial: keeps types <i>nested</i> in <c>SearchTodoLists</c>, so OpenAPI schema names stay
+/// <c>SearchTodoListsRequest</c> / <c>SearchTodoListsResponse</c> (via the parent-name-prepend rule
+/// in <c>ConfigureOpenApi.CreateSchemaReferenceId</c>). A flat split into separate top-level
+/// classes would lose that auto-naming and require manual avoidance of clashes.
+/// </remarks>
+public static partial class SearchTodoLists
 {
-    public sealed class Request
-    {
-        public TodoListSearchFilterDto? Filter { get; set; }
-
-        public Sorting<TodoListFields> Sorting { get; set; } = new()
-        {
-            Column = TodoListFields.CreatedAt,
-            Direction = DirectionType.Desc,
-        };
-
-        public PaginationRequest Pagination { get; set; } = new();
-    }
-
-    public sealed class Response
-    {
-        public TodoListSearchFilterDto? Filter { get; init; }
-
-        public Sorting<TodoListFields> Sorting { get; init; } = null!;
-
-        public PaginationResponse Pagination { get; init; } = null!;
-
-        public TodoListDto[] Data { get; init; } = null!;
-    }
-
     public static void Configure(RouteGroupBuilder group) =>
         group.MapPost("/search", Handle)
             .WithName(nameof(SearchTodoLists))
