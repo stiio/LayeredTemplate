@@ -884,62 +884,9 @@
         ],
         "type": "string"
       },
-      "EntityTagHeaderValue": {
-        "type": "object",
-        "properties": {
-          "tag": {
-            "$ref": "#/components/schemas/StringSegment"
-          },
-          "isWeak": {
-            "type": "boolean"
-          }
-        }
-      },
       "FileContentHttpResult": {
-        "type": "object",
-        "properties": {
-          "contentType": {
-            "type": "string"
-          },
-          "fileDownloadName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "lastModified": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "entityTag": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/EntityTagHeaderValue"
-              }
-            ]
-          },
-          "enableRangeProcessing": {
-            "type": "boolean"
-          },
-          "fileLength": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int64"
-          },
-          "fileContents": {
-            "$ref": "#/components/schemas/ReadOnlyMemoryOfbyte"
-          }
-        }
+        "type": "string",
+        "format": "binary"
       },
       "GetInfoResponse": {
         "type": "object",
@@ -1051,9 +998,6 @@
           }
         }
       },
-      "ReadOnlyMemoryOfbyte": {
-        "type": "string"
-      },
       "SearchTodoListsRequest": {
         "type": "object",
         "properties": {
@@ -1124,42 +1068,6 @@
           },
           "direction": {
             "$ref": "#/components/schemas/DirectionType"
-          }
-        }
-      },
-      "StringSegment": {
-        "type": "object",
-        "properties": {
-          "buffer": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "offset": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "length": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "value": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "hasValue": {
-            "type": "boolean"
           }
         }
       },

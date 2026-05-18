@@ -99,5 +99,6 @@ public static class ConfigureOpenApi
         opts.AddSchemaTransformer<StringEnumSchemaTransformer>();
         opts.AddSchemaTransformer<DateTimeSchemaTransformer>();
         opts.AddSchemaTransformer<PolymorphismOneOfTransformer>();
+        opts.AddSchemaTransformer<FileResultSchemaTransformer>();
     }
 }
