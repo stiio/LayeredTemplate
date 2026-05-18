@@ -1,7 +1,6 @@
 using LayeredTemplate.App.Setup.OpenApi.Transformers;
 using LayeredTemplate.Plugins.AssemblyExtensions.Extensions;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
