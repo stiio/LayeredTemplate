@@ -7,7 +7,7 @@ namespace LayeredTemplate.Plugins.JsonMultipart;
 
 /// <summary>
 /// Implement this on a request DTO to make Minimal API bind it from a <c>multipart/form-data</c>
-/// payload where some fields are JSON-encoded (marked with <see cref="Abstractions.FromJsonAttribute"/>)
+/// payload where some fields are JSON-encoded (marked with <see cref="FromJsonAttribute"/>)
 /// and others are uploaded files.
 /// </summary>
 /// <typeparam name="TSelf">Self-type (CRTP) — must be a parameterless-constructible class.</typeparam>

@@ -1,5 +1,4 @@
 using System.Reflection;
-using LayeredTemplate.Plugins.JsonMultipart.Abstractions;
 using LayeredTemplate.Plugins.JsonMultipart.Extensions;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.OpenApi;

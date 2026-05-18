@@ -1,4 +1,4 @@
-namespace LayeredTemplate.Plugins.JsonMultipart.Abstractions;
+namespace LayeredTemplate.Plugins.JsonMultipart;
 
 /// <summary>
 /// Marks a property on a request DTO as carrying its value as a JSON-encoded multipart field.

@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.App.Features.TodoLists.Models;
 using LayeredTemplate.Plugins.JsonMultipart;
-using LayeredTemplate.Plugins.JsonMultipart.Abstractions;
 
 namespace LayeredTemplate.App.Features.TodoLists;
 
