@@ -28,6 +28,11 @@ public static class CreateTodoListFile
 
         [Required]
         public IFormFile File { get; set; } = null!;
+
+        // Demonstrates plain form-value binding alongside JSON + file parts. Bound from the
+        // multipart field "IsDraft" via TypeDescriptor — same convention as Minimal API's
+        // query/route primitive parameters.
+        public bool IsDraft { get; set; }
     }
 
     public static void Configure(RouteGroupBuilder group) =>

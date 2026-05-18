@@ -807,6 +807,9 @@
           },
           "file": {
             "$ref": "#/components/schemas/IFormFile"
+          },
+          "isDraft": {
+            "type": "boolean"
           }
         },
         "description": "Demonstrates the multipart-with-JSON pattern. IJsonMultipartRequest&lt;TSelf&gt;\r\nwires up `BindAsync` (custom Minimal API binding) and OpenAPI metadata so the request\r\nis described as `multipart/form-data` with the Body Request.Body part carrying its\r\ncontent as `application/json`."
