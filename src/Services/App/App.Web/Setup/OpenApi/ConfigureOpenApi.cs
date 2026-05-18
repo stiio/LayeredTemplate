@@ -94,6 +94,7 @@ public static class ConfigureOpenApi
         opts.AddOperationTransformer<DefaultApplicationResponsesTransformer>();
         opts.AddOperationTransformer<AuthOperationTransformer>();
         opts.AddOperationTransformer<CamelCaseParametersTransformer>();
+        opts.AddOperationTransformer<AsParametersRequiredFixer>();
 
         opts.AddSchemaTransformer<StringEnumSchemaTransformer>();
         opts.AddSchemaTransformer<DateTimeSchemaTransformer>();

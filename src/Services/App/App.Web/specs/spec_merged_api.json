@@ -290,6 +290,8 @@
             "multipart/form-data": {
               "schema": {
                 "required": [
+                  "File",
+                  "IsDraft",
                   "body"
                 ],
                 "type": "object",
