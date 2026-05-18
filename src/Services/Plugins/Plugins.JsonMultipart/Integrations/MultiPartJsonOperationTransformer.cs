@@ -1,112 +1,139 @@
 using System.Reflection;
 using LayeredTemplate.Plugins.JsonMultipart.Extensions;
-using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
 namespace LayeredTemplate.Plugins.JsonMultipart.Integrations;
 
 /// <summary>
-/// For endpoints whose request DTO carries any <see cref="FromJsonAttribute"/>-marked properties,
-/// adds an <c>encoding</c> entry with <c>contentType: application/json</c> on those parts of the
-/// <c>multipart/form-data</c> request body. This hint tells Scalar / OpenAPI codegen to render
-/// the field as a JSON document inside the multipart part (vs the default text/plain).
+/// Injects <see cref="IJsonMultipartPart{TSelf}"/>-typed handler parameters into the OpenAPI
+/// <c>multipart/form-data</c> body schema and attaches <c>contentType: application/json</c>
+/// encoding hints so Scalar / codegen render those parts as JSON documents.
 /// </summary>
 /// <remarks>
-/// Discovers the request type via <see cref="IAcceptsMetadata"/> attached by
-/// <see cref="JsonMultipartFormBinder.PopulateMetadata{T}"/> for Minimal API endpoints, with an
-/// MVC-era fallback to <c>ActionDescriptor.Parameters</c>. The schema itself is left as the
-/// generator produced it (a <c>$ref</c> to the request type's component schema); encoding is
-/// applied at the media type level, which works regardless of whether the schema is inline or
-/// referenced.
+/// <para>Minimal API auto-describes <see cref="IFormFile"/> and <c>[FromForm]</c> primitives in the
+/// multipart body schema, but it has no way to describe a parameter bound via a custom
+/// <c>BindAsync</c> — it sees the type as "unbindable from body" and silently omits it. This
+/// transformer fills the gap: for each handler parameter whose type implements
+/// <see cref="IJsonMultipartPart{TSelf}"/>, we add a property entry to the body schema (referencing
+/// the type's component schema) and an <c>encoding</c> hint.</para>
+/// <para>Supports both call styles: top-level handler parameters (recommended) and
+/// <c>[AsParameters]</c> aggregate properties (works but the aggregate path is fragile when
+/// mixing custom-bound types with native form binding).</para>
 /// </remarks>
 internal sealed class MultiPartJsonOperationTransformer : IOpenApiOperationTransformer
 {
-    public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
+    public async Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
     {
-        var requestType = ResolveMultipartRequestType(context);
-        if (requestType is null)
+        if (operation.RequestBody?.Content is not { } content ||
+            !content.TryGetValue("multipart/form-data", out var multipart))
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        if (!operation.RequestBody!.Content!.TryGetValue("multipart/form-data", out var multipart))
+        var jsonPartParams = FindJsonPartParameters(context).ToArray();
+        if (jsonPartParams.Length == 0)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        var jsonProps = requestType
-            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.GetCustomAttribute<FromJsonAttribute>() is not null)
-            .ToArray();
-
-        if (jsonProps.Length == 0)
+        // The multipart schema produced by Minimal API may be either an inline object or a
+        // composition (allOf). Either way it carries a `Properties` dictionary at the top — extend
+        // it with our JSON parts. Same for `Required`.
+        var schema = multipart.Schema as OpenApiSchema;
+        if (schema is null)
         {
-            return Task.CompletedTask;
+            return;
         }
 
+        schema.Properties ??= new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal);
+        schema.Required ??= new HashSet<string>(StringComparer.Ordinal);
         multipart.Encoding ??= new Dictionary<string, OpenApiEncoding>(StringComparer.Ordinal);
 
-        foreach (var prop in jsonProps)
+        foreach (var (fieldName, type, isRequired) in jsonPartParams)
         {
-            multipart.Encoding[prop.Name.ToCamelCase()] = new OpenApiEncoding
-            {
-                ContentType = "application/json",
-            };
-        }
+            var camelName = fieldName.ToCamelCase();
 
-        return Task.CompletedTask;
+            if (!schema.Properties.ContainsKey(camelName))
+            {
+                // GetOrCreateSchemaAsync builds the schema for the type and stashes the id our
+                // CreateSchemaReferenceId callback assigned in `.Metadata["x-schema-id"]` (same
+                // pattern as PolymorphismOneOfTransformer). It does NOT automatically register
+                // the schema into Document.Components.Schemas — that registration only happens
+                // when something else in the document already references the type. Since our
+                // injection is the first / only reference here, we register the component
+                // explicitly so the `$ref` we emit below resolves to a real schema in OpenAPI
+                // codegen output (named `CreateTodoListFileBody` etc., not anonymous).
+                var generated = await context.GetOrCreateSchemaAsync(type, cancellationToken: cancellationToken);
+                var schemaId = generated.Metadata?["x-schema-id"]?.ToString();
+
+                if (schemaId is not null)
+                {
+                    context.Document.Components ??= new OpenApiComponents();
+                    context.Document.Components.Schemas ??= new Dictionary<string, IOpenApiSchema>();
+                    context.Document.Components.Schemas.TryAdd(schemaId, generated);
+
+                    schema.Properties[camelName] = new OpenApiSchemaReference(schemaId);
+                }
+                else
+                {
+                    // No schema id (primitive-like) — inline.
+                    schema.Properties[camelName] = generated;
+                }
+            }
+
+            if (isRequired)
+            {
+                schema.Required.Add(camelName);
+            }
+
+            multipart.Encoding[camelName] = new OpenApiEncoding { ContentType = "application/json" };
+        }
     }
 
-    private static Type? ResolveMultipartRequestType(OpenApiOperationTransformerContext context)
+    /// <summary>
+    /// Yields (fieldName, type, isRequired) for every handler parameter (or <c>[AsParameters]</c>
+    /// aggregate property) whose type implements <see cref="IJsonMultipartPart{TSelf}"/>.
+    /// </summary>
+    private static IEnumerable<(string Name, Type Type, bool Required)> FindJsonPartParameters(OpenApiOperationTransformerContext context)
     {
-        var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+        var methodInfo = context.Description.ActionDescriptor.EndpointMetadata
+            .OfType<MethodInfo>()
+            .FirstOrDefault();
 
-        // Preferred (Minimal API): IAcceptsMetadata attached by JsonMultipartFormBinder.PopulateMetadata.
-        var acceptsMetadata = metadata.OfType<IAcceptsMetadata>().FirstOrDefault();
-        if (acceptsMetadata?.RequestType is { } acceptsType && HasJsonProperties(acceptsType))
+        if (methodInfo is null)
         {
-            return acceptsType;
+            yield break;
         }
 
-        // Minimal API fallback: walk the handler delegate's parameter types directly. Works even
-        // if IEndpointParameterMetadataProvider didn't contribute an IAcceptsMetadata entry
-        // (e.g. when DIM doesn't fire for the static abstract method via the marker interface).
-        var methodInfo = metadata.OfType<MethodInfo>().FirstOrDefault();
-        if (methodInfo is not null)
+        foreach (var param in methodInfo.GetParameters())
         {
-            foreach (var param in methodInfo.GetParameters())
+            // Top-level handler parameter.
+            if (IsJsonMultipartPart(param.ParameterType))
             {
-                if (HasJsonProperties(param.ParameterType))
+                var required = !param.HasDefaultValue
+                    && (Nullable.GetUnderlyingType(param.ParameterType) is null);
+                yield return (param.Name!, param.ParameterType, required);
+                continue;
+            }
+
+            // [AsParameters] aggregate — recurse into properties.
+            if (param.GetCustomAttribute<AsParametersAttribute>() is not null)
+            {
+                foreach (var prop in param.ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 {
-                    return param.ParameterType;
+                    if (IsJsonMultipartPart(prop.PropertyType))
+                    {
+                        var required = prop.GetCustomAttributes()
+                            .Any(a => a.GetType().Name == "RequiredAttribute");
+                        yield return (prop.Name, prop.PropertyType, required);
+                    }
                 }
             }
         }
-
-        // MVC controllers fallback.
-        foreach (var p in context.Description.ActionDescriptor.Parameters)
-        {
-            if (HasJsonProperties(p.ParameterType))
-            {
-                return p.ParameterType;
-            }
-        }
-
-        // Final fallback: walk ApiDescription.ParameterDescriptions which Minimal API populates
-        // even when MethodInfo isn't surfaced in EndpointMetadata.
-        foreach (var p in context.Description.ParameterDescriptions)
-        {
-            if (p.Type is not null && HasJsonProperties(p.Type))
-            {
-                return p.Type;
-            }
-        }
-
-        return null;
     }
 
-    private static bool HasJsonProperties(Type type) =>
-        type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Any(p => p.GetCustomAttribute<FromJsonAttribute>() is not null);
+    private static bool IsJsonMultipartPart(Type t) =>
+        t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IJsonMultipartPart<>));
 }

@@ -280,7 +280,35 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/CreateTodoListFileRequest"
+                "required": [
+                  "file",
+                  "isDraft",
+                  "body"
+                ],
+                "type": "object",
+                "allOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "file": {
+                        "$ref": "#/components/schemas/IFormFile"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "isDraft": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                ],
+                "properties": {
+                  "body": {
+                    "$ref": "#/components/schemas/CreateTodoListFileBody"
+                  }
+                }
               },
               "encoding": {
                 "body": {
@@ -793,26 +821,8 @@
               "string"
             ]
           }
-        }
-      },
-      "CreateTodoListFileRequest": {
-        "required": [
-          "body",
-          "file"
-        ],
-        "type": "object",
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/CreateTodoListFileBody"
-          },
-          "file": {
-            "$ref": "#/components/schemas/IFormFile"
-          },
-          "isDraft": {
-            "type": "boolean"
-          }
         },
-        "description": "Demonstrates the multipart-with-JSON pattern. IJsonMultipartRequest&lt;TSelf&gt;\r\nwires up `BindAsync` (custom Minimal API binding) and OpenAPI metadata so the request\r\nis described as `multipart/form-data` with the Body Request.Body part carrying its\r\ncontent as `application/json`."
+        "description": "JSON-bound multipart part. The marker interface IJsonMultipartPart&lt;TSelf&gt;\r\ncontributes the static `BindAsync` that reads the form field of the same name as the\r\nconsuming parameter (here: `body`) and deserialises it via `System.Text.Json`."
       },
       "CreateTodoListRequest": {
         "required": [
