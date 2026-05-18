@@ -37,13 +37,13 @@ internal sealed class CurrentUser : ICurrentUser
 
     private ClaimsPrincipal User => this.httpContextAccessor.HttpContext!.User!;
 
-    public Guid UserId => new(this.User.FindFirst(AppClaims.UserId)!.Value);
+    public Guid UserId => new(this.User.FindFirstValue(AppClaims.UserId)!);
 
-    public string Email => this.User.FindFirst(AppClaims.Email)!.Value;
+    public string Email => this.User.FindFirstValue(AppClaims.Email)!;
 
     public bool EmailVerified => this.User.FindFirstValue(AppClaims.EmailVerified) == "true";
 
-    public string? Phone => this.User.FindFirst(AppClaims.Phone)?.Value;
+    public string? Phone => this.User.FindFirstValue(AppClaims.Phone);
 
     public bool PhoneVerified => this.User.FindFirstValue(AppClaims.PhoneVerified) == "true";
 
