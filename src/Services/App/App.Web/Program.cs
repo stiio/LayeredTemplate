@@ -45,6 +45,10 @@ try
         // when building the route table for the description provider. Without this, endpoints
         // accepting feature services fail with "Failure to infer one or more parameters".
         minimalBuilder.Services.AddFeatureServices(minimalBuilder.Configuration, minimalBuilder.Environment);
+        // Type-only stubs for "heavy" services (DbContext, etc.) endpoints resolve from DI.
+        // Lets Minimal API infer parameter binding without instantiating a real Postgres
+        // connection, running startup tasks, etc. — see Setup/ConfigureDocGenStubs.cs.
+        minimalBuilder.Services.AddDocGenStubs();
         minimalBuilder.Services.AddEndpointsApiExplorer();
         ConfigureJson(minimalBuilder.Services);
         var minimalApp = minimalBuilder.Build();
@@ -54,7 +58,6 @@ try
         // won't actually serve — `GetDocument.Insider` only walks the description provider.
         minimalApp.MapAllEndpoints();
         minimalApp.Run();
-        return;
     }
     else
     {
