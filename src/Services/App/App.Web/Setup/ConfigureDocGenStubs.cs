@@ -1,4 +1,7 @@
+using LayeredTemplate.App.Features.TodoLists.Services;
 using LayeredTemplate.App.Shared.Db;
+using LayeredTemplate.App.Shared.Infrastructure.Email;
+using LayeredTemplate.App.Shared.Infrastructure.Locks;
 using Microsoft.EntityFrameworkCore;
 
 namespace LayeredTemplate.App.Setup;
@@ -32,24 +35,10 @@ public static class ConfigureDocGenStubs
 {
     public static IServiceCollection AddDocGenStubs(this IServiceCollection services)
     {
-        // EF Core AppDbContext stub. UseNpgsql is called with a fake connection string;
-        // Npgsql doesn't attempt to connect until the first command. The doc generator never
-        // runs commands — it only walks endpoint metadata. UseSnakeCaseNamingConvention is
-        // preserved because model-building (lazy on first use) may invoke it if the model is
-        // ever built, and we'd rather build it correctly than not at all.
-        services.AddDbContextPool<AppDbContext>(options =>
-            options.UseNpgsql("Host=stub").UseSnakeCaseNamingConvention());
-
-        // Add more stubs below as endpoint signatures grow. Examples:
-        //
-        //   services.AddSingleton<ILockProvider>(_ => null!);
-        //   services.AddScoped<IEmailSender>(_ => null!);
-        //
-        // For null-returning factories: minimal API still sees the type as registered (via
-        // IServiceProviderIsService), and since the doc generator never resolves them, the
-        // null is harmless. If you ever need the doc generator to actually USE the service
-        // (rare — only if a metadata transformer reaches into DI), provide a real no-op
-        // implementation instead.
+        services.AddScoped<AppDbContext>(_ => null!);
+        services.AddSingleton<ILockProvider>(_ => null!);
+        services.AddScoped<IEmailSender>(_ => null!);
+        services.AddScoped<ITodoListRatingService>(_ => null!);
 
         return services;
     }
