@@ -6,6 +6,7 @@ using HealthChecks.UI.Client;
 using LayeredTemplate.App.Setup;
 using LayeredTemplate.App.Setup.Json;
 using LayeredTemplate.App.Setup.OpenApi;
+using LayeredTemplate.App.Shared;
 using LayeredTemplate.App.Shared.Infrastructure.Email;
 using LayeredTemplate.App.Shared.Infrastructure.Locks;
 using LayeredTemplate.App.Shared.Options;
@@ -42,10 +43,6 @@ try
         // Plugin's OpenAPI transformers also need to be registered here — without this, multipart
         // endpoints generate without the `application/json` encoding hint on JSON-typed parts.
         minimalBuilder.Services.AddPluginJsonMultipart();
-        // Feature services must also be registered so Minimal API can infer DI-bound parameters
-        // when building the route table for the description provider. Without this, endpoints
-        // accepting feature services fail with "Failure to infer one or more parameters".
-        minimalBuilder.Services.AddFeatureServices(minimalBuilder.Configuration, minimalBuilder.Environment);
         // Type-only stubs for "heavy" services (DbContext, etc.) endpoints resolve from DI.
         // Lets Minimal API infer parameter binding without instantiating a real Postgres
         // connection, running startup tasks, etc. — see Setup/ConfigureDocGenStubs.cs.
@@ -102,35 +99,18 @@ void ConfigureConfiguration(ConfigurationManager configuration, IWebHostEnvironm
 
 void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
 {
+    ConfigureJson(services);
+
     services.AddPluginStartupRunner();
     services.AddPluginJsonMultipart();
-
-    services.Configure<AppSettings>(configuration.GetSection(nameof(AppSettings)));
-    services.Configure<SmtpSettings>(configuration.GetSection(nameof(SmtpSettings)));
 
     services.AddAppDb(configuration);
     services.AddAppAuth(configuration);
     services.AddAppProblemDetails();
-
-    services.AddSingleton<ILockProvider, PostgresLockProvider>();
-    services.AddHttpContextAccessor();
-    services.AddScoped<LayeredTemplate.App.Shared.Auth.ICurrentUser, LayeredTemplate.App.Shared.Auth.CurrentUser>();
-
-    if (configuration.GetValue<bool>("MOCK_EMAIL_SENDER"))
-    {
-        services.AddScoped<IEmailSender, EmailSenderMock>();
-    }
-    else
-    {
-        services.AddScoped<IEmailSender, EmailSender>();
-    }
-
-    services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly(), includeInternalTypes: true, lifetime: ServiceLifetime.Singleton);
-
     services.AddEndpointsApiExplorer();
     services.AddAppOpenApi();
 
-    ConfigureJson(services);
+    services.AddHttpContextAccessor();
 
     services.AddHealthChecks();
 
@@ -139,6 +119,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
         options.ShutdownTimeout = TimeSpan.FromMinutes(1);
     });
 
+    services.AddSharedServices(configuration, env);
     // Walk the assembly for IFeatureServices implementers and register feature-internal services.
     // Called LAST so feature registrations may override anything registered above (typical for
     // testing-style decorators / wrappers).

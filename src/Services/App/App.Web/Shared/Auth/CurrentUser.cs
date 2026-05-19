@@ -7,7 +7,7 @@ namespace LayeredTemplate.App.Shared.Auth;
 /// Inject as a constructor / parameter dependency in endpoints. Single-line implementation
 /// reading from <see cref="IHttpContextAccessor"/> — no extra abstractions over what's already there.
 /// </summary>
-public interface ICurrentUser
+public interface ICurrentUserService
 {
     Guid UserId { get; }
 
@@ -26,11 +26,11 @@ public interface ICurrentUser
     string? Name { get; }
 }
 
-internal sealed class CurrentUser : ICurrentUser
+internal sealed class CurrentUserService : ICurrentUserService
 {
     private readonly IHttpContextAccessor httpContextAccessor;
 
-    public CurrentUser(IHttpContextAccessor httpContextAccessor)
+    public CurrentUserService(IHttpContextAccessor httpContextAccessor)
     {
         this.httpContextAccessor = httpContextAccessor;
     }
