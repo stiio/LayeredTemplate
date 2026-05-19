@@ -1,11 +1,13 @@
 using LayeredTemplate.App.Features.TodoLists.Models;
+using LayeredTemplate.App.Shared.Endpoints;
 
 namespace LayeredTemplate.App.Features.TodoLists;
 
-public static class GetTodoList
+[EndpointGroup<TodoListsGroup>]
+public sealed class GetTodoList : IEndpoint
 {
-    public static void Configure(RouteGroupBuilder group) =>
-        group.MapGet("/{id:guid}", Handle)
+    public static void Map(IEndpointRouteBuilder app) =>
+        app.MapGet("/{id:guid}", Handle)
             .WithName(nameof(GetTodoList))
             .WithSummary("Get TodoList by id");
 

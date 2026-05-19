@@ -1,11 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.App.Features.TodoLists.Models;
+using LayeredTemplate.App.Shared.Endpoints;
 using LayeredTemplate.App.Shared.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.App.Features.TodoLists;
 
-public static class UpdateTodoList
+[EndpointGroup<TodoListsGroup>]
+public sealed class UpdateTodoList : IEndpoint
 {
     public sealed class Request
     {
@@ -24,8 +26,8 @@ public static class UpdateTodoList
         public string? Description { get; set; }
     }
 
-    public static void Configure(RouteGroupBuilder group) =>
-        group.MapPut("/{id:guid}", Handle)
+    public static void Map(IEndpointRouteBuilder app) =>
+        app.MapPut("/{id:guid}", Handle)
             .WithName(nameof(UpdateTodoList))
             .WithSummary("Update TodoList");
 

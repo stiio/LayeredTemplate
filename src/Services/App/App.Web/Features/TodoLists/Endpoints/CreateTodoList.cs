@@ -1,13 +1,15 @@
 using System.ComponentModel.DataAnnotations;
 using FluentValidation;
 using LayeredTemplate.App.Features.TodoLists.Models;
+using LayeredTemplate.App.Shared.Endpoints;
 using LayeredTemplate.App.Shared.Errors;
 using LayeredTemplate.App.Shared.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.App.Features.TodoLists;
 
-public static class CreateTodoList
+[EndpointGroup<TodoListsGroup>]
+public sealed class CreateTodoList : IEndpoint
 {
     /// <summary>Request body for creating a TodoList.</summary>
     /// <example>{ "name": "some name", "description": "some description" }</example>
@@ -27,8 +29,8 @@ public static class CreateTodoList
         }
     }
 
-    public static void Configure(RouteGroupBuilder group) =>
-        group.MapPost("/", Handle)
+    public static void Map(IEndpointRouteBuilder app) =>
+        app.MapPost("/", Handle)
             .WithName(nameof(CreateTodoList))
             .WithSummary("Create TodoList")
             .WithValidation<Request>();

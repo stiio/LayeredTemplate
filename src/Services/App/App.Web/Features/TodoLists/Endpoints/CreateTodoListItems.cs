@@ -1,12 +1,14 @@
 using LayeredTemplate.App.Features.TodoLists.Models;
+using LayeredTemplate.App.Shared.Endpoints;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.App.Features.TodoLists;
 
-public static class CreateTodoListItems
+[EndpointGroup<TodoListsGroup>]
+public sealed class CreateTodoListItems : IEndpoint
 {
-    public static void Configure(RouteGroupBuilder group) =>
-        group.MapPost("/items", Handle)
+    public static void Map(IEndpointRouteBuilder app) =>
+        app.MapPost("/items", Handle)
             .WithName(nameof(CreateTodoListItems))
             .WithSummary("Create TodoList items (polymorphic example)");
 

@@ -1,11 +1,13 @@
+using LayeredTemplate.App.Shared.Endpoints;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LayeredTemplate.App.Features.TodoLists;
 
-public static class DeleteTodoList
+[EndpointGroup<TodoListsGroup>]
+public sealed class DeleteTodoList : IEndpoint
 {
-    public static void Configure(RouteGroupBuilder group) =>
-        group.MapDelete("/{id:guid}", Handle)
+    public static void Map(IEndpointRouteBuilder app) =>
+        app.MapDelete("/{id:guid}", Handle)
             .WithName(nameof(DeleteTodoList))
             .WithSummary("Delete TodoList");
 

@@ -1,11 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.App.Features.TodoLists.Models;
+using LayeredTemplate.App.Shared.Endpoints;
 using LayeredTemplate.Plugins.JsonMultipart;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.App.Features.TodoLists;
 
-public static class CreateTodoListFile
+[EndpointGroup<TodoListsGroup>]
+public sealed class CreateTodoListFile : IEndpoint
 {
     /// <summary>
     /// JSON-bound multipart part. The marker interface <see cref="IJsonMultipartPart{TSelf}"/>
@@ -35,8 +37,8 @@ public static class CreateTodoListFile
         public bool IsDraft { get; set; }
     }
 
-    public static void Configure(RouteGroupBuilder group) =>
-        group.MapPost("/file", Handle)
+    public static void Map(IEndpointRouteBuilder app) =>
+        app.MapPost("/file", Handle)
             .WithName(nameof(CreateTodoListFile))
             .WithSummary("Create TodoList from file (multipart + JSON example)")
             .DisableAntiforgery();

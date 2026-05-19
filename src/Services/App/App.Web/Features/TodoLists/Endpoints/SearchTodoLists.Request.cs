@@ -3,7 +3,7 @@ using LayeredTemplate.App.Shared.Pagination;
 
 namespace LayeredTemplate.App.Features.TodoLists;
 
-public static partial class SearchTodoLists
+public sealed partial class SearchTodoLists
 {
     public sealed class Request
     {

@@ -1,9 +1,11 @@
 using System.Reflection;
+using LayeredTemplate.App.Shared.Endpoints;
 using LayeredTemplate.Plugins.AssemblyExtensions.Extensions;
 
 namespace LayeredTemplate.App.Features.Info;
 
-public static class GetInfo
+[EndpointGroup<InfoGroup>]
+public sealed class GetInfo : IEndpoint
 {
     public sealed record Response
     {
@@ -14,8 +16,8 @@ public static class GetInfo
         public string? Version { get; init; }
     }
 
-    public static void Configure(RouteGroupBuilder group) =>
-        group.MapGet("/", Handle)
+    public static void Map(IEndpointRouteBuilder app) =>
+        app.MapGet("/", Handle)
             .WithName(nameof(GetInfo))
             .WithSummary("Get build / version info");
 

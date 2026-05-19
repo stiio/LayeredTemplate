@@ -1,12 +1,14 @@
 using System.Text;
+using LayeredTemplate.App.Shared.Endpoints;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LayeredTemplate.App.Features.TodoLists;
 
-public static class DownloadTodoListFile
+[EndpointGroup<TodoListsGroup>]
+public sealed class DownloadTodoListFile : IEndpoint
 {
-    public static void Configure(RouteGroupBuilder group) =>
-        group.MapGet("/file", Handle)
+    public static void Map(IEndpointRouteBuilder app) =>
+        app.MapGet("/file", Handle)
             .WithName(nameof(DownloadTodoListFile))
             .WithSummary("Download TodoList file (example)")
             .Produces<FileContentHttpResult>(200, "application/octet-stream");

@@ -1,11 +1,13 @@
 using LayeredTemplate.App.Features.Users.Models;
+using LayeredTemplate.App.Shared.Endpoints;
 
 namespace LayeredTemplate.App.Features.Users;
 
-public static class GetCurrentUser
+[EndpointGroup<UsersGroup>]
+public sealed class GetCurrentUser : IEndpoint
 {
-    public static void Configure(RouteGroupBuilder group) =>
-        group.MapGet("/current_user", Handle)
+    public static void Map(IEndpointRouteBuilder app) =>
+        app.MapGet("/current_user", Handle)
             .WithName(nameof(GetCurrentUser))
             .WithSummary("Get current user");
 

@@ -1,4 +1,5 @@
 using LayeredTemplate.App.Features.TodoLists.Models;
+using LayeredTemplate.App.Shared.Endpoints;
 using LayeredTemplate.App.Shared.Pagination;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,7 @@ namespace LayeredTemplate.App.Features.TodoLists;
 /// Demonstrates the "endpoint split into partial files" convention used when an endpoint outgrows
 /// a single file (~150+ lines, ≥3 nested types). The outer class is marked <c>partial</c>; nested
 /// types live in sibling files named <c>SearchTodoLists.&lt;Part&gt;.cs</c>
-/// (see <see cref="Request"/>, <see cref="Response"/>). Configure + Handle stay here as the
+/// (see <see cref="Request"/>, <see cref="Response"/>). Map + Handle stay here as the
 /// endpoint's "entry surface".
 /// </summary>
 /// <remarks>
@@ -17,10 +18,11 @@ namespace LayeredTemplate.App.Features.TodoLists;
 /// in <c>ConfigureOpenApi.CreateSchemaReferenceId</c>). A flat split into separate top-level
 /// classes would lose that auto-naming and require manual avoidance of clashes.
 /// </remarks>
-public static partial class SearchTodoLists
+[EndpointGroup<TodoListsGroup>]
+public sealed partial class SearchTodoLists : IEndpoint
 {
-    public static void Configure(RouteGroupBuilder group) =>
-        group.MapPost("/search", Handle)
+    public static void Map(IEndpointRouteBuilder app) =>
+        app.MapPost("/search", Handle)
             .WithName(nameof(SearchTodoLists))
             .WithSummary("Search TodoLists");
 

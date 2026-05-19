@@ -1,11 +1,14 @@
+using LayeredTemplate.App.Shared.Endpoints;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LayeredTemplate.App.Features._Dev;
 
-public static class DebugTest
+[DevOnly]
+[EndpointGroup<DevGroup>]
+public sealed class DebugTest : IEndpoint
 {
-    public static void Configure(RouteGroupBuilder group) =>
-        group.MapPost("/debug/test", Handle)
+    public static void Map(IEndpointRouteBuilder app) =>
+        app.MapPost("/debug/test", Handle)
             .WithName(nameof(DebugTest))
             .WithSummary("Dev: test endpoint");
 
