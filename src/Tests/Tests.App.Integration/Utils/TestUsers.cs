@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using LayeredTemplate.App.Features.Users;
+using LayeredTemplate.App.Features.Users.Entities;
 
 namespace LayeredTemplate.Tests.App.Integration.Utils;
 

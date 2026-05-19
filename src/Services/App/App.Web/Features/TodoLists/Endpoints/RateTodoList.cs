@@ -3,7 +3,7 @@ using LayeredTemplate.App.Features.TodoLists.Services;
 using LayeredTemplate.App.Shared.Endpoints;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LayeredTemplate.App.Features.TodoLists;
+namespace LayeredTemplate.App.Features.TodoLists.Endpoints;
 
 /// <summary>
 /// Demonstrates consumption of a feature-internal service: <see cref="ITodoListRatingService"/>

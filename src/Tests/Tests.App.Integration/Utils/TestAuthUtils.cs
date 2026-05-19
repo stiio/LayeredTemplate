@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using LayeredTemplate.App.Features.Users;
+using LayeredTemplate.App.Features.Users.Entities;
 using LayeredTemplate.App.Shared.Auth;
 using LayeredTemplate.App.Shared.Auth.MockAuth;
 

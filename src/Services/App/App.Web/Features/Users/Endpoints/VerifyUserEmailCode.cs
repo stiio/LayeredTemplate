@@ -4,7 +4,7 @@ using LayeredTemplate.App.Shared.Validation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LayeredTemplate.App.Features.Users;
+namespace LayeredTemplate.App.Features.Users.Endpoints;
 
 [EndpointGroup<UsersGroup>]
 public sealed class VerifyUserEmailCode : IEndpoint

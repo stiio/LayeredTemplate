@@ -1,10 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.App.Features.TodoLists.Models;
 using LayeredTemplate.App.Shared.Endpoints;
-using LayeredTemplate.App.Shared.Validation;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LayeredTemplate.App.Features.TodoLists;
+namespace LayeredTemplate.App.Features.TodoLists.Endpoints;
 
 [EndpointGroup<TodoListsGroup>]
 public sealed class UpdateTodoList : IEndpoint

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using LayeredTemplate.App.Features.Users;
+using LayeredTemplate.App.Features.Users.Entities;
 using LayeredTemplate.App.Features.Users.Models;
 using LayeredTemplate.Tests.App.Integration.Utils;
 using Microsoft.AspNetCore.Http.Json;

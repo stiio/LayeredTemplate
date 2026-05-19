@@ -2,7 +2,7 @@ using LayeredTemplate.App.Features.TodoLists.Models;
 using LayeredTemplate.App.Shared.Endpoints;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LayeredTemplate.App.Features.TodoLists;
+namespace LayeredTemplate.App.Features.TodoLists.Endpoints;
 
 [EndpointGroup<TodoListsGroup>]
 public sealed class CreateTodoListItems : IEndpoint

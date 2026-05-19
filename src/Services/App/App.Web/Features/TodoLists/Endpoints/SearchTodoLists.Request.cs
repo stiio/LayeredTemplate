@@ -1,7 +1,7 @@
 using LayeredTemplate.App.Features.TodoLists.Models;
 using LayeredTemplate.App.Shared.Pagination;
 
-namespace LayeredTemplate.App.Features.TodoLists;
+namespace LayeredTemplate.App.Features.TodoLists.Endpoints;
 
 public sealed partial class SearchTodoLists
 {

@@ -1,6 +1,6 @@
 using LayeredTemplate.App.Shared.Db;
 
-namespace LayeredTemplate.App.Features.Users;
+namespace LayeredTemplate.App.Features.Users.Entities;
 
 /// <summary>
 /// User aggregate. Public because integration tests construct seed users directly — keep

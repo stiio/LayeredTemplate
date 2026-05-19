@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using LayeredTemplate.App.Features.Users;
+using LayeredTemplate.App.Features.Users.Entities;
 using LayeredTemplate.Tests.App.Integration.TestAuthHandler;
 using LayeredTemplate.Tests.App.Integration.Utils;
 using Microsoft.AspNetCore.Authentication;
@@ -14,7 +15,7 @@ using Xunit;
 
 namespace LayeredTemplate.Tests.App.Integration;
 
-public class WebApp : WebApplicationFactory<Program>, IAsyncLifetime
+public class WebApp : WebApplicationFactory<LayeredTemplate.App.Program>, IAsyncLifetime
 {
     private readonly PostgreSqlContainer postgreSqlTestContainer = new PostgreSqlBuilder("postgres:13.2")
         .WithDatabase("appDbName-test")

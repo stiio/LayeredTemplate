@@ -3,7 +3,7 @@ using LayeredTemplate.App.Shared.Endpoints;
 using LayeredTemplate.App.Shared.Pagination;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LayeredTemplate.App.Features.TodoLists;
+namespace LayeredTemplate.App.Features.TodoLists.Endpoints;
 
 /// <summary>
 /// Demonstrates the "endpoint split into partial files" convention used when an endpoint outgrows

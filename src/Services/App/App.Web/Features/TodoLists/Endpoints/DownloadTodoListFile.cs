@@ -2,7 +2,7 @@ using System.Text;
 using LayeredTemplate.App.Shared.Endpoints;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace LayeredTemplate.App.Features.TodoLists;
+namespace LayeredTemplate.App.Features.TodoLists.Endpoints;
 
 [EndpointGroup<TodoListsGroup>]
 public sealed class DownloadTodoListFile : IEndpoint

@@ -2,7 +2,7 @@ using System.Reflection;
 using LayeredTemplate.App.Shared.Endpoints;
 using LayeredTemplate.Plugins.AssemblyExtensions.Extensions;
 
-namespace LayeredTemplate.App.Features.Info;
+namespace LayeredTemplate.App.Features.Info.Endpoints;
 
 [EndpointGroup<InfoGroup>]
 public sealed class GetInfo : IEndpoint

@@ -2,6 +2,7 @@ using System.Data;
 using System.Reflection;
 using Dapper;
 using LayeredTemplate.App.Features.Users;
+using LayeredTemplate.App.Features.Users.Entities;
 using LayeredTemplate.App.Shared.Errors;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;

@@ -1,7 +1,7 @@
 using LayeredTemplate.App.Features.Users.Models;
 using LayeredTemplate.App.Shared.Endpoints;
 
-namespace LayeredTemplate.App.Features.Users;
+namespace LayeredTemplate.App.Features.Users.Endpoints;
 
 [EndpointGroup<UsersGroup>]
 public sealed class GetCurrentUser : IEndpoint

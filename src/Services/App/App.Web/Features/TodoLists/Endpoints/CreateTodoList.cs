@@ -6,7 +6,7 @@ using LayeredTemplate.App.Shared.Errors;
 using LayeredTemplate.App.Shared.Validation;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LayeredTemplate.App.Features.TodoLists;
+namespace LayeredTemplate.App.Features.TodoLists.Endpoints;
 
 [EndpointGroup<TodoListsGroup>]
 public sealed class CreateTodoList : IEndpoint

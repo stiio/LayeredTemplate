@@ -4,7 +4,7 @@ using LayeredTemplate.App.Shared.Endpoints;
 using LayeredTemplate.Plugins.JsonMultipart;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LayeredTemplate.App.Features.TodoLists;
+namespace LayeredTemplate.App.Features.TodoLists.Endpoints;
 
 [EndpointGroup<TodoListsGroup>]
 public sealed class CreateTodoListFile : IEndpoint

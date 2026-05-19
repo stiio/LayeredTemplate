@@ -1,7 +1,7 @@
 using LayeredTemplate.App.Shared.Endpoints;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace LayeredTemplate.App.Features._Dev;
+namespace LayeredTemplate.App.Features._Dev.Endpoints;
 
 [DevOnly]
 [EndpointGroup<DevGroup>]

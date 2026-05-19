@@ -193,4 +193,7 @@ void ConfigureSerilog(IHostBuilder host)
 }
 
 #pragma warning disable SA1402
-public partial class Program;
+namespace LayeredTemplate.App
+{
+    public partial class Program;
+}
