@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using FluentValidation;
 using HealthChecks.UI.Client;
@@ -175,6 +176,8 @@ void ConfigureJson(IServiceCollection services)
         opts.SerializerOptions.Converters.Add(new DateTimeJsonConverter());
         opts.SerializerOptions.Converters.Add(new DateOnlyJsonConverter());
         opts.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        opts.SerializerOptions.WriteIndented = false;
+        opts.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
 }
 
@@ -193,7 +196,4 @@ void ConfigureSerilog(IHostBuilder host)
 }
 
 #pragma warning disable SA1402
-namespace LayeredTemplate.App
-{
-    public partial class Program;
-}
+public partial class Program;
