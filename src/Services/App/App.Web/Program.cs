@@ -39,16 +39,14 @@ try
     {
         var minimalBuilder = WebApplication.CreateBuilder(args);
         ConfigureSerilog(minimalBuilder.Host);
+        ConfigureJson(minimalBuilder.Services);
         minimalBuilder.Services.AddAppOpenApi();
-        // Plugin's OpenAPI transformers also need to be registered here — without this, multipart
-        // endpoints generate without the `application/json` encoding hint on JSON-typed parts.
         minimalBuilder.Services.AddPluginJsonMultipart();
+        minimalBuilder.Services.AddEndpointsApiExplorer();
         // Type-only stubs for "heavy" services (DbContext, etc.) endpoints resolve from DI.
         // Lets Minimal API infer parameter binding without instantiating a real Postgres
         // connection, running startup tasks, etc. — see Setup/ConfigureDocGenStubs.cs.
         minimalBuilder.Services.AddDocGenStubs();
-        minimalBuilder.Services.AddEndpointsApiExplorer();
-        ConfigureJson(minimalBuilder.Services);
         var minimalApp = minimalBuilder.Build();
         minimalApp.UseAppOpenApi();
         minimalApp.UseAppRequestLogging();
