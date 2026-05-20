@@ -1,8 +1,7 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
-namespace LayeredTemplate.Plugins.JsonMultipart.Integrations;
+namespace LayeredTemplate.App.Setup.OpenApi.Transformers;
 
 /// <summary>
 /// Renders <see cref="IFormFile"/> as <c>{ type: string, format: binary }</c> per OpenAPI's

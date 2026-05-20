@@ -101,6 +101,7 @@ public static class ConfigureOpenApi
         // earlier transformers have finished mutating the schema.
         opts.AddOperationTransformer<MultipartBodyFlattenTransformer>();
 
+        opts.AddSchemaTransformer<FormFileSchemaTransformer>();
         opts.AddSchemaTransformer<StringEnumSchemaTransformer>();
         opts.AddSchemaTransformer<DateTimeSchemaTransformer>();
         opts.AddSchemaTransformer<PolymorphismOneOfTransformer>();
