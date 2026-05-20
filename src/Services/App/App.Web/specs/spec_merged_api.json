@@ -1129,6 +1129,16 @@
             "$ref": "#/components/schemas/TodoListItemThree"
           }
         ],
+        "properties": {
+          "$type": {
+            "enum": [
+              "One",
+              "Two",
+              "Three"
+            ],
+            "type": "string"
+          }
+        },
         "discriminator": {
           "propertyName": "$type",
           "mapping": {
