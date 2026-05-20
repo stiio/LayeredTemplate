@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.App.Features.TodoLists.Models;
 using LayeredTemplate.App.Shared.Endpoints;
 using LayeredTemplate.Plugins.JsonMultipart;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.App.Features.TodoLists.Endpoints;
@@ -41,6 +42,7 @@ public sealed class CreateTodoListFile : IEndpoint
         app.MapPost("/file", Handle)
             .WithName(nameof(CreateTodoListFile))
             .WithSummary("Create TodoList from file (multipart + JSON example)")
+            .RequireAuthorization()
             .DisableAntiforgery();
 
     // Parameters are bound individually: `body` via Body.BindAsync (the marker interface),
