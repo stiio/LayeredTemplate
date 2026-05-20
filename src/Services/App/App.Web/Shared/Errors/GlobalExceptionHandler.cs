@@ -1,3 +1,5 @@
+using LayeredTemplate.App.Shared.Errors.Exceptions;
+using LayeredTemplate.App.Shared.Errors.Models;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace LayeredTemplate.App.Shared.Errors;

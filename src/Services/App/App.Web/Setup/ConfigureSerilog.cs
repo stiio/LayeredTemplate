@@ -2,9 +2,6 @@ using System.Security.Claims;
 using LayeredTemplate.App.Shared.Auth;
 using LayeredTemplate.Plugins.Http.Extensions;
 using Serilog;
-using Serilog.Exceptions;
-using Serilog.Exceptions.Core;
-using Serilog.Exceptions.EntityFrameworkCore.Destructurers;
 
 namespace LayeredTemplate.App.Setup;
 

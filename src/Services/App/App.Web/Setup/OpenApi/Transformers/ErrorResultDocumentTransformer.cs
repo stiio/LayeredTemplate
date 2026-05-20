@@ -1,5 +1,5 @@
 using System.Text.Json;
-using LayeredTemplate.App.Shared.Errors;
+using LayeredTemplate.App.Shared.Errors.Models;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 

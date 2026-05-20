@@ -2,7 +2,6 @@ using LayeredTemplate.App.Features.TodoLists.Services;
 using LayeredTemplate.App.Shared.Db;
 using LayeredTemplate.App.Shared.Infrastructure.Email;
 using LayeredTemplate.App.Shared.Infrastructure.Locks;
-using Microsoft.EntityFrameworkCore;
 
 namespace LayeredTemplate.App.Setup;
 

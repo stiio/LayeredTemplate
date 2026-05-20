@@ -1,5 +1,6 @@
 using FluentValidation;
 using LayeredTemplate.App.Shared.Errors;
+using LayeredTemplate.App.Shared.Errors.Exceptions;
 
 namespace LayeredTemplate.App.Shared.Validation;
 

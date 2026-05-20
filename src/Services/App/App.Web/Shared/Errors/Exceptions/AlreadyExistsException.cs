@@ -1,0 +1,9 @@
+﻿namespace LayeredTemplate.App.Shared.Errors.Exceptions;
+
+public sealed class AlreadyExistsException : DomainException
+{
+    public AlreadyExistsException(string message = "A record with the same identifier already exists.", Exception? innerException = null)
+        : base(message, innerException)
+    {
+    }
+}

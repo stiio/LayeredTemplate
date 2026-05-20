@@ -1,15 +1,11 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using FluentValidation;
 using HealthChecks.UI.Client;
 using LayeredTemplate.App.Setup;
 using LayeredTemplate.App.Setup.Json;
 using LayeredTemplate.App.Setup.OpenApi;
 using LayeredTemplate.App.Shared;
-using LayeredTemplate.App.Shared.Infrastructure.Email;
-using LayeredTemplate.App.Shared.Infrastructure.Locks;
-using LayeredTemplate.App.Shared.Options;
 using LayeredTemplate.Plugins.JsonMultipart;
 using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;

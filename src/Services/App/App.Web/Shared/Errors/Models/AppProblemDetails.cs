@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LayeredTemplate.App.Shared.Errors;
+namespace LayeredTemplate.App.Shared.Errors.Models;
 
 /// <summary>
 /// Extends RFC 7807 <see cref="ProblemDetails"/> with an app-specific <see cref="ErrorType"/>

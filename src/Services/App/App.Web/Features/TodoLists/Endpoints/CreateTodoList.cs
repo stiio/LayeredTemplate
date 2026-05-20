@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using FluentValidation;
 using LayeredTemplate.App.Features.TodoLists.Models;
 using LayeredTemplate.App.Shared.Endpoints;
-using LayeredTemplate.App.Shared.Errors;
+using LayeredTemplate.App.Shared.Errors.Exceptions;
 using LayeredTemplate.App.Shared.Validation;
 using Microsoft.AspNetCore.Mvc;
 
