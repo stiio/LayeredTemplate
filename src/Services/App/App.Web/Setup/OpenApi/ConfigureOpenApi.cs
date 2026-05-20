@@ -90,6 +90,7 @@ public static class ConfigureOpenApi
 
         opts.AddDocumentTransformer<SecurityDefinitionTransformer>();
         opts.AddDocumentTransformer<ErrorResultDocumentTransformer>();
+        opts.AddDocumentTransformer<PolymorphicDerivedRequiredTransformer>();
 
         opts.AddOperationTransformer<DefaultApplicationResponsesTransformer>();
         opts.AddOperationTransformer<AuthOperationTransformer>();
