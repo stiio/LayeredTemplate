@@ -10,6 +10,7 @@ using LayeredTemplate.Plugins.JsonMultipart;
 using LayeredTemplate.Plugins.StartupRunner;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using Serilog.Exceptions;
 using Serilog.Exceptions.Core;
@@ -95,14 +96,13 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 {
     ConfigureJson(services);
 
-    services.AddPluginStartupRunner();
     services.AddPluginJsonMultipart();
+    services.AddEndpointsApiExplorer();
+    services.AddAppOpenApi();
 
     services.AddAppDb(configuration);
     services.AddAppAuth(configuration);
     services.AddAppProblemDetails();
-    services.AddEndpointsApiExplorer();
-    services.AddAppOpenApi();
 
     services.AddHttpContextAccessor();
 
@@ -113,6 +113,17 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
         options.ShutdownTimeout = TimeSpan.FromMinutes(1);
     });
 
+    services.AddAppCors(configuration);
+    services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.All;
+        options.ForwardLimit = 2;
+        options.KnownProxies.Clear();
+        options.KnownIPNetworks.Clear();
+    });
+
+
+    services.AddPluginStartupRunner();
     services.AddSharedServices(configuration, env);
     // Walk the assembly for IFeatureServices implementers and register feature-internal services.
     // Called LAST so feature registrations may override anything registered above (typical for
@@ -122,6 +133,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
 void ConfigureMiddleware(WebApplication app, IWebHostEnvironment env)
 {
+    app.UseForwardedHeaders();
+    app.UseCors();
+
     if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
     {
         app.UseAppOpenApi();
