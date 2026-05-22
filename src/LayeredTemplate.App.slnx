@@ -39,10 +39,6 @@
     <File Path="README.md" />
     <File Path="ts-gen-config.json" />
   </Folder>
-  <Folder Name="/Tests/">
-    <Project Path="Tests/Tests.App.Functional/Tests.App.Functional.csproj" />
-    <Project Path="Tests/Tests.App.Integration/Tests.App.Integration.csproj" />
-  </Folder>
   <Project Path="docker-compose.dcproj">
     <Build />
   </Project>
