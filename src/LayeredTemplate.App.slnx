@@ -25,6 +25,9 @@
     <Project Path="Services/Plugins/Plugins.PhoneHelpers/Plugins.PhoneHelpers.csproj" />
     <Project Path="Services/Plugins/Plugins.SharedExtensions/Plugins.SharedExtensions.csproj" />
     <Project Path="Services/Plugins/Plugins.StartupRunner/Plugins.StartupRunner.csproj" />
+    <Project Path="Services/Plugins/Plugins.Workflow.Abstractions/Plugins.Workflow.Abstractions.csproj" />
+    <Project Path="Services/Plugins/Plugins.Workflow.Engine/Plugins.Workflow.Engine.csproj" />
+    <Project Path="Services/Plugins/Plugins.Workflow.Storage.EFCore/Plugins.Workflow.Storage.EFCore.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />

@@ -329,6 +329,7 @@ resharper_variable_can_be_not_nullable_highlighting = suggestion
 resharper_web_config_module_not_resolved_highlighting = warning
 resharper_web_config_type_not_resolved_highlighting = warning
 resharper_web_config_wrong_module_highlighting = warning
+resharper_invalid_xml_doc_comment_highlighting = suggestion
 
 [{*.yaml,*.yml}]
 indent_style = space

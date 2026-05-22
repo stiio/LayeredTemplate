@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using LayeredTemplate.App.Features.TodoLists.Models;
 using LayeredTemplate.App.Shared.Endpoints;
 using LayeredTemplate.Plugins.JsonMultipart;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LayeredTemplate.App.Features.TodoLists.Endpoints;

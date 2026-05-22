@@ -1,0 +1,75 @@
+using System.Text.Json;
+using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
+
+namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities;
+
+/// <summary>
+/// Persistent step-execution row. Mapped to/from
+/// <c>Hipaa.Backend.Plugins.Workflow.Abstractions.WorkflowStepRecord</c> by the store.
+/// </summary>
+public class WorkflowStepExecution : IHaveProtectedData
+{
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+
+    public Guid RunId { get; set; }
+
+    /// <summary>
+    /// Denormalized from <see cref="WorkflowRun.TenantId"/>. Lets purge / scoped-query operations
+    /// hit a single index instead of joining through workflow_runs.
+    /// </summary>
+    public Guid TenantId { get; set; }
+
+    /// <summary>Node id inside WorkflowRun.WorkflowSnapshot.</summary>
+    public string NodeId { get; set; } = null!;
+
+    public string Kind { get; set; } = null!;
+
+    public string? Name { get; set; }
+
+    public Guid? PredecessorExecutionId { get; set; }
+
+    /// <summary>Which output port of the predecessor fired the edge that created this step.</summary>
+    public string? TriggerPort { get; set; }
+
+    /// <summary>Config after expression resolution — ready to dispatch.</summary>
+    public JsonElement ResolvedConfig { get; set; }
+
+    /// <summary>
+    /// Stamped at insert-time from <c>IActionType.IsLongRunning</c>. Drives the lane filter in
+    /// <c>ClaimPendingStepsAsync</c> / <c>ClaimExpiredWaitingStepsAsync</c> — see
+    /// <c>WorkflowStepLane</c>. Defaults to <c>false</c> so legacy rows behave as fast steps.
+    /// </summary>
+    public bool IsLongRunning { get; set; }
+
+    /// <summary>Data produced by this step (available to subsequent steps as steps.{nodeKey}.*).</summary>
+    public JsonElement? Outputs { get; set; }
+
+    /// <summary>
+    /// Port the action returned in <c>ActionExecutionResult.OutputPort</c>. Null for Pending /
+    /// Running / Dead steps and for steps still parked in Waiting.
+    /// </summary>
+    public string? OutputPort { get; set; }
+
+    /// <summary>pending | running | completed | failed | dead | waiting.</summary>
+    public string Status { get; set; } = "pending";
+
+    public int AttemptCount { get; set; }
+
+    public DateTime NextAttemptAt { get; set; }
+
+    public string? LastError { get; set; }
+
+    public DateTime? CompletedAt { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Active key version at the time this row's protected columns were last written. Stamped
+    /// by <c>WorkflowProtectionStampInterceptor</c>; null when no protector is registered.
+    /// </summary>
+    public string? ProtectionVersion { get; set; }
+
+    public WorkflowRun Run { get; set; } = null!;
+}

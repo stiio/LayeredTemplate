@@ -1,4 +1,3 @@
-using System.Reflection;
 using LayeredTemplate.App.Shared.Auth;
 using LayeredTemplate.App.Shared.Auth.MockAuth;
 using Microsoft.AspNetCore.Authentication;
@@ -43,14 +42,6 @@ public static class ConfigureAuth
         {
             opts.InvokeHandlersAfterFailure = false;
         });
-
-        // Auto-register custom IAuthorizationHandler implementations in the assembly.
-        var handlers = Assembly.GetExecutingAssembly().GetTypes()
-            .Where(t => typeof(IAuthorizationHandler).IsAssignableFrom(t) && t is { IsGenericType: false, IsAbstract: false, IsInterface: false });
-        foreach (var handler in handlers)
-        {
-            services.AddScoped(typeof(IAuthorizationHandler), handler);
-        }
 
         return services;
     }

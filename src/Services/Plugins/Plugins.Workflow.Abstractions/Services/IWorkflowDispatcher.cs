@@ -1,0 +1,133 @@
+using System.Text.Json;
+
+namespace LayeredTemplate.Plugins.Workflow.Abstractions.Services;
+
+/// <summary>
+/// Single entry point to start a workflow run. Encapsulates the three steps callers used to
+/// have to wire up themselves (find the matching <c>WorkflowDefinition</c>, ask
+/// <c>IWorkflowRunner.Start</c> to build the run, flush via <c>IWorkflowStore.SaveChangesAsync</c>)
+/// behind one async method that's safe to call from any unit-of-work — the plugin owns its
+/// own DbContext now, so its commit doesn't piggyback on the consumer's <c>SaveChanges</c>.
+/// <para>
+/// Intended use is fire-and-forget from app handlers (submit, update, dry-run, …): build a
+/// <see cref="WorkflowDispatchRequest"/>, hand it over, get back a structured result. The
+/// dispatcher returns <see cref="WorkflowDispatchResult.NotConfigured"/> instead of throwing
+/// when no definition exists for the (tenant, owner, trigger) tuple — that's a legitimate
+/// state, not an error.
+/// </para>
+/// </summary>
+public interface IWorkflowDispatcher
+{
+    Task<WorkflowDispatchResult> DispatchAsync(WorkflowDispatchRequest request, CancellationToken cancellationToken);
+}
+
+/// <summary>
+/// Inputs to a dispatch call. Combines the <c>(tenant, owner, trigger)</c> definition lookup
+/// keys with the <see cref="Models.WorkflowStartIntent"/> fields the runner needs.
+/// </summary>
+public record WorkflowDispatchRequest
+{
+    /// <summary>Multi-tenant key — must match the workflow definition's <c>TenantId</c>.</summary>
+    public required Guid TenantId { get; init; }
+
+    /// <summary>Owner kind for the definition lookup (e.g. <c>"Form"</c>).</summary>
+    public required string OwnerKind { get; init; }
+
+    /// <summary>Owner id within <see cref="OwnerKind"/>. Null for tenant-scoped definitions.</summary>
+    public Guid? OwnerId { get; init; }
+
+    /// <summary>Trigger kind constant — drives definition lookup and is recorded on the run.</summary>
+    public required string TriggerKind { get; init; }
+
+    /// <summary>Polymorphic trigger source kind — e.g. <c>"Submission"</c>. Null for sourceless triggers (manual / dry-run).</summary>
+    public string? TriggerSourceKind { get; init; }
+
+    /// <summary>Id within <see cref="TriggerSourceKind"/>. Null when source-less.</summary>
+    public Guid? TriggerSourceId { get; init; }
+
+    /// <summary>Authenticated user who caused the dispatch, if any.</summary>
+    public Guid? ActorUserId { get; init; }
+
+    /// <summary>Builder-initiated test runs set this true so the trace UI can mark them and operator dashboards filter them out.</summary>
+    public bool IsDryRun { get; init; }
+
+    /// <summary>
+    /// Trigger-supplied payload as a JSON object. Stored under the <c>vars</c> namespace in the
+    /// run's static context (templates address keys as <c>{{ vars.&lt;key&gt; }}</c>). Trigger
+    /// source decides shape; e.g. <c>SubmissionCompleted</c> uses
+    /// <c>{ answers, meta, submission, form, workspace }</c>.
+    /// <para>
+    /// See <see cref="Models.WorkflowStartIntent.Variables"/> for why this is
+    /// <see cref="JsonElement"/> rather than a CLR dictionary, and the null / non-object
+    /// handling rules.
+    /// </para>
+    /// </summary>
+    public JsonElement? Variables { get; init; }
+
+    /// <summary>
+    /// Depth of the requesting run in the parent → child chain. Top-level callers (form submit,
+    /// manual API) leave this at 0; the <c>RunWorkflow</c> action passes <c>parent.NestingLevel + 1</c>
+    /// so the dispatcher can refuse runs that would exceed
+    /// <see cref="WorkflowEngineSettings.MaxNestingLevel"/>.
+    /// </summary>
+    public int NestingLevel { get; init; }
+
+    /// <summary>Parent run id for sub-workflow dispatches; null otherwise.</summary>
+    public Guid? ParentRunId { get; init; }
+
+    /// <summary>
+    /// Suspended parent step to resume on terminal state (only set in <c>waitForCompletion</c>
+    /// mode). Null for fire-and-forget children and top-level runs.
+    /// </summary>
+    public Guid? ParentStepId { get; init; }
+}
+
+public enum WorkflowDispatchOutcome
+{
+    /// <summary>Run was created and persisted. <see cref="WorkflowDispatchResult.RunId"/> is set.</summary>
+    Started,
+
+    /// <summary>No definition matches the (tenant, owner, trigger) tuple — legitimate, not an error.</summary>
+    NotConfigured,
+
+    /// <summary>Definition exists but its graph is empty / has no start nodes — nothing to run.</summary>
+    EmptyGraph,
+
+    /// <summary>
+    /// Request would create a run at depth &gt; <c>MaxNestingLevel</c>. Dispatcher refuses to start
+    /// the run; the calling <c>RunWorkflow</c> action surfaces this as a non-transient error.
+    /// </summary>
+    NestingLimitExceeded,
+
+    /// <summary>
+    /// Parent run already spawned <c>MaxSubRunsPerRun</c> direct children. Dispatcher refuses to
+    /// create another; the calling <c>RunWorkflow</c> action surfaces this on its <c>error</c>
+    /// port with reason <c>sub_run_limit_exceeded</c>. Only counted for direct children — each
+    /// run has its own quota.
+    /// </summary>
+    SubRunLimitExceeded,
+}
+
+public class WorkflowDispatchResult
+{
+    public WorkflowDispatchOutcome Outcome { get; init; }
+
+    public Guid? RunId { get; init; }
+
+    public bool Started => this.Outcome == WorkflowDispatchOutcome.Started;
+
+    public static WorkflowDispatchResult NotConfigured() =>
+        new() { Outcome = WorkflowDispatchOutcome.NotConfigured };
+
+    public static WorkflowDispatchResult EmptyGraph() =>
+        new() { Outcome = WorkflowDispatchOutcome.EmptyGraph };
+
+    public static WorkflowDispatchResult NestingLimitExceeded() =>
+        new() { Outcome = WorkflowDispatchOutcome.NestingLimitExceeded };
+
+    public static WorkflowDispatchResult SubRunLimitExceeded() =>
+        new() { Outcome = WorkflowDispatchOutcome.SubRunLimitExceeded };
+
+    public static WorkflowDispatchResult StartedAt(Guid runId) =>
+        new() { Outcome = WorkflowDispatchOutcome.Started, RunId = runId };
+}

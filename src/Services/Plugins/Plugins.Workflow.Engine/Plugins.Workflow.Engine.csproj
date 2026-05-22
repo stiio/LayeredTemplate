@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fluid.Core" Version="2.16.0" />
+    <PackageReference Include="Jint" Version="4.6.0" />
+    <!-- Non-cryptographic 64-bit hash used as the LiquidTemplateCache key. ~10x faster than SHA
+         and 8 bytes vs 64 bytes hex; collision probability negligible at our scale. -->
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Plugins.Workflow.Abstractions\Plugins.Workflow.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Worker / step-processor logic is internal; tests opt-in to that surface. -->
+    <InternalsVisibleTo Include="Hipaa.Backend.Tests.App.Functional" />
+  </ItemGroup>
+
+</Project>
