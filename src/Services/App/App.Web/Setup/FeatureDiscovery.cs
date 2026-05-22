@@ -71,13 +71,24 @@ public static class FeatureDiscovery
     /// <see cref="IEndpointRouteBuilder"/> if no <see cref="EndpointGroupAttribute{TGroup}"/> is
     /// present. Call after <c>builder.Build()</c>.
     /// </summary>
-    public static IEndpointRouteBuilder MapAllEndpoints(this IEndpointRouteBuilder app)
+    /// <param name="app">The route builder to map endpoints onto (typically the <see cref="WebApplication"/>).</param>
+    /// <param name="prefix">
+    /// Optional path prefix prepended to every registered route — both group-based and direct.
+    /// E.g. <c>"/billing"</c> turns a feature group <c>/api/v1/invoices</c> into
+    /// <c>/billing/api/v1/invoices</c>. Useful when the service runs behind a path-routing gateway
+    /// (k8s ingress, AWS ALB, nginx) and needs to own a subpath without each endpoint hardcoding
+    /// it. The prefix flows into OpenAPI paths automatically since doc generation walks the live
+    /// route table. Pass <c>null</c> or empty for no prefix (default).
+    /// </param>
+    public static IEndpointRouteBuilder MapAllEndpoints(this IEndpointRouteBuilder app, string? prefix = null)
     {
         var env = app.ServiceProvider.GetRequiredService<IHostEnvironment>();
         var isDev = env.IsDevelopment();
 
-        var groups = MaterialiseGroups(app, isDev);
-        MapEndpoints(app, isDev, groups);
+        var root = string.IsNullOrWhiteSpace(prefix) ? app : app.MapGroup(prefix);
+
+        var groups = MaterialiseGroups(root, isDev);
+        MapEndpoints(root, isDev, groups);
 
         return app;
     }
