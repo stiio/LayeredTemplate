@@ -13,6 +13,8 @@ public static class ConfigureDataProtection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.Configure<DataProtectionSettings>(configuration.GetSection(nameof(DataProtectionSettings)));
+
         // Disable runtime auto-generation — keys are created by RotateDataProtectionKeysTask at startup
         // under a distributed lock. This prevents race conditions when multiple instances start simultaneously.
         var dataProtection = services.AddDataProtection()

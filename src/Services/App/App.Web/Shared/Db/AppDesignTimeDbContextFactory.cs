@@ -15,7 +15,7 @@ internal sealed class AppDesignTimeDbContextFactory : IDesignTimeDbContextFactor
         optionsBuilder
             .UseNpgsql("Host=localhost;Port=5432;Database=appDbName;Username=postgres;Password=postgres;", x =>
             {
-                x.MigrationsHistoryTable("__ef_backend_migrations");
+                x.MigrationsHistoryTable("__ef_app_migrations");
                 x.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName);
                 x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
             })
