@@ -1,10 +1,11 @@
+using LayeredTemplate.App.Shared.Db;
 using LayeredTemplate.App.Shared.Infrastructure.Locks;
 using LayeredTemplate.Plugins.StartupRunner.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace LayeredTemplate.App.Shared.Db;
+namespace LayeredTemplate.App.Setup.StartupTasks;
 
 /// <summary>
 /// Applies pending EF Core migrations on startup, under a distributed advisory lock so only one
@@ -27,7 +28,7 @@ internal sealed class RunMigrationsTask : IStartupTask
         this.lockProvider = lockProvider;
     }
 
-    public int Order => 1;
+    public int Order => 10;
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {

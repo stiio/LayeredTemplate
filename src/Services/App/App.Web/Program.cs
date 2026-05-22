@@ -101,6 +101,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddAppOpenApi();
 
     services.AddAppDb(configuration);
+    services.AddAppDataProtection(configuration);
     services.AddAppAuth(configuration);
     services.AddAppProblemDetails();
 

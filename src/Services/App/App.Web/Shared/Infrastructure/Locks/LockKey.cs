@@ -10,4 +10,6 @@ public sealed class LockKey
     public string Name { get; }
 
     public static LockKey Migrations(string dbContextName) => new($"migrations:{dbContextName}");
+
+    public static LockKey RotateDataProtectionKeys() => new("rotate-data-protection-keys");
 }

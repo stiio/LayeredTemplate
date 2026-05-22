@@ -1,9 +1,9 @@
 using System.Reflection;
+using LayeredTemplate.App.Setup.StartupTasks;
 using LayeredTemplate.App.Shared.Db;
 using LayeredTemplate.App.Shared.Db.Interceptors;
 using LayeredTemplate.App.Shared.Options;
 using LayeredTemplate.Plugins.StartupRunner;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 
 namespace LayeredTemplate.App.Setup;
@@ -31,10 +31,6 @@ public static class ConfigureDb
 
             options.AddInterceptors(new BaseEntitySaveChangesInterceptor());
         });
-
-        services.AddDataProtection()
-            .SetApplicationName("LayeredTemplate.App")
-            .PersistKeysToDbContext<AppDbContext>();
 
         services.AddStartupTask<RunMigrationsTask>();
 
