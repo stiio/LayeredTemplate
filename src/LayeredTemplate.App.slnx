@@ -2,15 +2,18 @@
   <Folder Name="/.claude/">
     <File Path=".claude/settings.json" />
   </Folder>
+  <!--#if (!minimal)-->
   <Folder Name="/Pipelines/">
     <File Path="Pipelines/backend-deploy.yml" />
     <File Path="Pipelines/deps-update.yml" />
     <File Path="Pipelines/npm-api-package-deploy.yml" />
   </Folder>
+  <!--#endif-->
   <Folder Name="/Services/" />
   <Folder Name="/Services/App/">
     <Project Path="Services/App/App.Web/App.Web.csproj" />
   </Folder>
+  <!--#if (!minimal)-->
   <Folder Name="/Services/Auth/">
     <Project Path="Services/Auth/Auth.ApiClient/Auth.ApiClient.csproj" />
     <Project Path="Services/Auth/Auth.Web/Auth.Web.csproj" />
@@ -18,20 +21,27 @@
   <Folder Name="/Services/OAuthSample/">
     <Project Path="Services/OAuthSample/OAuthSample.Web/OAuthSample.Web.csproj" />
   </Folder>
+  <!--#endif-->
   <Folder Name="/Services/Plugins/">
     <Project Path="Services/Plugins/Plugins.AssemblyExtensions/Plugins.AssemblyExtensions.csproj" />
     <Project Path="Services/Plugins/Plugins.Http.Extensions/Plugins.Http.Extensions.csproj" />
     <Project Path="Services/Plugins/Plugins.JsonMultipart/Plugins.JsonMultipart.csproj" />
     <Project Path="Services/Plugins/Plugins.Logging.HttpClientLog/Plugins.Logging.HttpClientLog.csproj" />
+    <!--#if (!minimal)-->
     <Project Path="Services/Plugins/Plugins.PhoneHelpers/Plugins.PhoneHelpers.csproj" />
+    <!--#endif-->
     <Project Path="Services/Plugins/Plugins.StartupRunner/Plugins.StartupRunner.csproj" />
+    <!--#if (!minimal)-->
     <Project Path="Services/Plugins/Plugins.Workflow.Abstractions/Plugins.Workflow.Abstractions.csproj" />
     <Project Path="Services/Plugins/Plugins.Workflow.Engine/Plugins.Workflow.Engine.csproj" />
     <Project Path="Services/Plugins/Plugins.Workflow.Storage.EFCore/Plugins.Workflow.Storage.EFCore.csproj" />
+    <!--#endif-->
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
+    <!--#if (!minimal)-->
     <File Path=".gitlab-ci.yml" />
+    <!--#endif-->
     <File Path="CLAUDE.md" />
     <File Path="Directory.Build.props" />
     <File Path="env.example.json" />
@@ -39,7 +49,9 @@
     <File Path="README.md" />
     <File Path="ts-gen-config.json" />
   </Folder>
+  <!--#if (!minimal)-->
   <Project Path="docker-compose.dcproj">
     <Build />
   </Project>
+  <!--#endif-->
 </Solution>

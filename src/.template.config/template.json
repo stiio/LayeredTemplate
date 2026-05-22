@@ -79,6 +79,12 @@
         "value": ""
       },
       "replaces": ".Replace(\".App\", \"\")"
+    },
+    "minimal": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Generate a minimal project: only Services/App + the plugins it uses. Excludes Auth, OAuthSample, PhoneHelpers, Workflow plugins, Pipelines, docker-compose, .gitlab-ci.yml."
     }
   },
   "primaryOutputs": [
@@ -116,6 +122,22 @@
           "rename": {
             "LayeredTemplate.App.slnx": "LayeredTemplate.slnx"
           }
+        },
+        {
+          "condition": "(minimal)",
+          "exclude": [
+            "Services/Auth/**",
+            "Services/OAuthSample/**",
+            "Services/Plugins/Plugins.PhoneHelpers/**",
+            "Services/Plugins/Plugins.Workflow.Abstractions/**",
+            "Services/Plugins/Plugins.Workflow.Engine/**",
+            "Services/Plugins/Plugins.Workflow.Storage.EFCore/**",
+            "Pipelines/**",
+            "docker-compose.yml",
+            "docker-compose.dcproj",
+            ".dockerignore",
+            ".gitlab-ci.yml"
+          ]
         }
       ]
     }

@@ -1,8 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
+    <!--#if (!minimal)-->
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerComposeProjectPath>..\..\docker-compose.dcproj</DockerComposeProjectPath>
+    <!--#endif-->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RootNamespace>LayeredTemplate.App</RootNamespace>
   </PropertyGroup>
@@ -25,7 +27,9 @@
 
   <ItemGroup>
     <!-- Web framework, OpenAPI, Scalar UI -->
+    <!--#if (!minimal)-->
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
+    <!--#endif-->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.6" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.13.20" />
     <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.5">
@@ -83,10 +87,12 @@
     <Folder Include="Migrations\" />
   </ItemGroup>
 
+  <!--#if (!minimal)-->
   <ItemGroup>
     <Content Include="..\..\..\.dockerignore">
       <Link>.dockerignore</Link>
     </Content>
   </ItemGroup>
+  <!--#endif-->
 
 </Project>
