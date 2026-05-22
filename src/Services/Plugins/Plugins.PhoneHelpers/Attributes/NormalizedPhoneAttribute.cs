@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using PhoneNumbers;
 
 namespace LayeredTemplate.Plugins.PhoneHelpers.Attributes;
 
@@ -27,28 +26,14 @@ public class NormalizedPhoneAttribute : ValidationAttribute
             return true;
         }
 
-        if (value is not string valueAsString)
+        if (value is not string s)
         {
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(valueAsString))
-        {
-            return false;
-        }
-
-        var phoneNumberUtil = PhoneNumberUtil.GetInstance();
-
-        PhoneNumber phone;
-        try
-        {
-            phone = phoneNumberUtil.Parse(valueAsString, null);
-        }
-        catch
-        {
-            return false;
-        }
-
-        return phoneNumberUtil.IsValidNumber(phone);
+        // Whitespace-only value is treated as invalid here (legacy semantics from earlier
+        // Auth.Web Edit/Create flows). For "optional phone" callers, use a nullable property
+        // so the value comes through as null instead of "".
+        return PhoneNumberValidator.IsValid(s);
     }
 }
