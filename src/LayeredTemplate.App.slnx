@@ -4,6 +4,7 @@
   </Folder>
   <Folder Name="/Pipelines/">
     <File Path="Pipelines/backend-deploy.yml" />
+    <File Path="Pipelines/deps-update.yml" />
     <File Path="Pipelines/npm-api-package-deploy.yml" />
   </Folder>
   <Folder Name="/Services/" />
