@@ -1,4 +1,5 @@
 using LayeredTemplate.App.Features.TodoLists.Services;
+using LayeredTemplate.App.Shared.Auth;
 using LayeredTemplate.App.Shared.Db;
 using LayeredTemplate.App.Shared.Infrastructure.Email;
 using LayeredTemplate.App.Shared.Infrastructure.Locks;
@@ -38,6 +39,7 @@ public static class ConfigureDocGenStubs
         services.AddSingleton<ILockProvider>(_ => null!);
         services.AddScoped<IEmailSender>(_ => null!);
         services.AddScoped<ITodoListRatingService>(_ => null!);
+        services.AddScoped<ICurrentUserService>(_ => null!);
 
         return services;
     }
