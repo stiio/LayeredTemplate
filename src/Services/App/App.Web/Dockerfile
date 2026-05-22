@@ -26,6 +26,7 @@ COPY ["Services/Plugins/Plugins.AssemblyExtensions/Plugins.AssemblyExtensions.cs
 COPY ["Services/Plugins/Plugins.Http.Extensions/Plugins.Http.Extensions.csproj", "Services/Plugins/Plugins.Http.Extensions/"]
 COPY ["Services/Plugins/Plugins.JsonMultipart/Plugins.JsonMultipart.csproj", "Services/Plugins/Plugins.JsonMultipart/"]
 COPY ["Services/Plugins/Plugins.StartupRunner/Plugins.StartupRunner.csproj", "Services/Plugins/Plugins.StartupRunner/"]
+COPY ["Services/Plugins/Plugins.Logging.HttpClientLog/Plugins.Logging.HttpClientLog.csproj", "Services/Plugins/Plugins.Logging.HttpClientLog/"]
 
 RUN dotnet restore "Services/App/App.Web/App.Web.csproj"
 
