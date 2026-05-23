@@ -57,116 +57,6 @@
         ]
       }
     },
-    "/api/v1/users/email/send_code": {
-      "post": {
-        "tags": [
-          "Users"
-        ],
-        "summary": "Send user email verification code",
-        "operationId": "SendUserEmailCode",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendUserEmailCodeRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
-    "/api/v1/users/email/verify_code": {
-      "put": {
-        "tags": [
-          "Users"
-        ],
-        "summary": "Verify user email confirmation code",
-        "operationId": "VerifyUserEmailCode",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyUserEmailCodeRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
     "/api/v1/todo_lists": {
       "post": {
         "tags": [
@@ -1067,20 +957,6 @@
           }
         }
       },
-      "SendUserEmailCodeRequest": {
-        "required": [
-          "email"
-        ],
-        "type": "object",
-        "properties": {
-          "email": {
-            "maxLength": 255,
-            "type": "string",
-            "description": "Email",
-            "example": "example@email.com"
-          }
-        }
-      },
       "SortingOfTodoListFields": {
         "type": "object",
         "properties": {
@@ -1269,29 +1145,6 @@
               "null",
               "string"
             ]
-          }
-        }
-      },
-      "VerifyUserEmailCodeRequest": {
-        "required": [
-          "email",
-          "code"
-        ],
-        "type": "object",
-        "properties": {
-          "email": {
-            "maxLength": 255,
-            "type": "string",
-            "example": "example@email.com"
-          },
-          "code": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32",
-            "example": 124567
           }
         }
       }

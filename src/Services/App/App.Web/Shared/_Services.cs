@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using FluentValidation;
-using LayeredTemplate.App.Shared.Infrastructure.Email;
+﻿using LayeredTemplate.App.Shared.Infrastructure.Email;
 using LayeredTemplate.App.Shared.Infrastructure.Locks;
 using LayeredTemplate.App.Shared.Options;
 
@@ -28,7 +26,5 @@ public static class SharedServices
         {
             services.AddScoped<IEmailSender, EmailSender>();
         }
-
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly(), includeInternalTypes: true, lifetime: ServiceLifetime.Singleton);
     }
 }

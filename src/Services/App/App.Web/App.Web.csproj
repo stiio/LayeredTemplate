@@ -46,9 +46,6 @@
     <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
 
-    <!-- Validation -->
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-
     <!-- DB layer: EF Core + Dapper + Npgsql + snake_case + DP key persistence -->
     <PackageReference Include="Dapper" Version="2.1.72" />
     <PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
