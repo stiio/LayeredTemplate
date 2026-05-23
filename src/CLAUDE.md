@@ -52,8 +52,7 @@ App.Web/
 │   │   ├── Email/                 — IEmailSender + EmailSender (MailKit) + EmailSenderMock
 │   │   └── Locks/                 — ILockProvider + PostgresLockProvider (Medallion)
 │   ├── Options/AppSettings.cs     — AppSettings, SmtpSettings, ConnectionStringKeys
-│   ├── Pagination/                — PaginationRequest/Response, Sorting<T>, QueryableExtensions
-│   └── Validation/ValidationFilter.cs — endpoint filter, WithValidation<T>()
+│   └── Pagination/                — PaginationRequest/Response, Sorting<T>, QueryableExtensions
 ├── Features/                      — одна папка = одна вертикальная нарезка
 │   ├── Info/
 │   │   ├── _Group.cs              — IEndpointGroup: /api/v1/info, tag Info, group v1
@@ -126,12 +125,10 @@ App.Web/
 | Плагин | Назначение |
 |--------|-----------|
 | **Plugins.AssemblyExtensions** | `GetBuildDate()`, `GetVersion()` из метаданных сборки |
-| **Plugins.Authorization.Abstractions** | Константы: AuthenticationSchemes, Claims, Permissions, TokenKeys |
 | **Plugins.Http.Extensions** | HttpContext-расширения (`GetRequestIp` и др.) |
 | **Plugins.JsonMultipart** + Abstractions | Minimal-API биндер + OpenAPI-трансформеры для multipart/form-data с JSON-полями. DTO декларируется как `IJsonMultipartRequest<TSelf>`, JSON-поля помечаются `[FromJson]`, файловые поля — обычным `IFormFile` |
 | **Plugins.Logging.HttpClientLog** | DelegatingHandler для логирования HttpClient с маскировкой |
 | **Plugins.PhoneHelpers** | libphonenumber-csharp wrappers + DataAnnotations |
-| **Plugins.SharedExtensions** | TypeExtensions, EnumerableExtensions |
 | **Plugins.StartupRunner** | HostedService для запуска `IStartupTask` при старте |
 
 ## `Pipelines/` — CI/CD
@@ -165,7 +162,7 @@ docker-compose -f docker-compose.yml up
 1. **Добавление фичи** — создать `Features/<Feature>/_Group.cs` (реализует `IEndpointGroup`) + `Features/<Feature>/Endpoints/<X>.cs` с `[EndpointGroup<XxxGroup>] public sealed class X : IEndpoint`. Discovery подхватит без правок в `Program.cs`.
 2. **Добавление endpoint'а в существующую фичу** — один файл в `Features/<Feature>/Endpoints/`, реализующий `IEndpoint` с `[EndpointGroup<...>]`. Не нужно лезть в `_Group.cs` или какой-либо регистрационный файл.
 3. **Добавление таблицы** — entity в `Features/<Foo>/Entities/<Foo>.cs`, EF mapping в `Features/<Foo>/DbConfig/<Foo>Configuration.cs` (автодискаверится), одна строка `DbSet<Foo>` в `Shared/Db/AppDbContext.cs`. Затем `dotnet ef migrations add`.
-4. **Добавление сервиса фичи** — `Features/<Foo>/Services/<Service>.cs` (interface + impl). Если у фичи ещё нет DI-регистрации — `_Group.cs` дополнительно реализует `IFeatureServices` и вызывает `services.AddScoped<IFoo, Foo>()` в `ConfigureServices`. Discovery подхватит.
+4. **Добавление сервиса фичи** — `Features/<Foo>/Services/<Service>.cs` (interface + impl). Если у фичи ещё нет DI-регистрации — `_Services.cs` реализует `IFeatureServices` и вызывает `services.AddScoped<IFoo, Foo>()` в `ConfigureServices`. Discovery подхватит.
 5. **Несколько групп в одной фиче** — добавить ещё один `_AdminGroup.cs` (или произвольное имя) рядом с `_Group.cs`, реализующий `IEndpointGroup`. Endpoint'ы, нацеленные на новую группу, ставят `[EndpointGroup<XxxAdminGroup>]` вместо `[EndpointGroup<XxxGroup>]`. Типичный кейс: разный префикс/auth для user-facing vs admin endpoint'ов одной доменной области.
 6. **Версионирование** — v2 endpoint = новый файл `XxxV2.cs` в той же `Endpoints/` папке, нацеленный на отдельную группу `XxxV2Group` (с префиксом `/api/v2/...` и `WithGroupName("v2")`). Старые остаются в v1.
 7. **Dev endpoint'ы** — `Features/_Dev/` для cross-cutting, отдельный `_File.cs` в обычной фиче для feature-specific. `[DevOnly]` ставится либо на `IEndpointGroup` (тогда вся группа исчезает в non-Development), либо на конкретный `IEndpoint`. Endpoint, нацеленный на dev-only группу, автоматически cascade-скипается вне Development — отдельный `[DevOnly]` на endpoint'е в этом случае не обязателен, но и не помешает.
