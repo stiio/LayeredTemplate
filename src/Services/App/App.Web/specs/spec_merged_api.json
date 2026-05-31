@@ -803,8 +803,12 @@
         "type": "object",
         "properties": {
           "buildDate": {
+            "type": [
+              "null",
+              "string"
+            ],
             "description": "UTC timestamp when the assembly was built.",
-            "format": "date-time"
+            "example": "2022-11-15T12:00:00.0000000Z"
           },
           "version": {
             "type": [
@@ -988,6 +992,7 @@
             "$ref": "#/components/schemas/TodoListType"
           },
           "createdAt": {
+            "type": "string",
             "example": "2022-11-15T12:00:00.0000000Z"
           }
         }
