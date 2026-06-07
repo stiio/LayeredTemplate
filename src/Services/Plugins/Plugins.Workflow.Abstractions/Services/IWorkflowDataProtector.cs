@@ -55,20 +55,3 @@ public interface IWorkflowDataProtector
     /// </summary>
     byte[] Unprotect(byte[] ciphertext);
 }
-
-/// <summary>
-/// Marker interface for entities whose row carries a <c>protection_version</c> stamp. The
-/// engine's save-changes interceptor sets this column to the active key version whenever a
-/// protected property is being written, so operators can identify rows that need re-encryption
-/// after a key rotation.
-/// </summary>
-public interface IHaveProtectedData
-{
-    /// <summary>
-    /// Active key version at the time this row's protected columns were last written. Null
-    /// when the row was written without an <see cref="IWorkflowDataProtector"/> registered, or
-    /// pre-dates the encryption feature. Set by <c>WorkflowProtectionStampInterceptor</c>;
-    /// callers should not assign it manually.
-    /// </summary>
-    string? ProtectionVersion { get; set; }
-}

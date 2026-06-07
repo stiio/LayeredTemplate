@@ -7,7 +7,7 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities;
 /// Persistent workflow run row. <see cref="Definition"/> nav lets EF model the FK; engine code
 /// maps this to <c>Hipaa.Backend.Plugins.Workflow.Abstractions.WorkflowRunRecord</c>.
 /// </summary>
-public class WorkflowRun : IHaveProtectedData
+public class WorkflowRun
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
 
@@ -81,14 +81,6 @@ public class WorkflowRun : IHaveProtectedData
     /// and for top-level runs.
     /// </summary>
     public Guid? ParentStepId { get; set; }
-
-    /// <summary>
-    /// Active key version at the time this row's protected columns were last written. Stamped
-    /// by <c>WorkflowProtectionStampInterceptor</c>; null when no protector is registered or
-    /// the row pre-dates encryption. Operators query this to find rows still on a rotated-out
-    /// key.
-    /// </summary>
-    public string? ProtectionVersion { get; set; }
 
     // Reverse navigation kept because the worker batch loads steps via Run; it's used in
     // EfCoreWorkflowStore for change-tracking the run's children. The Definition navigation was

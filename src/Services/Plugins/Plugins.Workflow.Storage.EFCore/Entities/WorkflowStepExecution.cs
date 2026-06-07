@@ -7,7 +7,7 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities;
 /// Persistent step-execution row. Mapped to/from
 /// <c>Hipaa.Backend.Plugins.Workflow.Abstractions.WorkflowStepRecord</c> by the store.
 /// </summary>
-public class WorkflowStepExecution : IHaveProtectedData
+public class WorkflowStepExecution
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
 
@@ -64,12 +64,6 @@ public class WorkflowStepExecution : IHaveProtectedData
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
-
-    /// <summary>
-    /// Active key version at the time this row's protected columns were last written. Stamped
-    /// by <c>WorkflowProtectionStampInterceptor</c>; null when no protector is registered.
-    /// </summary>
-    public string? ProtectionVersion { get; set; }
 
     public WorkflowRun Run { get; set; } = null!;
 }

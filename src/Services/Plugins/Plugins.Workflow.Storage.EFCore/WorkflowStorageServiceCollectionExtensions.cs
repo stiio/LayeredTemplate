@@ -41,11 +41,6 @@ public static class WorkflowStorageServiceCollectionExtensions
             // No naming convention package — every column/index/PK/FK is named explicitly in
             // the entity configurations. Locks the schema contract at the type level instead of
             // deriving it from a third-party convention.
-
-            // Stamp protection_version on each save when an IWorkflowDataProtector is registered.
-            // Resolves null when not registered — interceptor becomes a no-op pass-through.
-            opts.AddInterceptors(new WorkflowProtectionStampInterceptor(
-                sp.GetService<IWorkflowDataProtector>()));
         });
 
         // EfCoreWorkflowStore implements all three interfaces; we register the impl once as

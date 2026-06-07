@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Hipaa.Backend.Plugins.Workflow.Storage.EFCore.Migrations
+namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -24,6 +24,7 @@ namespace Hipaa.Backend.Plugins.Workflow.Storage.EFCore.Migrations
                     owner_kind = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     owner_id = table.Column<Guid>(type: "uuid", nullable: true),
                     trigger_kind = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    display_name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     graph = table.Column<string>(type: "jsonb", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
@@ -45,16 +46,21 @@ namespace Hipaa.Backend.Plugins.Workflow.Storage.EFCore.Migrations
                     trigger_source_kind = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     trigger_source_id = table.Column<Guid>(type: "uuid", nullable: true),
                     is_dry_run = table.Column<bool>(type: "boolean", nullable: false),
+                    name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     actor_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     workflow_snapshot = table.Column<string>(type: "jsonb", nullable: false),
-                    static_context = table.Column<string>(type: "jsonb", nullable: false),
-                    steps_outputs = table.Column<string>(type: "jsonb", nullable: false),
+                    static_context = table.Column<byte[]>(type: "bytea", nullable: false),
+                    steps_outputs = table.Column<byte[]>(type: "bytea", nullable: false),
                     status = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    abort_reason = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    abort_reason = table.Column<byte[]>(type: "bytea", nullable: true),
                     started_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     finished_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    return_value = table.Column<byte[]>(type: "bytea", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    nesting_level = table.Column<int>(type: "integer", nullable: false),
+                    parent_run_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    parent_step_id = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -66,6 +72,13 @@ namespace Hipaa.Backend.Plugins.Workflow.Storage.EFCore.Migrations
                         principalTable: "workflow_definitions",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_workflow_runs_workflow_runs_parent_run_id",
+                        column: x => x.parent_run_id,
+                        principalSchema: "workflow",
+                        principalTable: "workflow_runs",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -81,17 +94,15 @@ namespace Hipaa.Backend.Plugins.Workflow.Storage.EFCore.Migrations
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     predecessor_execution_id = table.Column<Guid>(type: "uuid", nullable: true),
                     trigger_port = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
-                    resolved_config = table.Column<string>(type: "jsonb", nullable: false),
-                    outputs = table.Column<string>(type: "jsonb", nullable: true),
-                    output_ports = table.Column<string>(type: "jsonb", nullable: false),
+                    resolved_config = table.Column<byte[]>(type: "bytea", nullable: false),
+                    is_long_running = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    outputs = table.Column<byte[]>(type: "bytea", nullable: true),
+                    output_port = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
                     status = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     attempt_count = table.Column<int>(type: "integer", nullable: false),
                     next_attempt_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    last_error = table.Column<string>(type: "text", nullable: true),
+                    last_error = table.Column<byte[]>(type: "bytea", nullable: true),
                     completed_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    expected_arrivals = table.Column<int>(type: "integer", nullable: false),
-                    arrivals = table.Column<int>(type: "integer", nullable: false),
-                    arrived_from_node_ids = table.Column<string>(type: "jsonb", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -108,10 +119,11 @@ namespace Hipaa.Backend.Plugins.Workflow.Storage.EFCore.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "ix_workflow_definitions_tenant_id",
+                name: "ix_workflow_definitions_tenant_id_created_at",
                 schema: "workflow",
                 table: "workflow_definitions",
-                column: "tenant_id");
+                columns: new[] { "tenant_id", "created_at" },
+                descending: new[] { false, true });
 
             migrationBuilder.CreateIndex(
                 name: "ix_workflow_definitions_tenant_id_owner_kind_owner_id_trigger_",
@@ -121,22 +133,22 @@ namespace Hipaa.Backend.Plugins.Workflow.Storage.EFCore.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_workflow_runs_definition_id",
+                name: "IX_workflow_runs_definition_id",
                 schema: "workflow",
                 table: "workflow_runs",
                 column: "definition_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_workflow_runs_is_dry_run",
+                name: "ix_workflow_runs_parent_run_id",
                 schema: "workflow",
                 table: "workflow_runs",
-                column: "is_dry_run");
+                column: "parent_run_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_workflow_runs_status",
+                name: "ix_workflow_runs_parent_step_id",
                 schema: "workflow",
                 table: "workflow_runs",
-                column: "status");
+                column: "parent_step_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_workflow_runs_status_finished_at",
@@ -145,49 +157,78 @@ namespace Hipaa.Backend.Plugins.Workflow.Storage.EFCore.Migrations
                 columns: new[] { "status", "finished_at" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_workflow_runs_tenant_id",
+                name: "ix_workflow_runs_tenant_id_created_at",
                 schema: "workflow",
                 table: "workflow_runs",
-                column: "tenant_id");
+                columns: new[] { "tenant_id", "created_at" },
+                descending: new[] { false, true });
 
             migrationBuilder.CreateIndex(
-                name: "ix_workflow_runs_trigger_source_kind_trigger_source_id",
+                name: "ix_workflow_runs_tenant_id_trigger_source_kind_trigger_source_",
                 schema: "workflow",
                 table: "workflow_runs",
-                columns: new[] { "trigger_source_kind", "trigger_source_id" });
+                columns: new[] { "tenant_id", "trigger_source_kind", "trigger_source_id" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_workflow_step_executions_run_id",
+                name: "ix_workflow_step_executions_pending_lane_next_attempt",
                 schema: "workflow",
                 table: "workflow_step_executions",
-                column: "run_id");
+                columns: new[] { "is_long_running", "next_attempt_at" },
+                filter: "status = 'pending'");
 
             migrationBuilder.CreateIndex(
-                name: "ix_workflow_step_executions_status_next_attempt_at",
+                name: "ix_workflow_step_executions_run_id_created_at",
                 schema: "workflow",
                 table: "workflow_step_executions",
-                columns: new[] { "status", "next_attempt_at" });
+                columns: new[] { "run_id", "created_at" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_workflow_step_executions_tenant_id",
                 schema: "workflow",
                 table: "workflow_step_executions",
                 column: "tenant_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_workflow_step_executions_waiting_lane_next_attempt",
+                schema: "workflow",
+                table: "workflow_step_executions",
+                columns: new[] { "is_long_running", "next_attempt_at" },
+                filter: "status = 'waiting'");
+
+            migrationBuilder.AddForeignKey(
+                name: "fk_workflow_runs_workflow_step_executions_parent_step_id",
+                schema: "workflow",
+                table: "workflow_runs",
+                column: "parent_step_id",
+                principalSchema: "workflow",
+                principalTable: "workflow_step_executions",
+                principalColumn: "id",
+                onDelete: ReferentialAction.SetNull);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "fk_workflow_runs_workflow_definitions_definition_id",
+                schema: "workflow",
+                table: "workflow_runs");
+
+            migrationBuilder.DropForeignKey(
+                name: "fk_workflow_runs_workflow_step_executions_parent_step_id",
+                schema: "workflow",
+                table: "workflow_runs");
+
+            migrationBuilder.DropTable(
+                name: "workflow_definitions",
+                schema: "workflow");
+
             migrationBuilder.DropTable(
                 name: "workflow_step_executions",
                 schema: "workflow");
 
             migrationBuilder.DropTable(
                 name: "workflow_runs",
-                schema: "workflow");
-
-            migrationBuilder.DropTable(
-                name: "workflow_definitions",
                 schema: "workflow");
         }
     }

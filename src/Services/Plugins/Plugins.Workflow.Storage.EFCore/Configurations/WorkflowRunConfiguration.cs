@@ -33,10 +33,6 @@ internal class WorkflowRunConfiguration : IEntityTypeConfiguration<WorkflowRun>
         builder.Property(x => x.ParentRunId).HasColumnName("parent_run_id");
         builder.Property(x => x.ParentStepId).HasColumnName("parent_step_id");
 
-        // Protected columns: column type + value converter set in WorkflowDbContext.OnModelCreating
-        // (the converter needs the optional IWorkflowDataProtector resolved from DI). Configuration
-        // here only locks names + nullability/required.
-        builder.Property(x => x.ProtectionVersion).HasColumnName("protection_version").HasMaxLength(64);
         builder.Property(x => x.StaticContext).HasColumnName("static_context").IsRequired(); // old jsonb
         builder.Property(x => x.StepsOutputs).HasColumnName("steps_outputs").IsRequired(); // old jsonb
         builder.Property(x => x.AbortReason).HasColumnName("abort_reason"); // old varchar(200)
