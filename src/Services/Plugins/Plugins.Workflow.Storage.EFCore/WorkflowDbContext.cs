@@ -42,6 +42,8 @@ internal sealed class WorkflowDbContext : DbContext
 
     public DbSet<Entities.WorkflowStepExecution> WorkflowStepExecutions => this.Set<Entities.WorkflowStepExecution>();
 
+    public DbSet<Entities.WorkflowBookmark> WorkflowBookmarks => this.Set<Entities.WorkflowBookmark>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -282,8 +282,9 @@ don't ship traces.
 3. Declare static `OutputPorts` (Normal / Error / Always).
 4. Implement `ExecuteAsync(ActionContext<TConfig>, CancellationToken)`.
 5. Override `IsLongRunning => true` if the body is genuinely slow.
-6. Optional: implement `ITimeoutAwareActionType` if the action suspends and wants graceful
-   timeout handling on the `timedOut` port.
+6. If the action suspends (returns `OnSuspend`), override `OnStepResumedAsync` to choose the
+   wake-up port and `OnStepTimedOutAsync` for graceful timeout handling (e.g. a `timedOut` port).
+   Both default to a loud non-transient `OnError` — a suspending action MUST override them.
 7. Register: `services.AddScoped<IActionType, YourAction>();`.
 
 The frontend's `ListActionTypes` API surfaces it automatically — no FE changes needed beyond

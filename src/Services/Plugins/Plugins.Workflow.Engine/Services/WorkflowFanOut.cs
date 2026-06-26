@@ -5,6 +5,7 @@ using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 using LayeredTemplate.Plugins.Workflow.Engine.Expressions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -25,6 +26,12 @@ internal class WorkflowFanOut : IWorkflowFanOut
     private readonly WorkflowEngineSettings settings;
     private readonly ILogger<WorkflowFanOut> logger;
 
+    // Lazy resolution of IWorkflowResumer via the (scoped) IServiceProvider. WorkflowResumer
+    // depends on IWorkflowFanOut, so injecting the resumer directly would close a constructor DI
+    // cycle. Resolving it at call time from the SAME scope's provider breaks the cycle without
+    // giving up scoped lifetime (same trick RunWorkflowActionType uses for IWorkflowDispatcher).
+    private readonly IServiceProvider services;
+
     // Per-instance graph cache. Workflow snapshots are immutable (frozen at run start), so
     // caching by runId is safe for the scoped lifetime of this fan-out. The same scope serves
     // one worker batch (~10 steps) or one resume call — N entries max, no eviction needed.
@@ -34,11 +41,13 @@ internal class WorkflowFanOut : IWorkflowFanOut
         IWorkflowStore store,
         IStepExecutionBuilder stepBuilder,
         IOptions<WorkflowEngineSettings> settings,
+        IServiceProvider services,
         ILogger<WorkflowFanOut> logger)
     {
         this.store = store;
         this.stepBuilder = stepBuilder;
         this.settings = settings.Value;
+        this.services = services;
         this.logger = logger;
     }
 
@@ -228,12 +237,19 @@ internal class WorkflowFanOut : IWorkflowFanOut
     }
 
     /// <summary>
-    /// Drives the parent-side completion of a sub-workflow: atomically flips the suspended
-    /// parent step from Waiting → Completed on either the <c>success</c> or <c>failed</c> port,
-    /// stamps a child summary on the step's outputs, then recursively fan-outs from the parent
-    /// and re-checks the parent run for completion (so a chain of waiting parents can all unwind
-    /// in the same worker batch). Doesn't flush — the calling worker iteration's batch
-    /// SaveChanges does the persistence.
+    /// Drives the parent-side completion of a sub-workflow. C1 (ADR-027): instead of poking the
+    /// store's atomic resume directly, this routes through <see cref="IWorkflowResumer"/> so the
+    /// non-timeout resume path is uniform and <c>RunWorkflow.OnStepResumedAsync</c> isn't dead
+    /// code. The computed <c>success</c>/<c>failed</c> port (from the child's terminal status) is
+    /// passed as the command port; the child summary is passed as the resume payload, which the
+    /// action echoes and the resumer stamps on the parent step's outputs (same shape as before).
+    /// The resumer also drives the parent fan-out + run-completion recheck, so a chain of waiting
+    /// parents unwinds within the same batch (same recursion as the prior direct path — the only
+    /// addition is the action's pass-through OnStepResumed + port re-validation in between).
+    /// <para>
+    /// <c>flush:false</c> — the calling worker iteration's batch SaveChanges does the persistence.
+    /// Resolved lazily from the scope to avoid the resumer↔fanout constructor cycle.
+    /// </para>
     /// </summary>
     private async Task ResumeParentStepAsync(WorkflowRunRecord childRun, CancellationToken cancellationToken)
     {
@@ -254,38 +270,48 @@ internal class WorkflowFanOut : IWorkflowFanOut
         // No fallback to the child's steps_outputs by design — keep the parent's contract clean
         // and decoupled from the child's internal node names.
         // Convert to plain CLR (Dict / List / scalar) so the receiving step's outputs round-trip
-        // cleanly through JsonSerializer when TryResumeWaitingStepAsync stamps them.
+        // cleanly through JsonSerializer when the resumer normalizes + stamps them.
         var returnValueObj = childRun.ReturnValue is { } rv
             ? ExpressionModelBuilder.JsonElementToClr(rv)
             : null;
 
-        var outputs = new Dictionary<string, object?>
+        var summary = new Dictionary<string, object?>
         {
             ["childRunId"] = childRun.Id,
             ["childStatus"] = childRun.Status,
             ["childAbortReason"] = childRun.AbortReason,
             ["returnValue"] = returnValueObj,
         };
+        // Serialize the summary to a JsonElement so it flows through the resumer's payload contract
+        // (NormalizeOutputs flattens the object → the same dict the store stamped pre-ADR-027). enum
+        // childStatus / Guid childRunId serialize identically here as they did via the store.
+        var payload = JsonSerializer.SerializeToElement(summary, WorkflowJsonOptions.Default);
 
-        var resumed = await this.store.TryResumeWaitingStepAsync(
-            childRun.ParentStepId!.Value,
-            port,
-            outputs,
-            cancellationToken);
-        
-        if (resumed is null)
+        // Resolve the resumer from the current scope (lazy — see field comment). The resumer wins
+        // the same atomic Waiting-guard the store call won before, then runs RunWorkflow's
+        // pass-through OnStepResumed and drives parent fan-out + completion.
+        var resumer = this.services.GetRequiredService<IWorkflowResumer>();
+        var result = await resumer.ResumeAsync(
+            new WorkflowResumeCommand
+            {
+                RunId = childRun.ParentRunId!.Value,
+                StepId = childRun.ParentStepId!.Value,
+                TenantId = childRun.TenantId,
+                Port = port,
+                Payload = payload,
+            },
+            cancellationToken,
+            flush: false);
+
+        if (!result.Succeeded)
         {
-            // Parent step is no longer Waiting — operator may have manually resumed, or the
-            // sweeper dead-lettered it. Either way, parent fan-out has already been driven by
-            // whatever did the prior transition; nothing more to do here.
+            // Parent step is no longer Waiting (manual resume / sweeper dead-letter), or some other
+            // resumer-level failure. Either way the parent fan-out has already been driven by
+            // whatever did the prior transition; nothing more to do here — log loud, same as before.
             this.logger.LogWarning(
-                "Sub-workflow {ChildRunId} finished but parent step {ParentStepId} was not waiting; skipping auto-resume.",
-                childRun.Id, childRun.ParentStepId);
-            return;
+                "Sub-workflow {ChildRunId} finished but parent step {ParentStepId} could not be auto-resumed ({Reason}: {Message}); skipping.",
+                childRun.Id, childRun.ParentStepId, result.Reason, result.Message);
         }
-
-        await this.EnqueueNextStepAsync(resumed, port, cancellationToken);
-        await this.CheckRunCompletionAsync(resumed, cancellationToken);
     }
 
     private static object? SafeDeserialize(string json)

@@ -65,6 +65,10 @@ public static class WorkflowCoreServiceCollectionExtensions
         // API). Encapsulates edge / Join / safety-cap rules.
         services.AddScoped<IWorkflowFanOut, WorkflowFanOut>();
         services.AddScoped<IWorkflowResumer, WorkflowResumer>();
+        // Generic signal-wait fan-out: resolves bookmarks for an opaque (tenant, key) pair and
+        // resumes every waiting run via the resumer. App-side facade (mirrors IWorkflowDispatcher);
+        // domain actions register bookmarks on suspend, an App service signals on the matching event.
+        services.AddScoped<IWorkflowSignaler, WorkflowSignaler>();
         // Operator-driven termination: run → Failed, all active steps → Dead, sub-workflow
         // parent (if any) gets resumed on its `failed` port.
         services.AddScoped<IWorkflowCanceller, WorkflowCanceller>();
@@ -84,6 +88,11 @@ public static class WorkflowCoreServiceCollectionExtensions
         services.AddScoped<IActionType, ForEachActionType>();
         services.AddScoped<IActionType, DelayActionType>();
         services.AddScoped<IActionType, RunWorkflowActionType>();
+        // Generic suspend/signal pair over the bookmark primitive (ADR-025) — the domain-agnostic
+        // layer beneath App adapters like WaitForm. WaitSignal parks on N opaque keys (wait-for-any);
+        // SendSignal emits a signal that fan-out-resumes every waiter on the matching key.
+        services.AddScoped<IActionType, WaitSignalActionType>();
+        services.AddScoped<IActionType, SendSignalActionType>();
         // Engine-built-in: writes a Liquid/JS-computed label onto run.Name. Operator-facing
         // QoL — distinguish runs in the dashboard without inspecting their static_context.
         services.AddScoped<IActionType, SetRunNameActionType>();
@@ -106,16 +115,16 @@ public static class WorkflowCoreServiceCollectionExtensions
     /// this call, the engine writes plaintext UTF-8 bytes into the same <c>bytea</c> columns
     /// that would otherwise carry ciphertext — schema is unified, behaviour pivots only on
     /// presence of this registration. With it, every protected column is encrypted on write
-    /// and decrypted on read; the row's <c>protection_version</c> is stamped automatically by
-    /// a save-changes interceptor so operators can identify rows that need re-encryption after
-    /// a key rotation. See <see cref="IWorkflowDataProtector"/> remarks for storage format,
-    /// rotation strategy, and threading expectations.
+    /// and decrypted on read; the key id used to seal each value is embedded in the ciphertext
+    /// blob's wire format, so a re-encryption sweep after a key rotation inspects individual
+    /// values rather than a per-row stamp. See <see cref="IWorkflowDataProtector"/> remarks for
+    /// storage format, rotation strategy, and threading expectations.
     /// </summary>
     public static IWorkflowCoreBuilder AddWorkflowDataProtector<T>(this IWorkflowCoreBuilder builder)
         where T : class, IWorkflowDataProtector
     {
         // Singleton: protector holds the active key and (typically) a key ring. Same instance
-        // services every DbContext / interceptor / converter for the process lifetime.
+        // services every DbContext / converter for the process lifetime.
         builder.Services.AddSingleton<IWorkflowDataProtector, T>();
         return builder;
     }

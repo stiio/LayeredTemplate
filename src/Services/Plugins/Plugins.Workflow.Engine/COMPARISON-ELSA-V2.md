@@ -14,7 +14,7 @@
 | Concurrency control | `FOR UPDATE SKIP LOCKED` (Postgres) | `SemaphoreSlim` per-store + distributed lock (Medallion) | **Наш** — построено на индексе, не блокировке |
 | Storage shape | Колоночный — `static_context`, `steps_outputs`, `outputs`, `resolved_config` отдельные protected JSON | Один JSON-блоб `Data` на весь `WorkflowInstance` | **Наш** — searchable, partial-decrypt |
 | Многотенантность | `TenantId` обязателен везде, индексы tenant-first | `ITenantAccessor` + `TenantId` опционально, дефолт = null, multi-tenant Temporal не закрыт (TODO в коде) | **Наш** — встроено в фундамент |
-| PHI / encryption | `IWorkflowDataProtector` + bytea + `[1B 0x80 magic][cipher]` envelope, `protection_version` для key rotation | Только `IDataProtection` для http-callback токенов; field-level не нашёл | **Наш** |
+| PHI / encryption | `IWorkflowDataProtector` + bytea + `[1B 0x80 magic][cipher]` envelope, key id встроен per-value в blob для key rotation | Только `IDataProtection` для http-callback токенов; field-level не нашёл | **Наш** |
 | Multi-port outcomes / параллелизм | Single-port-per-step + Switch / Condition / ForEach | Multi-port + явные Fork/Join + ParallelForEach + Compensation | **Elsa** — больше моделей |
 | Suspend/Resume | `Waiting` step + `IWorkflowResumer.ResumeAsync(stepId, port, payload)` атомарно | `Bookmark`-таблица + `BookmarkProvider` per-activity, hash-индекс для матчинга, `BookmarkIndexer` пере-создаёт всё каждый шаг | **Elsa** — гибче (bookmark-провайдеры расширяемы), наш — дешевле (одна таблица, один UPDATE) |
 | Triggers | Не отдельная сущность — `WorkflowTriggerKinds` строки + `IWorkflowDispatcher.DispatchAsync` | `Trigger` сущность = bookmark до старта; `TriggerIndexer` + hash-matching | **Elsa** — для event-driven multi-source сценариев это важно |
@@ -81,13 +81,13 @@
 
 Три EF Core таблицы:
 - `workflow_definitions` — `(tenant_id, owner_kind, owner_id, trigger_kind)` natural key, `graph` jsonb с raw нодами и edges.
-- `workflow_runs` — `id, tenant_id, definition_id, name, trigger_kind, trigger_source_*, started_at, finished_at, status, abort_reason, workflow_snapshot (frozen graph string), static_context (JsonElement), steps_outputs (JsonElement), return_value (JsonElement?), nesting_level, parent_run_id, parent_step_id, created_at, updated_at, protection_version`.
-- `workflow_step_executions` — `id, run_id, tenant_id, node_id, kind, name, predecessor_execution_id, trigger_port, resolved_config (JsonElement), is_long_running, status, output_port, attempt_count, next_attempt_at, completed_at, last_error, outputs (JsonElement?), created_at, updated_at, protection_version`.
+- `workflow_runs` — `id, tenant_id, definition_id, name, trigger_kind, trigger_source_*, started_at, finished_at, status, abort_reason, workflow_snapshot (frozen graph string), static_context (JsonElement), steps_outputs (JsonElement), return_value (JsonElement?), nesting_level, parent_run_id, parent_step_id, created_at, updated_at`.
+- `workflow_step_executions` — `id, run_id, tenant_id, node_id, kind, name, predecessor_execution_id, trigger_port, resolved_config (JsonElement), is_long_running, status, output_port, attempt_count, next_attempt_at, completed_at, last_error, outputs (JsonElement?), created_at, updated_at`.
 
 **Protected JSON / string columns** — не jsonb, а `bytea` через `WorkflowProtectedJsonConverter` / `WorkflowProtectedStringConverter`:
 - Без `IWorkflowDataProtector` — UTF-8 plaintext.
 - С регистрацией — `[0x80 magic byte] || ciphertext`. Mixed-mode read поддержан (старые plaintext rows читаются параллельно с зашифрованными).
-- `protection_version` стампится `WorkflowProtectionStampInterceptor` на каждый save — операторы могут SQL'ом найти rows на ротированном ключе.
+- Key id встроен per-value в blob (wire format), поэтому re-encryption sweep инспектирует значения, а не per-row stamp.
 - Hot path остаётся на `JsonElement` (не string round-trip): `WorkflowProtectedJsonConverter` хранит UTF-8 bytes от `el.GetRawText()`, парсинг только на чтение.
 
 Concurrency: `FOR UPDATE SKIP LOCKED` в `ClaimPendingStepsAsync` (raw SQL под Postgres). Run-record concurrency token раньше был (`xmin`), потом удалён — не нужен под shared-scope worker'ом, который держит запись в Local трекере между Get → Update. Race window между cancel и worker terminal write — accepted (single-digit ms).

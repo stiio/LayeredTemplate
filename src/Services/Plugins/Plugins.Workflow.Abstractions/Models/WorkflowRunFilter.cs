@@ -27,5 +27,9 @@ public record WorkflowRunFilter
     /// <summary>Filter by trigger source id within <see cref="TriggerSourceKind"/>.</summary>
     public Guid? TriggerSourceId { get; init; }
 
+    /// <summary>Filter by dry-run flag — <c>true</c> = dry-runs only, <c>false</c> = real runs only,
+    /// null = both. Used by the delete-workflow guard to detect real (PHI-carrying) run history.</summary>
+    public bool? IsDryRun { get; init; }
+
     public required WorkflowPagination Pagination { get; init; }
 }

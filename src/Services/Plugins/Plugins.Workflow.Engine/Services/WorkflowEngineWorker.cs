@@ -164,15 +164,24 @@ internal class WorkflowEngineWorker : BackgroundService
         var registry = scope.ServiceProvider.GetRequiredService<IActionTypeRegistry>();
         var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
 
-        // Sweep expired waiting steps before claiming — gives ITimeoutAwareActionType
-        // implementations a chance to fire a graceful timeout port; non-timeout-aware actions
-        // transition to Dead with a generic message. Either way the run-completion check
-        // unblocks affected runs.
+        // Sweep expired waiting steps before claiming — every action's OnStepTimedOutAsync gets
+        // a chance to fire a graceful timeout port; the base default sends the step Dead with a
+        // generic message (non-transient). Either way the run-completion check unblocks affected
+        // runs.
         await this.ExpireStaleWaitingStepsAsync(store, registry, fanOut, lane, stoppingToken);
         // Commit timeout outcomes as their own logical unit. Critical for the empty-claim case:
         // without this save, a batch that finds expired waiting steps but no pending claims
         // would discard the timeout mutations on scope dispose.
         await store.SaveChangesAsync(stoppingToken);
+
+        // Reconciliation backstop for signal-wait bookmarks — on the same cadence as the timeout
+        // sweep. Deletes bookmarks whose target step is no longer Waiting (resumed elsewhere,
+        // timed-out, dead-lettered, cancelled). This is what makes bookmark cleanup CORRECT
+        // regardless of path; the eager delete-on-resume in the signaler is just an optimization.
+        // Set-based DELETE — independent of lane (no lane column on bookmarks); cheap to issue on
+        // every fast/long worker pass since it no-ops when nothing's stale. Best-effort: a failure
+        // here must not abort the batch's real work, so it's swept once per pass and logged.
+        await this.SweepResolvedBookmarksAsync(store, stoppingToken);
 
         // Don't claim more work after shutdown — sweep was best-effort, but new claims would
         // just need to be released right back.
@@ -276,6 +285,20 @@ internal class WorkflowEngineWorker : BackgroundService
         return processed.Count;
     }
 
+    /// <summary>
+    /// Internal for the test harness — runs ONE timeout-sweep pass (claim expired waiting steps →
+    /// per-action <c>OnStepTimedOutAsync</c> → <see cref="ApplyResultAsync"/>) without spinning up a
+    /// scope factory + hosted service. Production callers go through <see cref="ProcessBatchAsync"/>,
+    /// which wraps this in the lane / save / release plumbing. Mirrors the <see cref="ExecuteOneAsync"/>
+    /// test seam.
+    /// </summary>
+    internal Task SweepExpiredWaitingStepsOnceAsync(
+        IWorkflowStore store,
+        IActionTypeRegistry registry,
+        IWorkflowFanOut fanOut,
+        CancellationToken ct)
+        => this.ExpireStaleWaitingStepsAsync(store, registry, fanOut, WorkflowStepLane.Any, ct);
+
     private async Task ExpireStaleWaitingStepsAsync(
         IWorkflowStore store,
         IActionTypeRegistry registry,
@@ -292,32 +315,59 @@ internal class WorkflowEngineWorker : BackgroundService
 
         foreach (var step in expired)
         {
-            // Per-action policy: anything implementing ITimeoutAwareActionType gets a chance to
-            // produce a graceful outcome (typically a "timedOut" port). Everything else lands in
-            // Dead with a generic message.
+            // Per-action policy: every action's OnStepTimedOutAsync decides the outcome. Suspending
+            // actions override it to fire a graceful port (Delay → done, WaitForm / task-actions →
+            // timedOut + task expiry); the base default raises a non-transient OnError, landing the
+            // step in Dead with a generic message — same outcome as the pre-ADR-027 "no timeout
+            // policy" branch, now expressed as the base virtual rather than an absent interface.
             var actionType = registry.TryGet(step.Kind);
-            if (actionType is ITimeoutAwareActionType timeoutAware)
-            {
-                await this.HandleTimeoutGracefullyAsync(step, store, fanOut, timeoutAware, lane, ct);
-            }
-            else
+            if (actionType is null)
             {
                 step.Status = StepExecutionStatus.Dead;
-                step.LastError = $"Step '{step.Kind}' timed out while waiting and the action declared no timeout policy.";
+                step.LastError = $"Step '{step.Kind}' timed out while waiting and the action kind is unknown.";
                 step.CompletedAt = DateTime.UtcNow;
                 store.UpdateStep(step);
                 await fanOut.CheckRunCompletionAsync(step, ct);
+                continue;
             }
+
+            await this.HandleTimeoutGracefullyAsync(step, store, fanOut, actionType, lane, ct);
         }
 
         this.logger.LogWarning("Swept {Count} expired waiting step(s)", expired.Count);
+    }
+
+    /// <summary>
+    /// Reconciliation pass for the generic signal-wait bookmarks. A bookmark is valid only while
+    /// its step is Waiting; the moment the step leaves Waiting by ANY path, the bookmark is stale.
+    /// One set-based DELETE bounded by <see cref="WorkflowEngineSettings.BatchSize"/>. Best-effort:
+    /// swallow + log on failure so a transient DB blip here never aborts the batch's real work.
+    /// </summary>
+    private async Task SweepResolvedBookmarksAsync(IWorkflowStore store, CancellationToken ct)
+    {
+        try
+        {
+            var deleted = await store.SweepResolvedBookmarksAsync(this.settings.BatchSize, ct);
+            if (deleted > 0)
+            {
+                this.logger.LogInformation("Reconciliation swept {Count} resolved bookmark(s).", deleted);
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Shutdown — fine, next startup re-sweeps.
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Bookmark reconciliation sweep failed; will retry next pass.");
+        }
     }
 
     private async Task HandleTimeoutGracefullyAsync(
         WorkflowStepRecord step,
         IWorkflowStore store,
         IWorkflowFanOut fanOut,
-        ITimeoutAwareActionType timeoutAware,
+        IActionType actionType,
         WorkflowStepLane lane,
         CancellationToken ct)
     {
@@ -348,7 +398,7 @@ internal class WorkflowEngineWorker : BackgroundService
         }
 
         object configObj;
-        var configType = ((IActionType)timeoutAware).ConfigType;
+        var configType = actionType.ConfigType;
         try
         {
             configObj = step.ResolvedConfig.Deserialize(configType, WorkflowJsonOptions.Default)
@@ -364,6 +414,14 @@ internal class WorkflowEngineWorker : BackgroundService
             return;
         }
 
+        // Mirror WorkflowResumer.BuildContextAsync so the timeout context matches the resume/execute
+        // shape — NodeKey + StepsOutputs populated (graph is cached on the scope's fan-out, so cheap).
+        // No slice-A timeout override reads these, but keeping the context uniform avoids a future
+        // footgun for a timeout handler that wants the node key or prior outputs.
+        var graph = await fanOut.GetGraphAsync(run, ct);
+        var node = graph?.Nodes.FirstOrDefault(n => n.Id == step.NodeId);
+        var nodeKey = string.IsNullOrWhiteSpace(node?.Key) ? step.NodeId : node.Key;
+
         var context = new ActionContext
         {
             Config = configObj,
@@ -375,17 +433,19 @@ internal class WorkflowEngineWorker : BackgroundService
             TriggerSourceKind = run.TriggerSourceKind,
             TriggerSourceId = run.TriggerSourceId,
             IsDryRun = run.IsDryRun,
+            NodeKey = nodeKey,
+            StepsOutputs = run.StepsOutputs,
         };
 
         ActionExecutionResult result;
         try
         {
-            result = await timeoutAware.OnTimeoutAsync(context, ct);
+            result = await actionType.OnStepTimedOutAsync(context, ct);
         }
         catch (Exception ex)
         {
             step.Status = StepExecutionStatus.Dead;
-            step.LastError = $"OnTimeoutAsync threw: {ex.Message}";
+            step.LastError = $"OnStepTimedOutAsync threw: {ex.Message}";
             step.CompletedAt = DateTime.UtcNow;
             store.UpdateStep(step);
             await fanOut.CheckRunCompletionAsync(step, ct);
@@ -660,6 +720,21 @@ internal class WorkflowEngineWorker : BackgroundService
             step.Outputs = ToJsonElement(result.Outputs);
             step.LastError = null;
             store.UpdateStep(step);
+            // Persist any bookmarks the action registered on the SAME pending batch as the step's
+            // Waiting transition — the choke point's single flush makes "step parked" and "bookmarks
+            // live" atomic. Empty / null = no signal-wait, regular suspend (Approve / Delay / …).
+            if (result.Bookmarks is { Count: > 0 } bookmarks)
+            {
+                store.AddBookmarks(step, bookmarks);
+                // Correlation-key PHI hardening: log HASHED keys, never raw. A generic WaitSignal key
+                // is author-controlled and could carry PHI; the stable hash lets ops match this
+                // suspend to the later SignalAsync (same key → same hash) without exposing the value.
+                this.logger.LogInformation(
+                    "Step {StepId} suspended with {Count} bookmark(s): {KeyHashes}",
+                    step.Id,
+                    bookmarks.Count,
+                    bookmarks.Select(b => CorrelationKeyLog.Hash(b.CorrelationKey)).ToArray());
+            }
             // Drive run.Status → Suspended (single-port engine: this Waiting step is now the only
             // active one). CheckRunCompletion is the single source of truth for run state.
             await fanOut.CheckRunCompletionAsync(step, ct);

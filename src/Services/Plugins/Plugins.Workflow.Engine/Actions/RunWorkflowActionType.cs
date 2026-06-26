@@ -29,7 +29,7 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Actions;
 /// <c>error</c> port with a non-transient error message — authors can wire fallback paths off
 /// it. Nesting depth is capped by <see cref="WorkflowEngineSettings.MaxNestingLevel"/>.
 /// </summary>
-public class RunWorkflowActionType : ActionType<RunWorkflowConfig>, ITimeoutAwareActionType
+public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
 {
     public const string KindName = "RunWorkflow";
 
@@ -196,7 +196,7 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>, ITimeoutAwar
     /// The child run is not aborted; it keeps running and its eventual termination is silently
     /// ignored because the parent step is no longer Waiting.
     /// </summary>
-    public Task<ActionExecutionResult> OnTimeoutAsync(
+    public override Task<ActionExecutionResult> OnStepTimedOutAsync(
         ActionContext context, CancellationToken cancellationToken)
     {
         return Task.FromResult(this.Port(
@@ -207,6 +207,17 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>, ITimeoutAwar
                 message = "Sub-workflow did not finish within timeoutSeconds.",
             }));
     }
+
+    /// <summary>
+    /// Wait-mode resume: the parent step woke because the child run terminated. Pass-through —
+    /// <c>WorkflowFanOut.ResumeParentStepAsync</c> computes the port (<c>success</c> / <c>failed</c>)
+    /// from the child's terminal status and injects the child summary as the resume payload; we
+    /// echo both verbatim. The engine validates the port and stamps the child summary on this
+    /// step's outputs (same shape as the pre-ADR-027 direct-store stamp).
+    /// </summary>
+    public override Task<ActionExecutionResult> OnStepResumedAsync(
+        ActionContext context, JsonElement? payload, string? port, CancellationToken cancellationToken)
+        => Task.FromResult(this.Port(port ?? RunWorkflowPorts.Success, payload));
 }
 
 public class RunWorkflowConfig

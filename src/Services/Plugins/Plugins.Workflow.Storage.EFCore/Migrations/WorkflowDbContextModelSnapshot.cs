@@ -23,6 +23,56 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities.WorkflowBookmark", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CorrelationKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("correlation_key");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ResumePort")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("resume_port");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<Guid>("StepId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("step_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_workflow_bookmark");
+
+                    b.HasIndex("RunId")
+                        .HasDatabaseName("ix_workflow_bookmark_run_id");
+
+                    b.HasIndex("StepId")
+                        .HasDatabaseName("ix_workflow_bookmark_step_id");
+
+                    b.HasIndex("TenantId", "CorrelationKey")
+                        .HasDatabaseName("ix_workflow_bookmark_tenant_id_correlation_key");
+
+                    b.ToTable("workflow_bookmark", "workflow");
+                });
+
             modelBuilder.Entity("LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities.WorkflowDefinition", b =>
                 {
                     b.Property<Guid>("Id")
@@ -313,6 +363,18 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Migrations
                         .HasFilter("status = 'waiting'");
 
                     b.ToTable("workflow_step_executions", "workflow");
+                });
+
+            modelBuilder.Entity("LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities.WorkflowBookmark", b =>
+                {
+                    b.HasOne("LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities.WorkflowRun", "Run")
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_workflow_bookmark_workflow_runs_run_id");
+
+                    b.Navigation("Run");
                 });
 
             modelBuilder.Entity("LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities.WorkflowRun", b =>

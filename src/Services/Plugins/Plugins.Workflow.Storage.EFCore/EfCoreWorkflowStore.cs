@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LayeredTemplate.Plugins.Workflow.Abstractions;
+using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
@@ -231,6 +232,10 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         {
             query = query.Where(r => r.TriggerSourceId == triggerSourceId);
         }
+        if (filter.IsDryRun is { } isDryRun)
+        {
+            query = query.Where(r => r.IsDryRun == isDryRun);
+        }
 
         // Total first, slice second. Postgres uses ix_workflow_runs_tenant_id_created_at for the
         // sort+slice; the COUNT runs against the same WHERE without the ORDER BY/LIMIT, so the
@@ -260,6 +265,15 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         // No local-overlay needed.
         return this.dbContext.WorkflowRuns
             .CountAsync(r => r.ParentRunId == parentRunId, cancellationToken);
+    }
+
+    public Task<bool> AnyRunsForDefinitionAsync(Guid definitionId, CancellationToken cancellationToken)
+    {
+        // No tenant filter on purpose: system-workflow runs live under workspace tenants, not the
+        // definition's tenant (ADR-028 §4). The question is "did this definition ever run anywhere?"
+        return this.dbContext.WorkflowRuns
+            .AsNoTracking()
+            .AnyAsync(r => r.DefinitionId == definitionId, cancellationToken);
     }
 
     // ===== Steps =====
@@ -353,6 +367,75 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         entity.UpdatedAt = DateTime.UtcNow;
 
         return MapStepEntityToRecord(entity);
+    }
+
+    // ===== Bookmarks (generic signal-wait) =====
+
+    public void AddBookmarks(WorkflowStepRecord step, IReadOnlyList<WorkflowBookmarkRegistration> registrations)
+    {
+        var now = DateTime.UtcNow;
+        foreach (var reg in registrations)
+        {
+            this.dbContext.WorkflowBookmarks.Add(new Entities.WorkflowBookmark
+            {
+                TenantId = step.TenantId,
+                RunId = step.RunId,
+                StepId = step.Id,
+                CorrelationKey = reg.CorrelationKey,
+                ResumePort = reg.ResumePort,
+                CreatedAt = now,
+            });
+        }
+    }
+
+    public async Task<IReadOnlyList<WorkflowBookmarkRecord>> FindBookmarksAsync(
+        Guid tenantId, string correlationKey, CancellationToken cancellationToken)
+    {
+        // Tenant-scoped lookup — mandatory isolation. ix_workflow_bookmark_tenant_id_correlation_key
+        // serves this directly. AsNoTracking: the signaler resumes via the resumer (its own tracked
+        // step load) and deletes via a set-based DELETE, so it never mutates these instances.
+        var entities = await this.dbContext.WorkflowBookmarks
+            .AsNoTracking()
+            .Where(b => b.TenantId == tenantId && b.CorrelationKey == correlationKey)
+            .ToListAsync(cancellationToken);
+        return entities.Select(MapBookmarkEntityToRecord).ToList();
+    }
+
+    public Task<int> DeleteBookmarksAsync(IReadOnlyList<Guid> bookmarkIds, CancellationToken cancellationToken)
+    {
+        if (bookmarkIds.Count == 0) return Task.FromResult(0);
+
+        // Set-based delete by id — eager cleanup after a resume / stale outcome. ExecuteDeleteAsync
+        // bypasses the change tracker; that's fine, these rows aren't tracked (FindBookmarksAsync
+        // is AsNoTracking).
+        return this.dbContext.WorkflowBookmarks
+            .Where(b => bookmarkIds.Contains(b.Id))
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public Task<int> SweepResolvedBookmarksAsync(int limit, CancellationToken cancellationToken)
+    {
+        // Reconciliation backstop. A bookmark is only valid while its step is Waiting; the moment
+        // the step leaves Waiting (resumed / timed-out / dead-lettered / cancelled) by ANY path,
+        // the bookmark is garbage. One set-based DELETE … USING the step table, bounded by LIMIT
+        // so a huge backlog drains in cadence-sized chunks. Set-based (not EF query) because the
+        // <> comparison against the joined step status has no clean LINQ form here.
+        const string sql = """
+            DELETE FROM workflow.workflow_bookmark b
+            USING workflow.workflow_step_executions s
+            WHERE b.step_id = s.id
+              AND s.status <> {0}
+              AND b.id IN (
+                  SELECT b2.id FROM workflow.workflow_bookmark b2
+                  JOIN workflow.workflow_step_executions s2 ON b2.step_id = s2.id
+                  WHERE s2.status <> {0}
+                  LIMIT {1}
+              );
+        """;
+        return this.dbContext.Database.ExecuteSqlRawAsync(
+            sql,
+            new object[] { StepExecutionStatus.Waiting, limit },
+            cancellationToken);
     }
 
     // ===== Worker hot path =====
@@ -749,6 +832,8 @@ internal class EfCoreWorkflowStore : IWorkflowStore
             TriggerKind = entity.TriggerKind,
             DisplayName = entity.DisplayName,
             Graph = graph,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt,
         };
     }
 
@@ -811,6 +896,17 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         NestingLevel = e.NestingLevel,
         ParentRunId = e.ParentRunId,
         ParentStepId = e.ParentStepId,
+    };
+
+    private static WorkflowBookmarkRecord MapBookmarkEntityToRecord(WorkflowBookmark e) => new()
+    {
+        Id = e.Id,
+        TenantId = e.TenantId,
+        RunId = e.RunId,
+        StepId = e.StepId,
+        CorrelationKey = e.CorrelationKey,
+        ResumePort = e.ResumePort,
+        CreatedAt = e.CreatedAt,
     };
 
     private static WorkflowStepExecution MapStepRecordToEntity(WorkflowStepRecord r) => new()

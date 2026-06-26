@@ -35,6 +35,24 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "workflow_bookmark",
+                schema: "workflow",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    tenant_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    run_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    step_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    correlation_key = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    resume_port = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_workflow_bookmark", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "workflow_runs",
                 schema: "workflow",
                 columns: table => new
@@ -119,6 +137,24 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "ix_workflow_bookmark_run_id",
+                schema: "workflow",
+                table: "workflow_bookmark",
+                column: "run_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_workflow_bookmark_step_id",
+                schema: "workflow",
+                table: "workflow_bookmark",
+                column: "step_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_workflow_bookmark_tenant_id_correlation_key",
+                schema: "workflow",
+                table: "workflow_bookmark",
+                columns: new[] { "tenant_id", "correlation_key" });
+
+            migrationBuilder.CreateIndex(
                 name: "ix_workflow_definitions_tenant_id_created_at",
                 schema: "workflow",
                 table: "workflow_definitions",
@@ -196,6 +232,16 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Migrations
                 filter: "status = 'waiting'");
 
             migrationBuilder.AddForeignKey(
+                name: "fk_workflow_bookmark_workflow_runs_run_id",
+                schema: "workflow",
+                table: "workflow_bookmark",
+                column: "run_id",
+                principalSchema: "workflow",
+                principalTable: "workflow_runs",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
                 name: "fk_workflow_runs_workflow_step_executions_parent_step_id",
                 schema: "workflow",
                 table: "workflow_runs",
@@ -210,14 +256,17 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "fk_workflow_runs_workflow_definitions_definition_id",
+                name: "fk_workflow_step_executions_workflow_runs_run_id",
                 schema: "workflow",
-                table: "workflow_runs");
+                table: "workflow_step_executions");
 
-            migrationBuilder.DropForeignKey(
-                name: "fk_workflow_runs_workflow_step_executions_parent_step_id",
-                schema: "workflow",
-                table: "workflow_runs");
+            migrationBuilder.DropTable(
+                name: "workflow_bookmark",
+                schema: "workflow");
+
+            migrationBuilder.DropTable(
+                name: "workflow_runs",
+                schema: "workflow");
 
             migrationBuilder.DropTable(
                 name: "workflow_definitions",
@@ -225,10 +274,6 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Migrations
 
             migrationBuilder.DropTable(
                 name: "workflow_step_executions",
-                schema: "workflow");
-
-            migrationBuilder.DropTable(
-                name: "workflow_runs",
                 schema: "workflow");
         }
     }

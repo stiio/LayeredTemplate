@@ -39,9 +39,10 @@ public class ActionExecutionResult
     /// When true, the engine parks the step in <see cref="Models.StepExecutionStatus.Waiting"/>
     /// instead of completing it — used by actions that hand control to an external trigger
     /// (Approval, manual webhook, scheduled hold, …). The step is resumed via
-    /// <c>IWorkflowStore.TryResumeWaitingStepAsync</c>; if <see cref="SuspendTimeoutSeconds"/>
-    /// is set and elapses first, the engine consults
-    /// <see cref="ITimeoutAwareActionType.OnTimeoutAsync"/> to decide the outcome (default = Dead).
+    /// <c>IWorkflowResumer.ResumeAsync</c> (which calls the action's
+    /// <see cref="ActionType{TConfig}.OnStepResumedAsync"/>); if <see cref="SuspendTimeoutSeconds"/>
+    /// is set and elapses first, the engine sweeper consults
+    /// <see cref="ActionType{TConfig}.OnStepTimedOutAsync"/> to decide the outcome (default = Dead).
     /// </summary>
     public bool IsSuspended { get; init; }
 
@@ -66,6 +67,20 @@ public class ActionExecutionResult
     /// Ignored unless <see cref="TerminatesRun"/> is true.
     /// </summary>
     public object? ReturnValue { get; init; }
+
+    /// <summary>
+    /// Bookmarks the engine should persist alongside the parked Waiting step. Each registration
+    /// declares an opaque correlation key plus the resume port to fire when an external
+    /// <c>IWorkflowSignaler.SignalAsync(tenant, key, payload)</c> matches it. Only honoured when
+    /// <see cref="IsSuspended"/> is true; ignored on every other result flavour.
+    /// <para>
+    /// The engine never interprets the key — it's a domain-agnostic string the registering action
+    /// owns (e.g. an App-side action may key it on a submission id, but the engine doesn't know
+    /// that). Plural because a single suspend may wait on several keys (wait-for-any-of-N); a
+    /// signal on any one of them resumes the step. Fan-IN / wait-for-ALL is out of scope.
+    /// </para>
+    /// </summary>
+    public IReadOnlyList<WorkflowBookmarkRegistration>? Bookmarks { get; init; }
 
     /// <summary>Single-port fire — the only fan-out primitive.</summary>
     public static ActionExecutionResult OnPort(string port, object? outputs = null) =>
@@ -94,14 +109,21 @@ public class ActionExecutionResult
     /// = null means "wait forever" — the run stays in <c>running</c> until something resumes it.
     /// <paramref name="initialOutputs"/> are stamped on the step right away so downstream Conditions
     /// (or the resume handler) can read pre-suspend metadata via <c>steps.&lt;key&gt;.*</c>.
+    /// <paramref name="bookmarks"/> register one or more opaque correlation keys an external
+    /// <c>IWorkflowSignaler.SignalAsync</c> can use to resume this exact step; persisted atomically
+    /// with the suspend by the worker (see <see cref="Bookmarks"/>).
     /// </summary>
-    public static ActionExecutionResult OnSuspend(int? timeoutSeconds = null, object? initialOutputs = null) =>
+    public static ActionExecutionResult OnSuspend(
+        int? timeoutSeconds = null,
+        object? initialOutputs = null,
+        IReadOnlyList<WorkflowBookmarkRegistration>? bookmarks = null) =>
         new()
         {
             OutputPort = null,
             Outputs = initialOutputs,
             IsSuspended = true,
             SuspendTimeoutSeconds = timeoutSeconds,
+            Bookmarks = bookmarks,
         };
 
     /// <summary>

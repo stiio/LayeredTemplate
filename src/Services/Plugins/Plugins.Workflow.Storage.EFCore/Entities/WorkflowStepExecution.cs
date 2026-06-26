@@ -1,5 +1,4 @@
 using System.Text.Json;
-using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 
 namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities;
 

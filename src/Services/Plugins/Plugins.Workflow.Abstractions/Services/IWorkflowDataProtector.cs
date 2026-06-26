@@ -21,10 +21,9 @@ namespace LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 /// <para>
 /// <b>Key rotation:</b> implementations are expected to manage a key ring internally. <see cref="Unprotect"/>
 /// must succeed for any ciphertext written with any historical key the implementation still
-/// retains. <see cref="Protect"/> always uses the active key. <see cref="CurrentKeyVersion"/>
-/// is stamped onto the row's <c>protection_version</c> column at save time so operators can
-/// query <c>WHERE protection_version &lt;&gt; 'current'</c> to find rows still on an old key
-/// and run a re-encryption pass.
+/// retains. <see cref="Protect"/> always uses the active key. Key identification lives inside
+/// each ciphertext blob (the wire format embeds the key id), so a re-encryption sweep can
+/// inspect individual values rather than relying on a per-row stamp.
 /// </para>
 /// <para>
 /// <b>Threading:</b> implementations must be thread-safe — <see cref="Protect"/> and
@@ -33,13 +32,6 @@ namespace LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 /// </remarks>
 public interface IWorkflowDataProtector
 {
-    /// <summary>
-    /// Stable identifier of the active encryption key. Short, immutable per key generation —
-    /// e.g. <c>"v1"</c>, <c>"2024-Q2"</c>, <c>"kms:keyId:abc"</c>. Stored verbatim on every
-    /// protected row.
-    /// </summary>
-    string CurrentKeyVersion { get; }
-
     /// <summary>
     /// Encrypts <paramref name="plaintext"/> with the active key. Engine wraps the result with
     /// a magic-byte prefix before storage; the implementation should return raw ciphertext only.

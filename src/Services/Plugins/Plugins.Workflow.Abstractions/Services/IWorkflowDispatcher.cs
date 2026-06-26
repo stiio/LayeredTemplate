@@ -27,8 +27,22 @@ public interface IWorkflowDispatcher
 /// </summary>
 public record WorkflowDispatchRequest
 {
-    /// <summary>Multi-tenant key — must match the workflow definition's <c>TenantId</c>.</summary>
+    /// <summary>
+    /// Multi-tenant key the RUN is created under — the run's <c>TenantId</c>, all of its steps, and
+    /// every action-level tenant/permission check key off this. For an ordinary run it is also the
+    /// tenant the definition is looked up in (<see cref="OwnerTenantId"/> defaults to it).
+    /// </summary>
     public required Guid TenantId { get; init; }
+
+    /// <summary>
+    /// Tenant the DEFINITION is resolved under, when it differs from the tenant the run executes in
+    /// (ADR-028). Null — the default — means "same tenant as the run": the dispatcher looks the
+    /// definition up under <see cref="TenantId"/>, exactly as before (zero behavioural change for
+    /// every existing caller). Set it only for platform-authored system workflows: the definition
+    /// lives under a sentinel tenant, but the run must still be created under the operator's real
+    /// workspace (<see cref="TenantId"/>) so the executed actions see the right tenant's data.
+    /// </summary>
+    public Guid? OwnerTenantId { get; init; }
 
     /// <summary>Owner kind for the definition lookup (e.g. <c>"Form"</c>).</summary>
     public required string OwnerKind { get; init; }

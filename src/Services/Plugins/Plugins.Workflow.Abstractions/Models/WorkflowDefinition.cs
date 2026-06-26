@@ -32,4 +32,10 @@ public record WorkflowDefinition
     public string? DisplayName { get; init; }
 
     public required WorkflowGraph Graph { get; init; }
+
+    /// <summary>Row creation instant (UTC), set by the store on insert. Default for in-memory records the store never produced.</summary>
+    public DateTime CreatedAt { get; init; }
+
+    /// <summary>Last mutation instant (UTC), set by the store on insert/update. Default for in-memory records the store never produced.</summary>
+    public DateTime UpdatedAt { get; init; }
 }

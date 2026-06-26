@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
 
 namespace LayeredTemplate.Plugins.Workflow.Engine.Actions;
@@ -16,10 +17,11 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Actions;
 /// <para>
 /// Because the step is just a normal Waiting step, an operator can short-circuit it via the
 /// regular resume API (<c>POST /workflow-runs/{run}/steps/{step}/resume?port=done</c>). Useful
-/// for tests / manual unblocking; not a typical UX path.
+/// for tests / manual unblocking; not a typical UX path. That path flows through
+/// <see cref="OnStepResumedAsync"/>, which echoes the caller-chosen port (pass-through).
 /// </para>
 /// </summary>
-public class DelayActionType : ActionType<DelayConfig>, ITimeoutAwareActionType
+public class DelayActionType : ActionType<DelayConfig>
 {
     public const string KindName = "Delay";
 
@@ -62,13 +64,22 @@ public class DelayActionType : ActionType<DelayConfig>, ITimeoutAwareActionType
     /// Deadline reached — fire the <c>done</c> port. For Delay this is the only path: there is
     /// no external resume signal we'd be waiting on, the timer IS the trigger.
     /// </summary>
-    public Task<ActionExecutionResult> OnTimeoutAsync(
+    public override Task<ActionExecutionResult> OnStepTimedOutAsync(
         ActionContext context, CancellationToken cancellationToken)
     {
         return Task.FromResult(this.Port(
             PortDone,
             new { firedAt = DateTime.UtcNow.ToString("O") }));
     }
+
+    /// <summary>
+    /// Manual short-circuit via the resume API. Pass-through: echo the caller's chosen port and
+    /// payload so a <c>?port=done</c> resume behaves exactly as it did when the resumer stamped
+    /// the port directly (the engine validates the port against <see cref="OutputPorts"/>).
+    /// </summary>
+    public override Task<ActionExecutionResult> OnStepResumedAsync(
+        ActionContext context, JsonElement? payload, string? port, CancellationToken cancellationToken)
+        => Task.FromResult(this.Port(port ?? PortDone, payload));
 }
 
 public class DelayConfig

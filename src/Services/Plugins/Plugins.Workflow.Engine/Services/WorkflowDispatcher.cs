@@ -63,8 +63,12 @@ internal class WorkflowDispatcher : IWorkflowDispatcher
             }
         }
 
+        // Definition-tenancy ≠ run-tenancy (ADR-028): the lookup uses OwnerTenantId when supplied
+        // (system workflows live under a sentinel tenant), but the run below is still built from
+        // `request` and so created under the REAL TenantId. OwnerTenantId defaults to TenantId, so
+        // ordinary callers (null) resolve the definition in the same tenant they always did.
         var definition = await this.store.FindDefinitionAsync(
-            request.TenantId,
+            request.OwnerTenantId ?? request.TenantId,
             request.OwnerKind,
             request.OwnerId,
             request.TriggerKind,

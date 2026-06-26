@@ -28,7 +28,8 @@ A custom storage backend, third-party action type, or consumer trigger pulls onl
 ## Folder map
 
 ```
-Actions/        — IActionType (+ ActionType<TConfig> base) + ITimeoutAwareActionType,
+Actions/        — IActionType (+ ActionType<TConfig> base; Execute + OnStepResumed /
+                  OnStepTimedOut lifecycle hooks for suspending actions),
                   IActionTypeRegistry, ActionContext (run-time, JsonElement-typed),
                   ActionExecutionResult (port / suspend / terminate / error),
                   ActionPort (descriptor + Normal/Error/Always kind enum).
@@ -54,7 +55,7 @@ Services/       — Engine entry-points and persistence boundary:
                   IWorkflowReadStore / IWorkflowRetentionStore / IWorkflowStore
                     (read / purge / full persistence boundary),
                   WorkflowConcurrencyException (optimistic-concurrency signal),
-                  IWorkflowDataProtector + IHaveProtectedData (PHI encryption hooks).
+                  IWorkflowDataProtector (PHI encryption hook).
 Telemetry/      — WorkflowTelemetry (ActivitySource name constant).
 ```
 
@@ -172,8 +173,8 @@ Optional. Register `IWorkflowDataProtector` and the EF Core backend will transpa
 the JSON-typed protected columns (`static_context`, `steps_outputs`, `return_value`,
 `resolved_config`, `outputs`) plus plain-text protected columns (`abort_reason`, `last_error`)
 using a `[1B 0x80 magic][ciphertext]` envelope. Without registration, bytes are stored as
-plaintext UTF-8. `IHaveProtectedData` marks rows whose `protection_version` column carries the
-key id used to write them — operators query this to find rows still on a rotated-out key.
+plaintext UTF-8. The key id used to seal each value is embedded in the ciphertext blob's wire
+format, so a re-encryption sweep inspects individual values rather than a per-row stamp.
 
 ### `ActionContext` and `ExpressionEvaluationContext`
 

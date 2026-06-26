@@ -88,6 +88,16 @@ public interface IWorkflowReadStore
     /// </summary>
     Task<int> CountChildRunsAsync(Guid parentRunId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Cross-tenant existence check: did ANY run (any tenant, any status, dry or real) reference
+    /// <paramref name="definitionId"/>? Deliberately <b>not</b> tenant-scoped — system-workflow
+    /// runs execute under the operators' workspace tenants, not the definition's owning tenant
+    /// (ADR-028 §4), so a tenant-filtered query would falsely report zero. Used as the delete
+    /// guard for system workflows: a RESTRICT FK on <c>workflow_runs.definition_id</c> would
+    /// otherwise turn the delete into a 500 instead of a clean 4xx.
+    /// </summary>
+    Task<bool> AnyRunsForDefinitionAsync(Guid definitionId, CancellationToken cancellationToken);
+
     // ===== Steps =====
 
     Task<IReadOnlyList<WorkflowStepRecord>> GetStepsForRunAsync(Guid runId, CancellationToken cancellationToken);

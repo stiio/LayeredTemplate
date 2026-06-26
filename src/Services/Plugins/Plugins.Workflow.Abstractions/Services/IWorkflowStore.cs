@@ -1,3 +1,4 @@
+using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 
@@ -127,10 +128,10 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// while still in <c>Waiting</c> status — by flipping them to <c>Running</c> in a single
     /// SQL with <c>FOR UPDATE SKIP LOCKED</c>. Mirrors the
     /// <see cref="ClaimPendingStepsAsync"/> pattern so multi-worker setups never see two
-    /// workers fire <c>OnTimeoutAsync</c> for the same step.
+    /// workers fire <c>OnStepTimedOutAsync</c> for the same step.
     /// <para>
-    /// Caller (engine worker sweeper path) drives the timeout outcome via
-    /// <c>ITimeoutAwareActionType.OnTimeoutAsync</c> and then routes through the regular
+    /// Caller (engine worker sweeper path) drives the timeout outcome via the action's
+    /// <c>OnStepTimedOutAsync</c> and then routes through the regular
     /// <c>ApplyResultAsync</c>, which terminates the step (<c>Completed</c>/<c>Dead</c>)
     /// just like an ordinary execution.
     /// </para>
@@ -154,6 +155,42 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     Task<int> ReleaseClaimedStepsAsync(
         IReadOnlyList<Guid> stepIds,
         CancellationToken cancellationToken);
+
+    // ===== Bookmarks (generic signal-wait) =====
+
+    /// <summary>
+    /// Stage one bookmark row per registration for insert at the next <see cref="SaveChangesAsync"/>.
+    /// Called by the worker in the suspend branch so the bookmarks persist on the SAME flush as the
+    /// step's transition to <c>Waiting</c> — there's never a window where the step is parked but its
+    /// bookmarks are missing (or vice versa). Each row freezes the exact <c>(RunId, StepId)</c> the
+    /// suspend happened on plus the registration's <c>CorrelationKey</c> / <c>ResumePort</c>; a
+    /// later <c>IWorkflowSignaler.SignalAsync</c> resumes that exact frozen step, never a re-derived one.
+    /// </summary>
+    void AddBookmarks(WorkflowStepRecord step, IReadOnlyList<WorkflowBookmarkRegistration> registrations);
+
+    /// <summary>
+    /// Find every bookmark in <paramref name="tenantId"/> matching <paramref name="correlationKey"/>
+    /// (exact string). Tenant-scoped — MANDATORY: a key in another tenant must never surface here.
+    /// Used by the signaler fan-out; the matched bookmarks drive per-step resumes.
+    /// </summary>
+    Task<IReadOnlyList<WorkflowBookmarkRecord>> FindBookmarksAsync(
+        Guid tenantId, string correlationKey, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Hard-delete the bookmark rows with the given ids. Eager cleanup the signaler issues after a
+    /// resume / stale outcome; correctness of cleanup ultimately rests on
+    /// <see cref="SweepResolvedBookmarksAsync"/>, not on this optimization. No-op on empty input.
+    /// </summary>
+    Task<int> DeleteBookmarksAsync(IReadOnlyList<Guid> bookmarkIds, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Reconciliation backstop: delete every bookmark whose target step is no longer in
+    /// <c>Waiting</c> — resumed, timed-out, dead-lettered, or cancelled by any path. A single
+    /// set-based <c>DELETE … USING workflow_step_executions</c>. Run on the same cadence as the
+    /// timeout sweeper. This — not the eager delete-on-resume — is what makes bookmark cleanup
+    /// CORRECT regardless of which path retired the step. Returns the count deleted.
+    /// </summary>
+    Task<int> SweepResolvedBookmarksAsync(int limit, CancellationToken cancellationToken);
 
     // ===== Atomic commit =====
 

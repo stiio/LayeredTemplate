@@ -30,6 +30,7 @@ internal class WorkflowStepExecutionConfiguration : IEntityTypeConfiguration<Wor
         // when the step is built; defaults to false for backward compat with legacy rows.
         builder.Property(x => x.IsLongRunning).HasColumnName("is_long_running").HasDefaultValue(false);
 
+        // Protected columns: column type + value converter set in WorkflowDbContext.OnModelCreating.
         builder.Property(x => x.ResolvedConfig).HasColumnName("resolved_config").IsRequired(); // old jsonb
         builder.Property(x => x.Outputs).HasColumnName("outputs"); // old jsonb
         builder.Property(x => x.LastError).HasColumnName("last_error"); // old text

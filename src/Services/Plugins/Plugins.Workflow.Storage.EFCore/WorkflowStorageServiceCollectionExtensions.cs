@@ -31,7 +31,7 @@ public static class WorkflowStorageServiceCollectionExtensions
         string connectionString,
         bool autoMigrate = true)
     {
-        builder.Services.AddDbContext<WorkflowDbContext>((sp, opts) =>
+        builder.Services.AddDbContext<WorkflowDbContext>(opts =>
         {
             opts.UseNpgsql(connectionString, npgsql =>
             {
@@ -41,6 +41,8 @@ public static class WorkflowStorageServiceCollectionExtensions
             // No naming convention package — every column/index/PK/FK is named explicitly in
             // the entity configurations. Locks the schema contract at the type level instead of
             // deriving it from a third-party convention.
+            // PHI encryption converters are wired in WorkflowDbContext.OnModelCreating from its
+            // ctor-injected (optional) IWorkflowDataProtector — no save interceptor needed.
         });
 
         // EfCoreWorkflowStore implements all three interfaces; we register the impl once as

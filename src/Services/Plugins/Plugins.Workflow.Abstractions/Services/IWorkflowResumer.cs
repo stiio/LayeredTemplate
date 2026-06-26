@@ -42,11 +42,22 @@ public record WorkflowResumeCommand
     /// <summary>Tenant the caller is acting on behalf of — must match the run's stored tenant.</summary>
     public required Guid TenantId { get; init; }
 
-    /// <summary>Output port to fire — must be one of the action's declared <c>OutputPorts</c>.</summary>
-    public required string Port { get; init; }
+    /// <summary>
+    /// Caller-supplied outcome port. The resumer hands it to the action's
+    /// <c>OnStepResumedAsync(ctx, payload, port)</c>: pass-through actions (Approve, RunWorkflow-wait)
+    /// echo it; fixed-port actions (WaitForm, task-actions) ignore it (returning their own port).
+    /// <b>Currently required in practice</b> — the resumer rejects null/blank with
+    /// <see cref="WorkflowResumeFailureReason.InvalidPort"/> BEFORE consulting the action, and every
+    /// caller supplies a concrete port today. Typed nullable only to leave room for a future
+    /// "let the action choose its default port" mode (ADR-027 Slice B follow-up); until that lands,
+    /// pass a concrete port. The fired port is whatever the action returns, validated against its
+    /// <c>OutputPorts</c>.
+    /// </summary>
+    public string? Port { get; init; }
 
     /// <summary>
-    /// Free-form JSON payload merged into the step's outputs. Becomes available downstream via
+    /// Free-form JSON payload handed to the action's <c>OnStepResumedAsync</c> and (for the
+    /// echo-style actions) stamped on the step's outputs. Becomes available downstream via
     /// <c>steps.&lt;node_key&gt;.*</c>:
     /// <list type="bullet">
     ///   <item>Object → keys are flattened into the outputs as-is.</item>
@@ -57,7 +68,7 @@ public record WorkflowResumeCommand
     /// <c>payload</c> shape is the consumer's job (resumer is intentionally tenant- and
     /// identity-agnostic).
     /// </summary>
-    public JsonElement? Outputs { get; init; }
+    public JsonElement? Payload { get; init; }
 }
 
 public enum WorkflowResumeFailureReason

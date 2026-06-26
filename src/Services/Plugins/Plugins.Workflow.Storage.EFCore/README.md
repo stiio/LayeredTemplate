@@ -36,13 +36,9 @@ Entities/                          — EF entities the engine persists.
 │                                    lookup key + optional DisplayName.
 ├── WorkflowRun.cs                  — A single run: snapshot, static context (JSON-typed),
 │                                    accumulated step outputs (JSON-typed), status, trigger
-│                                    source, parent-run/step linkage, protection version,
-│                                    xmin concurrency token.
-├── WorkflowStepExecution.cs        — Per-step state: kind, resolved config (JSON-typed),
-│                                    outputs (JSON-typed), is_long_running lane flag,
-│                                    protection version, xmin concurrency token.
-└── IHaveProtectedData.cs           — Marker interface implemented by entities whose protected
-                                    columns get stamped with the active key version.
+│                                    source, parent-run/step linkage.
+└── WorkflowStepExecution.cs        — Per-step state: kind, resolved config (JSON-typed),
+                                    outputs (JSON-typed), is_long_running lane flag.
 
 Configurations/                     — IEntityTypeConfiguration<T> for each entity. Every column,
                                     index, PK, FK is named explicitly (no convention package);
@@ -65,10 +61,6 @@ WorkflowDbContext.cs                — Internal DbContext. Owns `workflow` sche
                                     concurrency token mapping.
 WorkflowProtectedStringConverter.cs — Plain-text protected columns ↔ bytea.
 WorkflowProtectedJsonConverter.cs   — JsonElement ↔ bytea.
-WorkflowProtectionStampInterceptor.cs
-                                   — SaveChanges interceptor that stamps `protection_version`
-                                    on entities being saved when an IWorkflowDataProtector is
-                                    registered.
 WorkflowStorageServiceCollectionExtensions.cs
                                    — IWorkflowCoreBuilder.AddEfCoreStorage(connectionString) +
                                     DI registrations for the three store interfaces (composite
@@ -100,6 +92,7 @@ services.AddWorkflowCore(configuration)
 | `workflow.workflow_definitions` | Authored graphs. Unique on `(tenant_id, owner_kind, owner_id, trigger_kind)`. Optional `display_name`. |
 | `workflow.workflow_runs` | One row per run. Carries `workflow_snapshot` (frozen graph), `static_context` + `steps_outputs` + `return_value` (JSON-typed protected columns), `parent_run_id` / `parent_step_id` for sub-workflow chains, `xmin` system column for concurrency. |
 | `workflow.workflow_step_executions` | One row per step instance. Cascade-deleted with the run. `resolved_config` + `outputs` + `last_error` are protected columns. `is_long_running` drives lane filter. |
+| `workflow.workflow_bookmark` | Generic external-event wait registry (ADR-025). One row per `OnSuspend` bookmark: an opaque `(tenant_id, correlation_key)` → the frozen waiting `(run_id, step_id, resume_port)`. `IWorkflowSignaler.SignalAsync(tenant, key, payload)` fan-out-resumes all matches. Cascade-deleted with the run; reconciliation-swept once its step leaves `waiting`. No PHI (opaque key). |
 | `workflow.__EFMigrationsHistory` | Plugin-private history table. Lowercase column names (`migration_id`, `product_version`) per the snake_case convention. |
 
 ### Indexes
@@ -118,6 +111,9 @@ services.AddWorkflowCore(configuration)
 | `ix_workflow_step_executions_waiting_lane_next_attempt` | `(is_long_running, next_attempt_at) WHERE status='waiting'` | **Partial index** — timeout sweeper. |
 | `ix_workflow_step_executions_run_id_created_at` | `(run_id, created_at)` | GetStepsForRun queries with implicit chronological order. |
 | `ix_workflow_step_executions_tenant_id` | `(tenant_id)` | Tenant-scoped purge / "delete all PHI for tenant X". |
+| `ix_workflow_bookmark_tenant_id_correlation_key` | `(tenant_id, correlation_key)` | Signal-lookup hot path (`SignalAsync`). |
+| `ix_workflow_bookmark_run_id` | `(run_id)` | FK cascade + run cleanup. |
+| `ix_workflow_bookmark_step_id` | `(step_id)` | Reconciliation-sweep join + eager delete. |
 
 ### Foreign keys
 
@@ -127,6 +123,7 @@ services.AddWorkflowCore(configuration)
 | `workflow_runs.parent_run_id` → `workflow_runs.id` | **SET NULL** — when retention purges a parent run, descendant children are orphaned but stay alive. Critical for fire-and-forget sub-workflows: a parent that finishes early and gets purged otherwise drags a still-suspended child along under CASCADE, even though the child is doing legitimate work. RESTRICT can't be used because `ExecuteDeleteAsync`'s `ORDER BY` governs only LIMIT selection, not per-row delete order, so the planner could delete a parent before its children and trip the constraint. SET NULL atomically nulls the back-pointer when the parent row goes away — no ordering hazard, and `ParentRunId` is purely an audit / observability pointer plus the `MaxSubRunsPerRun` count source (only consulted while the parent is alive). Auto-resume of wait-mode parents goes through `ParentStepId`, not this FK. |
 | `workflow_runs.parent_step_id` → `workflow_step_executions.id` | SET NULL — when a step is purged, child runs lose the back-pointer gracefully. |
 | `workflow_step_executions.run_id` → `workflow_runs.id` | CASCADE — steps go with their run. |
+| `workflow_bookmark.run_id` → `workflow_runs.id` | CASCADE — bookmarks go with their run (no orphans). |
 
 ## Migrations
 
@@ -165,16 +162,9 @@ Two converters share the envelope:
   deserialize and prevents consumer code from stuffing malformed strings into JSON-typed
   columns.
 
-`protection_version` (varchar 64, nullable) on each protected entity carries the key id used
-to write the row — stamped by `WorkflowProtectionStampInterceptor` at SaveChanges:
-
-- `Added` entries always stamp.
-- `Modified` entries stamp only when at least one protected (converter-mapped) property is
-  itself modified — so a status-only update doesn't stamp the current version onto a row whose
-  ciphertext was actually written under an older key.
-
-Operators query `protection_version` to find rows still on a rotated-out key (see SQL recipes
-below).
+Key identification is per-value, not per-row: each ciphertext blob embeds the key id in its
+wire format (`[1B 0x80 magic][1B version][2B keyId BE][12B nonce][ciphertext][16B tag]`). A
+re-encryption sweep inspects individual values rather than a row-level stamp.
 
 ## Capacity diagnosis
 
@@ -390,13 +380,12 @@ Read protected (currently plaintext) JSON column as text:
 SELECT
     id,
     started_at,
-    protection_version,
     length(static_context) AS bytes,
     -- Detection: first byte 0x80 (=128) means encrypted blob
     CASE
         WHEN length(static_context) > 0
          AND get_byte(static_context, 0) = 128
-        THEN '<encrypted, version=' || COALESCE(protection_version, 'unknown') || '>'
+        THEN '<encrypted>'
         ELSE convert_from(static_context, 'UTF8')
     END AS static_context_text
 FROM workflow.workflow_runs
@@ -404,18 +393,8 @@ ORDER BY started_at DESC
 LIMIT 5;
 ```
 
-Find rows that need re-encryption after rotating from `v1` to `v2`:
-
-```sql
-SELECT id, started_at, protection_version, status
-FROM workflow.workflow_runs
-WHERE protection_version = 'v1'         -- or IS NULL for legacy plaintext
-  AND status IN ('running', 'suspended');
-
-SELECT id, run_id, kind, protection_version
-FROM workflow.workflow_step_executions
-WHERE protection_version IS DISTINCT FROM 'v2';
-```
+To find rows still on a rotated-out key, decrypt each value and read the embedded key id from
+the blob's wire format (`[1B 0x80][1B version][2B keyId]…`) — there is no row-level stamp.
 
 Manual decrypt for AES-GCM-256 envelopes via plpython3u (see `IWorkflowDataProtector` impl in
 the consumer for the wire format — typically `[1B version][2B keyId BE][12B nonce][ciphertext][16B tag]`):
