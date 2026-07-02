@@ -128,6 +128,16 @@ public class WorkflowDispatchResult
 
     public Guid? RunId { get; init; }
 
+    /// <summary>
+    /// Status of the started run at dispatch time (set only when <see cref="Outcome"/> is
+    /// <see cref="WorkflowDispatchOutcome.Started"/>; null otherwise). Normally <c>running</c>, but a
+    /// run whose start step is dead-on-arrival (its config failed to resolve — e.g. invalid Liquid)
+    /// is already <c>failed</c> here. Callers that would otherwise wait on the run (RunWorkflow in
+    /// <c>waitForCompletion</c> mode) use this to fire a terminal port immediately instead of
+    /// suspending for a resume that will never arrive.
+    /// </summary>
+    public string? RunStatus { get; init; }
+
     public bool Started => this.Outcome == WorkflowDispatchOutcome.Started;
 
     public static WorkflowDispatchResult NotConfigured() =>
@@ -142,6 +152,6 @@ public class WorkflowDispatchResult
     public static WorkflowDispatchResult SubRunLimitExceeded() =>
         new() { Outcome = WorkflowDispatchOutcome.SubRunLimitExceeded };
 
-    public static WorkflowDispatchResult StartedAt(Guid runId) =>
-        new() { Outcome = WorkflowDispatchOutcome.Started, RunId = runId };
+    public static WorkflowDispatchResult StartedAt(Guid runId, string runStatus) =>
+        new() { Outcome = WorkflowDispatchOutcome.Started, RunId = runId, RunStatus = runStatus };
 }

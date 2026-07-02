@@ -71,6 +71,19 @@ internal class WorkflowRunner : IWorkflowRunner
             run, startNode, predecessorExecutionId: null, triggerPort: null, model, cancellationToken);
         if (initialStep is null) return null;
 
+        // Dead-on-arrival start step — its config failed to resolve (e.g. an invalid Liquid/JS
+        // template), so the builder emitted a terminal Dead row instead of a Pending one. The
+        // worker only ever claims Pending steps, so this step will never execute and nothing would
+        // drive CheckRunCompletion (unlike a Dead SUCCESSOR, which the fan-out reconciles right
+        // after enqueue). Reconcile here: one Dead step with nothing else pending ⇒ the run is
+        // Failed. Surface the resolution error as the abort reason.
+        if (initialStep.Status == StepExecutionStatus.Dead)
+        {
+            run.Status = WorkflowRunStatus.Failed;
+            run.FinishedAt = DateTime.UtcNow;
+            run.AbortReason = initialStep.LastError;
+        }
+
         // Stage the run + its single start step in the store. Caller calls SaveChangesAsync to flush.
         this.store.AddRun(run);
         this.store.AddStep(initialStep);

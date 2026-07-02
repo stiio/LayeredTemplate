@@ -2,6 +2,7 @@ using System.Text.Json;
 using LayeredTemplate.Plugins.Workflow.Abstractions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Expressions;
+using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 using LayeredTemplate.Plugins.Workflow.Engine.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -114,11 +115,15 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
             ParentStepId = context.Config.WaitForCompletion ? context.StepExecutionId : null,
         };
 
-        var dispatcher = this.services.GetRequiredService<IWorkflowDispatcher>();
-
+        // Dispatch the child in its OWN DI scope, never the executing step's. WorkflowDispatcher
+        // flushes its store's DbContext (SaveChanges) to commit the child run; doing that on the
+        // batch's SHARED DbContext would flush unrelated tracked changes from sibling steps mid-run.
+        // A fresh scope makes the child dispatch a self-contained unit of work.
         WorkflowDispatchResult result;
         try
         {
+            await using var childScope = this.services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();
+            var dispatcher = childScope.ServiceProvider.GetRequiredService<IWorkflowDispatcher>();
             result = await dispatcher.DispatchAsync(request, cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -170,7 +175,24 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
                     });
                 }
 
-                // Wait mode: park the step. FanOut.CheckRunCompletionAsync resumes us via the
+                // Wait mode, but the child already reached a terminal state AT DISPATCH — its start
+                // step was dead-on-arrival (config failed to resolve, e.g. invalid Liquid). Suspending
+                // would park us for a resume that never comes: the child never runs on a worker, and a
+                // synchronous resume can't fire either (this step isn't Waiting yet). Fire the terminal
+                // port now with the child's outcome.
+                if (result.RunStatus is WorkflowRunStatus.Failed or WorkflowRunStatus.Completed)
+                {
+                    var terminalPort = result.RunStatus == WorkflowRunStatus.Completed
+                        ? RunWorkflowPorts.Success
+                        : RunWorkflowPorts.Failed;
+                    return this.Port(terminalPort, new
+                    {
+                        childRunId = result.RunId,
+                        childStatus = result.RunStatus,
+                    });
+                }
+
+                // Normal wait mode: park the step. FanOut.CheckRunCompletionAsync resumes us via the
                 // success / failed port when the child terminates, stamping its steps_outputs
                 // on this step's outputs.
                 return this.Suspend(

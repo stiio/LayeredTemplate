@@ -108,6 +108,6 @@ internal class WorkflowDispatcher : IWorkflowDispatcher
         activity?.SetTag(WorkflowTags.RunId, run.Id);
         activity?.SetTag(WorkflowTags.DefinitionId, definition.Id);
         activity?.SetTag(WorkflowTags.Outcome, nameof(WorkflowDispatchOutcome.Started));
-        return WorkflowDispatchResult.StartedAt(run.Id);
+        return WorkflowDispatchResult.StartedAt(run.Id, run.Status);
     }
 }
