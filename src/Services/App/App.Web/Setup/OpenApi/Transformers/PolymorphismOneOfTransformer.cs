@@ -182,7 +182,7 @@ internal sealed class PolymorphismOneOfTransformer : IOpenApiDocumentTransformer
                 .Select(member => member is OpenApiSchemaReference reference
                     && reference.Reference?.Id is { } id
                     && renames.TryGetValue(id, out var newId)
-                        ? (IOpenApiSchema)new OpenApiSchemaReference(newId)
+                        ? new OpenApiSchemaReference(newId)
                         : member)
                 .ToList();
         }
