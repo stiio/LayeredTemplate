@@ -256,15 +256,21 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         };
     }
 
-    public Task<int> CountChildRunsAsync(Guid parentRunId, CancellationToken cancellationToken)
+    public async Task<int> CountChildRunsAsync(Guid parentRunId, CancellationToken cancellationToken)
     {
         // Hot path on RunWorkflow dispatch — index ix_workflow_runs_parent_run_id keeps this an
-        // index-only count. WorkflowDispatcher.DispatchAsync calls SaveChangesAsync after each
-        // successful AddRun, so by the time the cap is checked again for the same parent (next
-        // step in the same batch, or a later batch), the previous child is already in the DB.
-        // No local-overlay needed.
-        return this.dbContext.WorkflowRuns
+        // index-only count.
+        var saved = await this.dbContext.WorkflowRuns
             .CountAsync(r => r.ParentRunId == parentRunId, cancellationToken);
+        // Local overlay, same EntityState.Added pattern as CountStepsForRunAsync: the RunWorkflow
+        // action dispatches with flush:false, staging the child on the worker's shared context so
+        // it commits atomically with the dispatching step's transition. A cap check that runs
+        // before that flush must still see the staged child, or a same-flush sequence could
+        // overshoot MaxSubRunsPerRun.
+        var localPending = this.dbContext.ChangeTracker
+            .Entries<WorkflowRun>()
+            .Count(e => e.State == EntityState.Added && e.Entity.ParentRunId == parentRunId);
+        return saved + localPending;
     }
 
     public Task<bool> AnyRunsForDefinitionAsync(Guid definitionId, CancellationToken cancellationToken)

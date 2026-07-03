@@ -42,10 +42,13 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
         new ActionPortDescriptor(RunWorkflowPorts.Error, "Error", ActionPortKind.Error),
     };
 
-    // Lazy resolution via IServiceProvider — IActionType is enumerated by ActionTypeRegistry,
-    // which is reached transitively from IWorkflowDispatcher (StepExecutionBuilder needs it),
-    // so injecting the dispatcher directly creates a DI cycle. Looking it up at call time
-    // breaks the cycle without giving up scoped lifetime.
+    // Lazy resolution of IWorkflowDispatcher via the (scoped) IServiceProvider. IActionType is
+    // enumerated by ActionTypeRegistry, which is reached transitively from IWorkflowDispatcher
+    // (StepExecutionBuilder needs it), so injecting the dispatcher directly would close a
+    // constructor DI cycle. Resolving at call time from the SAME scope's provider breaks the
+    // cycle without giving up scoped lifetime — and keeps the dispatcher on the worker's shared
+    // store, so the child run stages into the same unit of work as this step's transition
+    // (same trick WorkflowFanOut uses for IWorkflowResumer).
     private readonly IServiceProvider services;
     private readonly IWorkflowStore store;
     private readonly ILogger<RunWorkflowActionType> logger;
@@ -115,16 +118,25 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
             ParentStepId = context.Config.WaitForCompletion ? context.StepExecutionId : null,
         };
 
-        // Dispatch the child in its OWN DI scope, never the executing step's. WorkflowDispatcher
-        // flushes its store's DbContext (SaveChanges) to commit the child run; doing that on the
-        // batch's SHARED DbContext would flush unrelated tracked changes from sibling steps mid-run.
-        // A fresh scope makes the child dispatch a self-contained unit of work.
+        // Dispatch on the CURRENT scope's dispatcher with flush:false — the child run + its
+        // initial step are only STAGED on the worker's shared store here and commit atomically
+        // with THIS step's own transition in the worker's per-step flush. That single commit
+        // closes two holes the previous fresh-scope + immediate-commit design had:
+        //   1. Fast-child race: a child committed before this step's Waiting transition could
+        //      run to completion first; its parent auto-resume then found this step not Waiting
+        //      and skipped, parking the parent in Suspended forever. Now the child is never
+        //      claimable before the parent's Waiting state is durable.
+        //   2. Crash duplication: a crash between the two commits left an orphaned child; the
+        //      released step then dispatched a SECOND child on retry (and the orphan still
+        //      consumed a MaxSubRunsPerRun slot). Staged together, it's both-or-neither.
+        // Safe on the shared context: WorkflowRunner.StartAsync stages run+step back-to-back
+        // with no awaits in between (its throwing work happens before any Add), so a dispatch
+        // failure leaves nothing behind for the batch flush to pick up.
         WorkflowDispatchResult result;
         try
         {
-            await using var childScope = this.services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();
-            var dispatcher = childScope.ServiceProvider.GetRequiredService<IWorkflowDispatcher>();
-            result = await dispatcher.DispatchAsync(request, cancellationToken);
+            var dispatcher = this.services.GetRequiredService<IWorkflowDispatcher>();
+            result = await dispatcher.DispatchAsync(request, cancellationToken, flush: false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

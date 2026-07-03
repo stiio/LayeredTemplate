@@ -7,9 +7,11 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Services;
 
 /// <summary>
 /// Default <see cref="IWorkflowDispatcher"/>. Looks up the definition, builds the run via
-/// <see cref="IWorkflowRunner"/>, and flushes the plugin's own <c>IWorkflowStore</c> so the
-/// caller's app-side <c>SaveChanges</c> doesn't need to know anything about workflow state
-/// (and couldn't reach it any more — separate DbContext now).
+/// <see cref="IWorkflowRunner"/>, and (by default) flushes the plugin's own <c>IWorkflowStore</c>
+/// so the caller's app-side <c>SaveChanges</c> doesn't need to know anything about workflow state
+/// (and couldn't reach it any more — separate DbContext now). Engine-internal callers opt out of
+/// the flush to stage the child atomically with their own step transition — see
+/// <see cref="IWorkflowDispatcher.DispatchAsync"/>.
 /// <para>
 /// Also enforces <see cref="WorkflowEngineSettings.MaxNestingLevel"/> for sub-workflow
 /// dispatches so a runaway recursive RunWorkflow chain can't keep starting new runs.
@@ -32,7 +34,7 @@ internal class WorkflowDispatcher : IWorkflowDispatcher
     }
 
     public async Task<WorkflowDispatchResult> DispatchAsync(
-        WorkflowDispatchRequest request, CancellationToken cancellationToken)
+        WorkflowDispatchRequest request, CancellationToken cancellationToken, bool flush = true)
     {
         using var activity = WorkflowActivitySource.Instance.StartActivity(
             "workflow.run.dispatch", ActivityKind.Internal);
@@ -104,7 +106,13 @@ internal class WorkflowDispatcher : IWorkflowDispatcher
         }
 
         // Plugin owns its DbContext: flushing here doesn't touch any consumer transaction.
-        await this.store.SaveChangesAsync(cancellationToken);
+        // Engine-internal callers (RunWorkflow) pass flush:false — their child run stays staged
+        // on the worker's shared scope and commits atomically with the dispatching step's own
+        // transition in the per-step flush (see IWorkflowDispatcher.DispatchAsync remarks).
+        if (flush)
+        {
+            await this.store.SaveChangesAsync(cancellationToken);
+        }
         activity?.SetTag(WorkflowTags.RunId, run.Id);
         activity?.SetTag(WorkflowTags.DefinitionId, definition.Id);
         activity?.SetTag(WorkflowTags.Outcome, nameof(WorkflowDispatchOutcome.Started));

@@ -18,7 +18,20 @@ namespace LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 /// </summary>
 public interface IWorkflowDispatcher
 {
-    Task<WorkflowDispatchResult> DispatchAsync(WorkflowDispatchRequest request, CancellationToken cancellationToken);
+    /// <summary>
+    /// Starts a run for the matching definition. <paramref name="flush"/> controls the final
+    /// <c>store.SaveChangesAsync</c>: external callers (app handlers, integration tests) keep
+    /// the default <c>true</c> so dispatch is a self-contained unit of work; engine-internal
+    /// callers (the <c>RunWorkflow</c> action) pass <c>false</c> so the staged child run commits
+    /// atomically with the dispatching step's own transition in the worker's per-step flush —
+    /// the child can never become claimable before the parent step's state (<c>Waiting</c> in
+    /// wait-for-completion mode) is durable, and a crash before that flush re-dispatches exactly
+    /// one child instead of leaking an orphan.
+    /// </summary>
+    Task<WorkflowDispatchResult> DispatchAsync(
+        WorkflowDispatchRequest request,
+        CancellationToken cancellationToken,
+        bool flush = true);
 }
 
 /// <summary>
