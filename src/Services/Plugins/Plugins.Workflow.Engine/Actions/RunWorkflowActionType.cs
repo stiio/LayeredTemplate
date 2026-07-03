@@ -26,9 +26,12 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Actions;
 ///     <c>steps_outputs</c> stamped on the parent step's outputs.
 ///   </item>
 /// </list>
-/// Dispatch failures (no matching definition, empty graph, or nesting cap reached) fire the
-/// <c>error</c> port with a non-transient error message — authors can wire fallback paths off
-/// it. Nesting depth is capped by <see cref="WorkflowEngineSettings.MaxNestingLevel"/>.
+/// Dispatch failures (no matching definition, empty graph, nesting / sub-run caps) fire the
+/// <c>error</c> port with a machine-readable <c>reason</c> — authors can wire fallback paths
+/// off it. The wait-mode deadline fires the dedicated <c>timedOut</c> port instead (same
+/// pattern as WaitSignal), so "child never started" and "child is too slow" stay
+/// distinguishable without parsing reasons. Nesting depth is capped by
+/// <see cref="WorkflowEngineSettings.MaxNestingLevel"/>.
 /// </summary>
 public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
 {
@@ -37,9 +40,10 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
     public static readonly IReadOnlyList<ActionPortDescriptor> Ports = new[]
     {
         new ActionPortDescriptor(RunWorkflowPorts.Started, "Started", ActionPortKind.Normal),
-        new ActionPortDescriptor(RunWorkflowPorts.Success, "Success", ActionPortKind.Normal),
-        new ActionPortDescriptor(RunWorkflowPorts.Failed, "Failed", ActionPortKind.Error),
-        new ActionPortDescriptor(RunWorkflowPorts.Error, "Error", ActionPortKind.Error),
+        new ActionPortDescriptor(RunWorkflowPorts.Success, "Success (child completed)", ActionPortKind.Normal),
+        new ActionPortDescriptor(RunWorkflowPorts.Failed, "Failed (child failed)", ActionPortKind.Error),
+        new ActionPortDescriptor(RunWorkflowPorts.Error, "Error (dispatch failed)", ActionPortKind.Error),
+        new ActionPortDescriptor(RunWorkflowPorts.TimedOut, "Timed out", ActionPortKind.Error),
     };
 
     // Lazy resolution of IWorkflowDispatcher via the (scoped) IServiceProvider. IActionType is
@@ -225,8 +229,8 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
     }
 
     /// <summary>
-    /// Wait-mode timeout: fire the <c>error</c> port with a <c>timed_out</c> reason so authors
-    /// can wire fallback handling (notify, retry, escalate, …) — same pattern as Approve.
+    /// Wait-mode timeout: fire the dedicated <c>timedOut</c> port so authors can wire escalation
+    /// (notify, retry, …) separately from dispatch-error fallbacks — same pattern as WaitSignal.
     /// The child run is not aborted; it keeps running and its eventual termination is silently
     /// ignored because the parent step is no longer Waiting.
     /// </summary>
@@ -234,10 +238,10 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
         ActionContext context, CancellationToken cancellationToken)
     {
         return Task.FromResult(this.Port(
-            RunWorkflowPorts.Error,
+            RunWorkflowPorts.TimedOut,
             new
             {
-                reason = "timed_out",
+                timedOutAt = DateTime.UtcNow.ToString("O"),
                 message = "Sub-workflow did not finish within timeoutSeconds.",
             }));
     }
@@ -280,7 +284,7 @@ public class RunWorkflowConfig
 
     /// <summary>
     /// Optional timeout (seconds) for wait mode. Null = wait indefinitely. When the timer
-    /// elapses without a child terminal state, the engine sweeper fires the <c>error</c> port.
+    /// elapses without a child terminal state, the engine sweeper fires the <c>timedOut</c> port.
     /// </summary>
     public int? TimeoutSeconds { get; set; }
 

@@ -323,8 +323,25 @@ internal class WorkflowFanOut : IWorkflowFanOut
 /// </summary>
 internal static class RunWorkflowPorts
 {
+    /// <summary>Fire-and-forget mode: child dispatched, parent moves on immediately.</summary>
     public const string Started = "started";
+
+    /// <summary>Wait mode: the child run reached <c>Completed</c>.</summary>
     public const string Success = "success";
+
+    /// <summary>Wait mode: the child run reached <c>Failed</c> (its own logic failed / it was cancelled).</summary>
     public const string Failed = "failed";
-    public const string Error = "timeout";
+
+    /// <summary>
+    /// The RunWorkflow action itself couldn't do its job — dispatch failed (no matching
+    /// definition, empty graph, nesting / sub-run caps, unexpected dispatcher error). Distinct
+    /// from <see cref="Failed"/>, which reports the CHILD's own terminal failure.
+    /// </summary>
+    public const string Error = "error";
+
+    /// <summary>
+    /// Wait-mode deadline elapsed before the child reached a terminal state — same pattern as
+    /// WaitSignal's <c>timedOut</c>. The child keeps running; only the parent stops waiting.
+    /// </summary>
+    public const string TimedOut = "timedOut";
 }
