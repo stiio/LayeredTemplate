@@ -1,3 +1,5 @@
+using System.Text.Json;
+using LayeredTemplate.Plugins.Workflow.Abstractions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
@@ -37,6 +39,15 @@ internal class FakeStore : IWorkflowStore
 
     /// <summary>What <see cref="GetStepStateSummaryAsync"/> reports. Default: nothing active / waiting / dead.</summary>
     public WorkflowRunStepStateSummary StepStateSummary { get; set; } = new(false, false, false);
+
+    /// <summary>Seed for <see cref="GetStepAsync"/> / <see cref="TryResumeWaitingStepAsync"/> lookups (resume-path tests).</summary>
+    public List<WorkflowStepRecord> Steps { get; } = new();
+
+    /// <summary>
+    /// When true, <see cref="BeginTransactionAsync"/> returns null — simulates an ambient
+    /// transaction already open on the scope (the resumer's chain-unwind participation mode).
+    /// </summary>
+    public bool SimulateAmbientTransaction { get; set; }
 
     public int SaveCount { get; private set; }
 
@@ -103,6 +114,11 @@ internal class FakeStore : IWorkflowStore
 
     public Task<IWorkflowStoreTransaction?> BeginTransactionAsync(CancellationToken cancellationToken)
     {
+        if (this.SimulateAmbientTransaction)
+        {
+            return Task.FromResult<IWorkflowStoreTransaction?>(null);
+        }
+
         var transaction = new FakeStoreTransaction();
         this.Transactions.Add(transaction);
         return Task.FromResult<IWorkflowStoreTransaction?>(transaction);
@@ -154,13 +170,29 @@ internal class FakeStore : IWorkflowStore
         => throw new NotSupportedException();
 
     public Task<WorkflowStepRecord?> GetStepAsync(Guid stepId, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
+        => Task.FromResult(this.Steps.FirstOrDefault(s => s.Id == stepId));
 
     public Task<IReadOnlyList<WorkflowStepRecord>> ClaimPendingStepsAsync(int batchSize, WorkflowStepLane lane, CancellationToken cancellationToken)
         => throw new NotSupportedException();
 
     public Task<WorkflowStepRecord?> TryResumeWaitingStepAsync(Guid stepId, string outputPort, object? outputs, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
+    {
+        // Mirror the real store's atomic guard: flip Waiting → Completed + stamp port/outputs
+        // only if the step is still Waiting; anything else loses with null (409-style).
+        var step = this.Steps.FirstOrDefault(s => s.Id == stepId);
+        if (step is null || step.Status != StepExecutionStatus.Waiting)
+        {
+            return Task.FromResult<WorkflowStepRecord?>(null);
+        }
+
+        step.Status = StepExecutionStatus.Completed;
+        step.OutputPort = outputPort;
+        step.Outputs = outputs is null
+            ? step.Outputs
+            : JsonSerializer.SerializeToElement(outputs, WorkflowJsonOptions.Default);
+        step.CompletedAt = DateTime.UtcNow;
+        return Task.FromResult<WorkflowStepRecord?>(step);
+    }
 
     public Task<int> PurgeFinishedRunsAsync(DateTime olderThan, int limit, Guid? tenantId = null, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
