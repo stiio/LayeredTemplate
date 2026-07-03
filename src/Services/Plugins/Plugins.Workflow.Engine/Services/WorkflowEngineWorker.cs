@@ -218,18 +218,60 @@ internal class WorkflowEngineWorker : BackgroundService
             try
             {
                 await this.ExecuteOneAsync(step, store, registry, fanOut, lane, stepCts.Token);
-                await store.SaveChangesAsync(stepCts.Token);
+                // CT.None on purpose: the action has already run (side effects possibly issued);
+                // this flush persists its computed outcome. Cancelling here — lane deadline
+                // landing between action completion and save, or shutdown drain — would discard
+                // the outcome and force a duplicate execution on the next claim. Single bounded
+                // flush; same rationale as the release path below.
+                await store.SaveChangesAsync(CancellationToken.None);
                 processed.Add(step.Id);
+            }
+            catch (OperationCanceledException) when (stepCts.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
+            {
+                // Fast-lane action timeout (shutdown not involved). Do NOT release the claim:
+                // release refunds the attempt_count bump while next_attempt_at stays in the
+                // past, so a deterministically-slow action would be re-claimed immediately
+                // (claim orders by next_attempt_at — the timed-out step always sorts first)
+                // and spin this worker forever, one timeout budget per revolution. Count the
+                // attempt instead: the standard transient-error outcome retries with backoff
+                // and dead-letters once MaxAttempts is exhausted.
+                store.DiscardPendingChanges();
+                try
+                {
+                    var timeoutResult = ActionExecutionResult.OnError(
+                        $"Step did not complete within the fast-lane action timeout ({this.settings.FastLaneActionTimeoutSeconds}s). "
+                        + "Actions that legitimately run this long should declare IsLongRunning = true.",
+                        transient: true);
+                    await this.ApplyResultAsync(step, timeoutResult, store, fanOut, CancellationToken.None);
+                    await store.SaveChangesAsync(CancellationToken.None);
+                    processed.Add(step.Id);
+                    this.logger.LogWarning(
+                        "Step {StepId} hit the fast-lane action timeout ({Timeout}s) on attempt {Attempt}/{Max}; timeout outcome applied.",
+                        step.Id, this.settings.FastLaneActionTimeoutSeconds, step.AttemptCount, this.settings.MaxAttempts);
+                }
+                catch (Exception applyEx)
+                {
+                    // Persisting the timeout outcome failed (DB blip mid-handling). Fall back to
+                    // the release path: drop the staged outcome and leave the step out of
+                    // `processed` so the block below returns it to pending — the invariant
+                    // "claimed but not consumed ⇒ released" survives this degraded path too.
+                    this.logger.LogError(applyEx,
+                        "Failed to persist fast-lane timeout outcome for step {StepId}; releasing claim instead.",
+                        step.Id);
+                    store.DiscardPendingChanges();
+                }
             }
             catch (OperationCanceledException) when (stepCts.IsCancellationRequested)
             {
-                // stepCts fired mid-flight: either fast-lane upfront timeout elapsed or shutdown
-                // drain budget ran out. With shared scope, any in-tracker mutations from this
-                // step are still pending; we must clear them so the NEXT step's SaveChanges
-                // doesn't try to flush this step's failed write again. Detach the step entry
-                // (and any same-run step entries that fan-out may have staged).
+                // Shutdown drain elapsed mid-step. Release the claim (the attempt bump is
+                // refunded by ReleaseClaimedStepsAsync) so the next worker startup retries
+                // immediately — a routine deploy must not consume attempts: with MaxAttempts = 1
+                // a counted shutdown cancellation would dead-letter perfectly healthy steps.
+                // With shared scope, in-tracker mutations from this step are still pending;
+                // clear them so the NEXT step's SaveChanges doesn't flush this step's failed
+                // write.
                 this.logger.LogWarning(
-                    "Step {StepId} cancelled mid-flight (lane timeout or shutdown drain elapsed); will be released back to pending.",
+                    "Step {StepId} cancelled by shutdown drain; will be released back to pending.",
                     step.Id);
                 store.DiscardPendingChanges();
             }
@@ -614,17 +656,15 @@ internal class WorkflowEngineWorker : BackgroundService
                     actionActivity?.SetStatus(ActivityStatusCode.Error, result.Error);
                 }
             }
-            catch (OperationCanceledException ex) when (ct.IsCancellationRequested)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
-                // Drain budget exhausted (or hard-cancel from the host). Surface as a transient
-                // error so the next worker startup retries the step. Without this branch the
-                // exception would propagate out of ProcessBatchAsync and the row stays in
-                // 'running' status until stale-purge.
-                this.logger.LogWarning(
-                    "Action {Kind} cancelled during shutdown drain; will retry on restart.", step.Kind);
-                actionActivity?.SetStatus(ActivityStatusCode.Error, "Cancelled during shutdown drain");
+                // Lane timeout or shutdown drain — the outcome policy lives in ProcessBatchAsync,
+                // which can see stoppingToken and distinguish the two (timeout ⇒ count the
+                // attempt; shutdown ⇒ release the claim). Tag the span while the action activity
+                // is still in scope, then let the cancellation propagate.
+                actionActivity?.SetStatus(ActivityStatusCode.Error, "Cancelled (lane timeout or shutdown drain)");
                 actionActivity?.SetTag(WorkflowTags.ActionResultType, "Cancelled");
-                result = ActionExecutionResult.OnError(ex.Message, transient: true);
+                throw;
             }
             catch (Exception ex)
             {
@@ -646,7 +686,11 @@ internal class WorkflowEngineWorker : BackgroundService
             stepActivity?.SetStatus(ActivityStatusCode.Error, result.Error);
         }
 
-        await this.ApplyResultAsync(step, result, store, fanOut, ct);
+        // CT.None: the action has run — its outcome (fired port, outputs, run mutations) must be
+        // applied and staged even if the lane deadline or shutdown drain fires right after the
+        // action body returns. Cancelling bookkeeping here would discard a computed result and
+        // re-run the action's side effects on the next claim.
+        await this.ApplyResultAsync(step, result, store, fanOut, CancellationToken.None);
     }
 
     /// <summary>
