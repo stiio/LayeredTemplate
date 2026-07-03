@@ -161,12 +161,17 @@ internal class EfCoreWorkflowStore : IWorkflowStore
     public void UpdateRun(WorkflowRunRecord run)
     {
         // Local-only lookup: the worker / fan-out / canceller / restarter all ensure the run
-        // is tracked in this scope before mutating (via GetRunAsync), so a Local miss is a
-        // logic bug — not a state we want to silently round-trip into. With the shared-scope
-        // worker model and no concurrency token, this contract is restored: claim's tracked
-        // load + GetRunAsync calls keep the entity alive in Local for the batch's lifetime.
+        // is tracked in this scope before mutating (via GetRunAsync) — claim's tracked load +
+        // GetRunAsync calls keep the entity alive in Local for the batch's lifetime. A Local
+        // miss means the caller broke that contract and the mutation would be silently lost;
+        // fail fast instead of round-tripping stale state.
         var entity = this.dbContext.WorkflowRuns.Local.FirstOrDefault(e => e.Id == run.Id);
-        if (entity is null) return;
+        if (entity is null)
+        {
+            throw new InvalidOperationException(
+                $"UpdateRun: run {run.Id} is not tracked in this scope. Load it via GetRunAsync " +
+                "on the same store before mutating — otherwise the update would be silently dropped.");
+        }
         ApplyRunRecordToEntity(run, entity);
         entity.UpdatedAt = DateTime.UtcNow;
     }
@@ -297,10 +302,16 @@ internal class EfCoreWorkflowStore : IWorkflowStore
     public void UpdateStep(WorkflowStepRecord step)
     {
         // Local-only lookup: caller has tracked-loaded the step earlier in this scope (claim
-        // returns tracked entities; resumer / restarter call GetStepAsync first). With shared
-        // batch scope this contract holds for every step in the batch — no Find fall-through.
+        // returns tracked entities; resumer / restarter call GetStepAsync first). A Local miss
+        // means the caller broke that contract and the mutation would be silently lost; fail
+        // fast instead of round-tripping stale state.
         var entity = this.dbContext.WorkflowStepExecutions.Local.FirstOrDefault(e => e.Id == step.Id);
-        if (entity is null) return;
+        if (entity is null)
+        {
+            throw new InvalidOperationException(
+                $"UpdateStep: step {step.Id} is not tracked in this scope. Load it via GetStepAsync " +
+                "(or a claim) on the same store before mutating — otherwise the update would be silently dropped.");
+        }
         ApplyStepRecordToEntity(step, entity);
         entity.UpdatedAt = DateTime.UtcNow;
     }
@@ -669,35 +680,16 @@ internal class EfCoreWorkflowStore : IWorkflowStore
 
     public async Task<IReadOnlyList<WorkflowStepRecord>> ClaimExpiredWaitingStepsAsync(
         int limit,
-        WorkflowStepLane lane,
         CancellationToken cancellationToken)
     {
         // Same atomic claim shape as ClaimPendingStepsAsync — FOR UPDATE SKIP LOCKED guarantees
-        // no two workers see the same expired-waiting step. Status flips Waiting → Running in
-        // one statement; the caller's HandleTimeoutGracefullyAsync drives the timeout outcome
+        // no two sweep passes see the same expired-waiting step. Status flips Waiting → Running
+        // in one statement; the caller's HandleTimeoutGracefullyAsync drives the timeout outcome
         // and ApplyResultAsync moves it to Completed/Dead like a regular step termination.
         // attempt_count is NOT incremented — this isn't a retry, it's a one-shot timeout fire.
-        // Lane filter mirrors ClaimPendingStepsAsync so OnTimeoutAsync (which can also be slow)
-        // runs on the matching pool — long-running's timeout doesn't block fast workers.
-        var claimedIds = lane switch
-        {
-            WorkflowStepLane.Any => await this.ClaimExpiredAnyAsync(limit, cancellationToken),
-            WorkflowStepLane.FastOnly => await this.ClaimExpiredByLaneAsync(limit, isLongRunning: false, cancellationToken),
-            WorkflowStepLane.LongOnly => await this.ClaimExpiredByLaneAsync(limit, isLongRunning: true, cancellationToken),
-            _ => throw new ArgumentOutOfRangeException(nameof(lane), lane, "Unknown WorkflowStepLane value."),
-        };
-
-        if (claimedIds.Count == 0) return Array.Empty<WorkflowStepRecord>();
-
-        // Tracked load — caller mutates and UpdateStep applies in place.
-        var entities = await this.dbContext.WorkflowStepExecutions
-            .Where(s => claimedIds.Contains(s.Id))
-            .ToListAsync(cancellationToken);
-        return entities.Select(MapStepEntityToRecord).ToList();
-    }
-
-    private Task<List<Guid>> ClaimExpiredAnyAsync(int limit, CancellationToken cancellationToken)
-    {
+        // No lane filter: timeouts are swept by the engine's single maintenance loop regardless
+        // of the step's lane — OnStepTimedOutAsync hooks are quick decision code, not action
+        // bodies, so lane isolation buys nothing here.
         const string sql = """
             UPDATE workflow.workflow_step_executions
             SET status = {0}, updated_at = now()
@@ -710,28 +702,17 @@ internal class EfCoreWorkflowStore : IWorkflowStore
             )
             RETURNING id;
         """;
-        return this.dbContext.Database
+        var claimedIds = await this.dbContext.Database
             .SqlQueryRaw<Guid>(sql, StepExecutionStatus.Running, StepExecutionStatus.Waiting, limit)
             .ToListAsync(cancellationToken);
-    }
 
-    private Task<List<Guid>> ClaimExpiredByLaneAsync(int limit, bool isLongRunning, CancellationToken cancellationToken)
-    {
-        const string sql = """
-            UPDATE workflow.workflow_step_executions
-            SET status = {0}, updated_at = now()
-            WHERE id IN (
-                SELECT id FROM workflow.workflow_step_executions
-                WHERE status = {1} AND is_long_running = {2} AND next_attempt_at <= now()
-                ORDER BY next_attempt_at
-                LIMIT {3}
-                FOR UPDATE SKIP LOCKED
-            )
-            RETURNING id;
-        """;
-        return this.dbContext.Database
-            .SqlQueryRaw<Guid>(sql, StepExecutionStatus.Running, StepExecutionStatus.Waiting, isLongRunning, limit)
+        if (claimedIds.Count == 0) return Array.Empty<WorkflowStepRecord>();
+
+        // Tracked load — caller mutates and UpdateStep applies in place.
+        var entities = await this.dbContext.WorkflowStepExecutions
+            .Where(s => claimedIds.Contains(s.Id))
             .ToListAsync(cancellationToken);
+        return entities.Select(MapStepEntityToRecord).ToList();
     }
 
     // ===== Purge =====

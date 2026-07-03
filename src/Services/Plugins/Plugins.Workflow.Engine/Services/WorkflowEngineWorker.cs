@@ -31,6 +31,12 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Services;
 /// <see cref="WorkflowEngineSettings.ShutdownDrainSeconds"/> elapses past the stop signal —
 /// in-flight HTTP calls get to finish naturally rather than being yanked out mid-flight.
 /// </para>
+/// <para>
+/// A single per-process maintenance loop owns the expired-waiting timeout sweep and the
+/// bookmark reconciliation sweep on <see cref="WorkflowEngineSettings.MaintenanceIntervalSeconds"/>;
+/// worker loops only claim and execute. Running the sweeps on every worker pass duplicated
+/// identical queries WorkerCount× for no benefit.
+/// </para>
 /// </summary>
 internal class WorkflowEngineWorker : BackgroundService
 {
@@ -74,15 +80,15 @@ internal class WorkflowEngineWorker : BackgroundService
         var fastLane = longCount > 0 ? WorkflowStepLane.FastOnly : WorkflowStepLane.Any;
 
         this.logger.LogInformation(
-            "WorkflowEngineWorker starting (fast={Fast}/{FastLane}, long={Long}, poll={Poll}s, batch={Batch}, maxAttempts={Max}, fastTimeout={FastTimeout}s, drain={Drain}s)",
-            fastCount, fastLane, longCount, this.settings.PollIntervalSeconds, this.settings.BatchSize,
-            this.settings.MaxAttempts, this.settings.FastLaneActionTimeoutSeconds, this.settings.ShutdownDrainSeconds);
+            "WorkflowEngineWorker starting (fast={Fast}/{FastLane}, long={Long}, poll={Poll}s, maintenance={Maintenance}s, batch={Batch}, maxAttempts={Max}, fastTimeout={FastTimeout}s, drain={Drain}s)",
+            fastCount, fastLane, longCount, this.settings.PollIntervalSeconds, this.settings.MaintenanceIntervalSeconds,
+            this.settings.BatchSize, this.settings.MaxAttempts, this.settings.FastLaneActionTimeoutSeconds, this.settings.ShutdownDrainSeconds);
 
-        // Spawn N fast loops + M long loops in-process. Each loop runs its own ProcessBatchAsync
-        // with a fresh DI scope; FOR UPDATE SKIP LOCKED on Postgres-side claim guarantees no two
+        // Spawn N fast loops + M long loops + 1 maintenance loop in-process. Each loop runs with
+        // its own DI scope; FOR UPDATE SKIP LOCKED on Postgres-side claim guarantees no two
         // loops ever take the same step. Task.WhenAll holds until shutdown — host SIGTERM cancels
         // the token, every loop's catch returns, all tasks complete, ExecuteAsync returns.
-        var loops = new List<Task>(capacity: fastCount + longCount);
+        var loops = new List<Task>(capacity: fastCount + longCount + 1);
         for (int i = 0; i < fastCount; i++)
         {
             int workerId = i;
@@ -94,6 +100,7 @@ internal class WorkflowEngineWorker : BackgroundService
             int workerId = fastCount + i;
             loops.Add(this.WorkerLoopAsync(workerId, WorkflowStepLane.LongOnly, stoppingToken));
         }
+        loops.Add(this.MaintenanceLoopAsync(stoppingToken));
         await Task.WhenAll(loops);
     }
 
@@ -153,8 +160,8 @@ internal class WorkflowEngineWorker : BackgroundService
         WorkflowStepLane lane,
         CancellationToken stoppingToken)
     {
-        // Single shared scope for the whole batch — sweep, claim, and per-step execute all share
-        // one DbContext. Claim's tracked load populates Local with the just-claimed entities so
+        // Single shared scope for the whole batch — claim and per-step execute share one
+        // DbContext. Claim's tracked load populates Local with the just-claimed entities so
         // UpdateStep / UpdateRun find them in-memory without an extra Find roundtrip.
         // (Per-step scopes were introduced when WorkflowConcurrencyException isolation mattered;
         // since concurrency tokens were dropped, that complexity is gone — shared scope is
@@ -164,27 +171,7 @@ internal class WorkflowEngineWorker : BackgroundService
         var registry = scope.ServiceProvider.GetRequiredService<IActionTypeRegistry>();
         var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
 
-        // Sweep expired waiting steps before claiming — every action's OnStepTimedOutAsync gets
-        // a chance to fire a graceful timeout port; the base default sends the step Dead with a
-        // generic message (non-transient). Either way the run-completion check unblocks affected
-        // runs.
-        await this.ExpireStaleWaitingStepsAsync(store, registry, fanOut, lane, stoppingToken);
-        // Commit timeout outcomes as their own logical unit. Critical for the empty-claim case:
-        // without this save, a batch that finds expired waiting steps but no pending claims
-        // would discard the timeout mutations on scope dispose.
-        await store.SaveChangesAsync(stoppingToken);
-
-        // Reconciliation backstop for signal-wait bookmarks — on the same cadence as the timeout
-        // sweep. Deletes bookmarks whose target step is no longer Waiting (resumed elsewhere,
-        // timed-out, dead-lettered, cancelled). This is what makes bookmark cleanup CORRECT
-        // regardless of path; the eager delete-on-resume in the signaler is just an optimization.
-        // Set-based DELETE — independent of lane (no lane column on bookmarks); cheap to issue on
-        // every fast/long worker pass since it no-ops when nothing's stale. Best-effort: a failure
-        // here must not abort the batch's real work, so it's swept once per pass and logged.
-        await this.SweepResolvedBookmarksAsync(store, stoppingToken);
-
-        // Don't claim more work after shutdown — sweep was best-effort, but new claims would
-        // just need to be released right back.
+        // Don't claim work after shutdown — new claims would just need to be released right back.
         if (stoppingToken.IsCancellationRequested) return 0;
 
         var claimed = await store.ClaimPendingStepsAsync(this.settings.BatchSize, lane, stoppingToken);
@@ -328,10 +315,85 @@ internal class WorkflowEngineWorker : BackgroundService
     }
 
     /// <summary>
+    /// Single per-process maintenance loop: expired-waiting timeout sweep + bookmark
+    /// reconciliation on their own (rarer) cadence, so N worker loops don't each repeat the
+    /// same queries every poll. Timeout handlers run here regardless of the step's lane —
+    /// <c>OnStepTimedOutAsync</c> hooks are quick decision code, not action bodies, and a
+    /// dedicated loop means even a slow custom hook never blocks step workers (it only delays
+    /// other timeout firings, which are sweep-granular anyway).
+    /// </summary>
+    private async Task MaintenanceLoopAsync(CancellationToken stoppingToken)
+    {
+        using var loopScope = this.logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["WorkerId"] = "maintenance",
+        });
+
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await this.RunMaintenancePassAsync(stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError(ex, "Workflow maintenance pass failed; retrying next interval.");
+            }
+
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(this.settings.MaintenanceIntervalSeconds), stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// One maintenance pass with a fresh DI scope: drain expired-waiting steps in BatchSize
+    /// chunks until dry (a burst of simultaneously-expiring Delays clears within one pass
+    /// instead of one chunk per interval), then reconcile bookmarks.
+    /// </summary>
+    private async Task RunMaintenancePassAsync(CancellationToken stoppingToken)
+    {
+        await using var scope = this.scopeFactory.CreateAsyncScope();
+        var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
+        var registry = scope.ServiceProvider.GetRequiredService<IActionTypeRegistry>();
+        var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
+
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var swept = await this.ExpireStaleWaitingStepsAsync(store, registry, fanOut, stoppingToken);
+            if (swept > 0)
+            {
+                // Commit timeout outcomes as their own logical unit — without this save the
+                // chunk's mutations would be discarded on scope dispose. (Parent auto-resumes
+                // triggered inside the sweep have already committed via the resumer's own
+                // transaction.)
+                await store.SaveChangesAsync(stoppingToken);
+            }
+            if (swept < this.settings.BatchSize) break;
+        }
+
+        // Reconciliation backstop for signal-wait bookmarks. Deletes bookmarks whose target
+        // step is no longer Waiting (resumed elsewhere, timed-out, dead-lettered, cancelled).
+        // This is what makes bookmark cleanup CORRECT regardless of path; the eager
+        // delete-on-resume in the signaler is just an optimization. Set-based DELETE; no-ops
+        // when nothing's stale.
+        await this.SweepResolvedBookmarksAsync(store, stoppingToken);
+    }
+
+    /// <summary>
     /// Internal for the test harness — runs ONE timeout-sweep pass (claim expired waiting steps →
     /// per-action <c>OnStepTimedOutAsync</c> → <see cref="ApplyResultAsync"/>) without spinning up a
-    /// scope factory + hosted service. Production callers go through <see cref="ProcessBatchAsync"/>,
-    /// which wraps this in the lane / save / release plumbing. Mirrors the <see cref="ExecuteOneAsync"/>
+    /// scope factory + hosted service. Production callers go through <see cref="RunMaintenancePassAsync"/>,
+    /// which wraps this in the scope / save plumbing. Mirrors the <see cref="ExecuteOneAsync"/>
     /// test seam.
     /// </summary>
     internal Task SweepExpiredWaitingStepsOnceAsync(
@@ -339,21 +401,20 @@ internal class WorkflowEngineWorker : BackgroundService
         IActionTypeRegistry registry,
         IWorkflowFanOut fanOut,
         CancellationToken ct)
-        => this.ExpireStaleWaitingStepsAsync(store, registry, fanOut, WorkflowStepLane.Any, ct);
+        => this.ExpireStaleWaitingStepsAsync(store, registry, fanOut, ct);
 
-    private async Task ExpireStaleWaitingStepsAsync(
+    private async Task<int> ExpireStaleWaitingStepsAsync(
         IWorkflowStore store,
         IActionTypeRegistry registry,
         IWorkflowFanOut fanOut,
-        WorkflowStepLane lane,
         CancellationToken ct)
     {
         // Atomic claim — Waiting → Running with FOR UPDATE SKIP LOCKED. Replaces the previous
         // read-only listing that wasn't multi-worker-safe (two loops could see the same expired
         // row and double-fire OnTimeoutAsync). Step is now logically "claimed" by us; the
         // ApplyResultAsync below moves it to a terminal state.
-        var expired = await store.ClaimExpiredWaitingStepsAsync(this.settings.BatchSize, lane, ct);
-        if (expired.Count == 0) return;
+        var expired = await store.ClaimExpiredWaitingStepsAsync(this.settings.BatchSize, ct);
+        if (expired.Count == 0) return 0;
 
         foreach (var step in expired)
         {
@@ -373,10 +434,11 @@ internal class WorkflowEngineWorker : BackgroundService
                 continue;
             }
 
-            await this.HandleTimeoutGracefullyAsync(step, store, fanOut, actionType, lane, ct);
+            await this.HandleTimeoutGracefullyAsync(step, store, fanOut, actionType, ct);
         }
 
         this.logger.LogWarning("Swept {Count} expired waiting step(s)", expired.Count);
+        return expired.Count;
     }
 
     /// <summary>
@@ -410,7 +472,6 @@ internal class WorkflowEngineWorker : BackgroundService
         IWorkflowStore store,
         IWorkflowFanOut fanOut,
         IActionType actionType,
-        WorkflowStepLane lane,
         CancellationToken ct)
     {
         using var sweepScope = this.logger.BeginScope(new Dictionary<string, object?>
@@ -427,7 +488,6 @@ internal class WorkflowEngineWorker : BackgroundService
         activity?.SetTag(WorkflowTags.StepId, step.Id);
         activity?.SetTag(WorkflowTags.TenantId, step.TenantId);
         activity?.SetTag(WorkflowTags.StepKind, step.Kind);
-        activity?.SetTag(WorkflowTags.StepLane, FormatLane(lane));
 
         var run = await store.GetRunAsync(step.RunId, ct);
         if (run is null)

@@ -9,7 +9,8 @@ namespace LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
 ///  - executes a single instance and returns the single port that fired.
 /// Prefer deriving from <see cref="ActionType{TConfig}"/> rather than implementing this
 /// interface directly — the base class wires typed config deserialization for you.
-/// Add a new action by dropping a new class — DI + registry pick it up automatically.
+/// Register the class via <c>AddWorkflowCore(...).AddActionType&lt;T&gt;()</c> — the registry
+/// picks it up automatically.
 /// </summary>
 public interface IActionType
 {

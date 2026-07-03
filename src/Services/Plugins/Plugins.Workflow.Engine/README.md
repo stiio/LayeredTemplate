@@ -118,7 +118,8 @@ Bound from configuration section `WorkflowEngineSettings` (override via the opti
 | Setting | Default | Purpose |
 |---|---|---|
 | `MaxAttempts` | 1 | Total attempts per step before dead-lettering. |
-| `PollIntervalSeconds` | 3 | How often the worker polls when idle. |
+| `PollIntervalSeconds` | 3 | How often a worker loop polls when idle. |
+| `MaintenanceIntervalSeconds` | 5 | Cadence of the single per-process maintenance loop (expired-waiting timeout sweep + bookmark reconciliation). Bounds suspend-deadline granularity — a Delay fires within this many seconds past its deadline. |
 | `BatchSize` | 10 | Steps claimed per polling iteration. |
 | `BackoffSeconds` | `[30, 120, 600, 3600, 21600]` | Sequential backoff per retry attempt; last value repeats past the tail. Ignored when `MaxAttempts = 1`. |
 | `MaxStepsPerRun` | 200 | Hard cap on total step records per run; trips `abort_reason="step_cap"`. |
@@ -185,9 +186,11 @@ on the host so it actually waits for the engine to drain.
 
 ## Worker batch & failure handling
 
-A polling iteration runs in a single DI scope: the sweep, the claim SQL, every step's
-`ExecuteOneAsync`, and `SaveChangesAsync` after each one. Per-step save commits results
-incrementally — if the host kills us between step N and N+1, steps 1..N are durably persisted.
+A polling iteration runs in a single DI scope: the claim SQL, every step's `ExecuteOneAsync`,
+and `SaveChangesAsync` after each one. Per-step save commits results incrementally — if the
+host kills us between step N and N+1, steps 1..N are durably persisted. The expired-waiting
+timeout sweep and the bookmark reconciliation sweep run on a separate single per-process
+maintenance loop (`MaintenanceIntervalSeconds`), not on worker iterations.
 
 If a step's processing throws (cancellation token elapsed, DB blip, anything else):
 

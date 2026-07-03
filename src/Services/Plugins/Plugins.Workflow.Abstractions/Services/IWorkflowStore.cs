@@ -135,10 +135,11 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// Atomically claims expired Waiting steps — those whose <c>NextAttemptAt</c> has passed
     /// while still in <c>Waiting</c> status — by flipping them to <c>Running</c> in a single
     /// SQL with <c>FOR UPDATE SKIP LOCKED</c>. Mirrors the
-    /// <see cref="ClaimPendingStepsAsync"/> pattern so multi-worker setups never see two
-    /// workers fire <c>OnStepTimedOutAsync</c> for the same step.
+    /// <see cref="ClaimPendingStepsAsync"/> pattern so multi-process setups never see two
+    /// sweepers fire <c>OnStepTimedOutAsync</c> for the same step. No lane filter — the
+    /// engine's single maintenance loop sweeps timeouts for both lanes.
     /// <para>
-    /// Caller (engine worker sweeper path) drives the timeout outcome via the action's
+    /// Caller (engine maintenance loop) drives the timeout outcome via the action's
     /// <c>OnStepTimedOutAsync</c> and then routes through the regular
     /// <c>ApplyResultAsync</c>, which terminates the step (<c>Completed</c>/<c>Dead</c>)
     /// just like an ordinary execution.
@@ -146,7 +147,6 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// </summary>
     Task<IReadOnlyList<WorkflowStepRecord>> ClaimExpiredWaitingStepsAsync(
         int limit,
-        WorkflowStepLane lane,
         CancellationToken cancellationToken);
 
     /// <summary>

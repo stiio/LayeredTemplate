@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.Json;
 using LayeredTemplate.Plugins.Workflow.Abstractions;
@@ -14,6 +15,17 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Expressions;
 /// </summary>
 internal class ExpressionResolver : IExpressionResolver
 {
+    /// <summary>
+    /// Per-type reflection cache: public readable instance properties (indexers excluded —
+    /// they need arguments) paired with the camelCase path segment used in error paths.
+    /// Process-wide: config POCOs are a small closed set of shapes, and this walk runs on
+    /// every step build — re-running GetProperties + camelCase per visit was pure waste.
+    /// </summary>
+    private static readonly ConcurrentDictionary<Type, (PropertyInfo Prop, string PathSegment)[]> PropertiesByType = new();
+
+    /// <summary>Cached Engine / Value getters + Resolved setter per closed <c>Expr&lt;T&gt;</c> type.</summary>
+    private static readonly ConcurrentDictionary<Type, ExprAccessors> ExprAccessorsByType = new();
+
     private readonly Dictionary<string, IExpressionEngine> engines;
 
     public ExpressionResolver(IEnumerable<IExpressionEngine> engines)
@@ -78,22 +90,30 @@ internal class ExpressionResolver : IExpressionResolver
             return;
         }
 
-        // Object: iterate public read/write props.
-        foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        // Object: iterate public readable props (reflection metadata cached per type).
+        var members = PropertiesByType.GetOrAdd(type, static t => t
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanRead && p.GetIndexParameters().Length == 0)
+            .Select(p => (p, ToCamelCase(p.Name)))
+            .ToArray());
+        foreach (var (prop, pathSegment) in members)
         {
-            if (!prop.CanRead) continue;
             object? value;
             try { value = prop.GetValue(node); }
             catch { continue; }
-            await this.ResolveNodeAsync(value, model, context, $"{path}.{ToCamelCase(prop.Name)}", cancellationToken);
+            await this.ResolveNodeAsync(value, model, context, $"{path}.{pathSegment}", cancellationToken);
         }
     }
 
     private async ValueTask ResolveExprAsync(object exprInstance, Type innerType, IDictionary<string, object?> model, ExpressionEvaluationContext context, string path, CancellationToken cancellationToken)
     {
         var type = exprInstance.GetType();
-        var engineName = (string)type.GetProperty(nameof(Expr<object>.Engine))!.GetValue(exprInstance)!;
-        var rawValue = (string)type.GetProperty(nameof(Expr<object>.Value))!.GetValue(exprInstance)!;
+        var accessors = ExprAccessorsByType.GetOrAdd(type, static t => new ExprAccessors(
+            t.GetProperty(nameof(Expr<object>.Engine))!,
+            t.GetProperty(nameof(Expr<object>.Value))!,
+            t.GetProperty(nameof(Expr<object>.Resolved))!));
+        var engineName = (string)accessors.Engine.GetValue(exprInstance)!;
+        var rawValue = (string)accessors.Value.GetValue(exprInstance)!;
 
         if (!this.engines.TryGetValue(engineName, out var engine))
         {
@@ -128,7 +148,7 @@ internal class ExpressionResolver : IExpressionResolver
                 ex);
         }
 
-        type.GetProperty(nameof(Expr<object>.Resolved))!.SetValue(exprInstance, resolved);
+        accessors.Resolved.SetValue(exprInstance, resolved);
     }
 
     private static bool IsExprType(Type type, out Type? innerType)
@@ -146,4 +166,6 @@ internal class ExpressionResolver : IExpressionResolver
 
     private static string ToCamelCase(string s) =>
         string.IsNullOrEmpty(s) || char.IsLower(s[0]) ? s : char.ToLowerInvariant(s[0]) + s[1..];
+
+    private sealed record ExprAccessors(PropertyInfo Engine, PropertyInfo Value, PropertyInfo Resolved);
 }

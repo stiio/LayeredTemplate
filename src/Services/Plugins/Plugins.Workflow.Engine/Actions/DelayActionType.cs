@@ -10,9 +10,10 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Actions;
 /// the engine sweeper picks it up at the deadline and calls <see cref="OnTimeoutAsync"/>, which
 /// fires the success port.
 /// <para>
-/// Granularity is bounded by <c>WorkflowEngineSettings.PollIntervalSeconds</c> (default 3s) — a
-/// 1-second delay can land anywhere between 1 and ~4 seconds depending on where the wake-up
-/// falls within the sweeper cycle. Maximum delay is <c>int.MaxValue</c> seconds (~68 years).
+/// Granularity is bounded by <c>WorkflowEngineSettings.MaintenanceIntervalSeconds</c> (default
+/// 5s) — a 1-second delay can land anywhere between 1 and ~6 seconds depending on where the
+/// wake-up falls within the maintenance-sweep cycle. Maximum delay is <c>int.MaxValue</c>
+/// seconds (~68 years).
 /// </para>
 /// <para>
 /// Because the step is just a normal Waiting step, an operator can short-circuit it via the

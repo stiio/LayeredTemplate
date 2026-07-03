@@ -14,6 +14,20 @@ public class WorkflowEngineSettings
 
     public int PollIntervalSeconds { get; set; } = 3;
 
+    /// <summary>
+    /// Cadence of the engine's single per-process maintenance loop: the expired-waiting sweep
+    /// (fires suspend deadlines — Delay, WaitSignal / RunWorkflow timeouts) and the bookmark
+    /// reconciliation sweep. One loop regardless of <see cref="WorkerCount"/> — running these
+    /// on every worker pass duplicated identical queries WorkerCount× for no benefit.
+    /// <para>
+    /// This bounds suspend-deadline granularity: a Delay of N seconds fires between N and
+    /// N + this many seconds (a backlog burst drains fully within one pass). Default 5s stays
+    /// close to the previous poll-bound behaviour; raise it when deadline precision doesn't
+    /// matter.
+    /// </para>
+    /// </summary>
+    public int MaintenanceIntervalSeconds { get; set; } = 5;
+
     public int BatchSize { get; set; } = 10;
 
     /// <summary>

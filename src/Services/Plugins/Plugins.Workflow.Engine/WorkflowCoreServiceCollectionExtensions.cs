@@ -18,7 +18,8 @@ namespace LayeredTemplate.Plugins.Workflow.Engine;
 /// extensions can chain on:
 /// <code>
 /// services.AddWorkflowCore(configuration)
-///         .AddEfCoreStorage&lt;ApplicationDbContext&gt;()
+///         .AddEfCoreStorage(connectionString)
+///         .AddActionType&lt;SendEmailActionType&gt;()
 ///         .AddLiquidFilter&lt;PhoneFormatFilter&gt;()
 ///         .AddLiquidExtension&lt;MyLiquidExtension&gt;()
 ///         .AddJsFunction&lt;GetPresignedUrlJsFunction&gt;()
@@ -106,6 +107,22 @@ public static class WorkflowCoreServiceCollectionExtensions
         services.AddHostedService<WorkflowRetentionWorker>();
 
         return new WorkflowCoreBuilder(services);
+    }
+
+    // ===== Action types =====
+
+    /// <summary>
+    /// Register a consumer action type as a scoped service. <see cref="IActionType.Kind"/> is
+    /// the id workflow nodes reference; the scoped <c>ActionTypeRegistry</c> picks every
+    /// registration up automatically — no other wiring needed. Prefer deriving from
+    /// <see cref="ActionType{TConfig}"/> over implementing <see cref="IActionType"/> directly:
+    /// the base class wires typed config deserialization plus the resume / timeout hooks.
+    /// </summary>
+    public static IWorkflowCoreBuilder AddActionType<T>(this IWorkflowCoreBuilder builder)
+        where T : class, IActionType
+    {
+        builder.Services.AddScoped<IActionType, T>();
+        return builder;
     }
 
     // ===== Liquid extension hooks =====

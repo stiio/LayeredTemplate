@@ -96,9 +96,8 @@ internal class StepExecutionBuilder : IStepExecutionBuilder
                 PredecessorExecutionId = predecessorExecutionId,
                 TriggerPort = triggerPort,
                 ResolvedConfig = EmptyObject,
-                // Lane stamp matters even for dead-on-arrival rows: the long-running pool's
-                // sweeper still picks them up via the same lane filter (and immediately moves
-                // on, since they're already terminal).
+                // Lane stamp kept for row-shape consistency — terminal rows are never claimed
+                // by either pool, but a uniform column beats a "sometimes default" one.
                 IsLongRunning = actionType.IsLongRunning,
                 Status = StepExecutionStatus.Dead,
                 LastError = ex.Message,

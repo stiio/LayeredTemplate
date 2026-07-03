@@ -67,9 +67,7 @@ internal sealed class WorkflowProtectedJsonConverter : ValueConverter<JsonElemen
             return null;
         }
 
-        ReadOnlySpan<byte> jsonBytes;
-        byte[]? decryptedBuffer = null;
-
+        byte[] jsonBytes;
         if (data[0] == EncryptedMagic)
         {
             if (protector is null)
@@ -81,8 +79,7 @@ internal sealed class WorkflowProtectedJsonConverter : ValueConverter<JsonElemen
 
             var ciphertext = new byte[data.Length - 1];
             Buffer.BlockCopy(data, 1, ciphertext, 0, ciphertext.Length);
-            decryptedBuffer = protector.Unprotect(ciphertext);
-            jsonBytes = decryptedBuffer;
+            jsonBytes = protector.Unprotect(ciphertext);
         }
         else
         {
@@ -92,8 +89,9 @@ internal sealed class WorkflowProtectedJsonConverter : ValueConverter<JsonElemen
         // Parse into a fresh JsonDocument and Clone the root — the document owns the buffer
         // briefly via `using`, after Clone the returned element is detached and the document is
         // disposed safely. Without Clone the element would point into a buffer that's about to
-        // be returned to the pool.
-        using var doc = JsonDocument.Parse(jsonBytes.ToArray());
+        // be returned to the pool. Both branches already hold a byte[] the document can read
+        // directly — no defensive copy needed.
+        using var doc = JsonDocument.Parse(jsonBytes);
         return doc.RootElement.Clone();
     }
 }
