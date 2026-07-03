@@ -13,6 +13,7 @@ in a sibling project and swap `AddEfCoreStorage(...)` for `AddXxxStorage(...)` i
 
 - [Folder map](#folder-map)
 - [Setup](#setup)
+- [Work push (LISTEN/NOTIFY)](#work-push-listennotify)
 - [Schema](#schema)
   - [Indexes](#indexes)
   - [Foreign keys](#foreign-keys)
@@ -61,6 +62,11 @@ WorkflowDbContext.cs                — Internal DbContext. Owns `workflow` sche
                                     concurrency token mapping.
 WorkflowProtectedStringConverter.cs — Plain-text protected columns ↔ bytea.
 WorkflowProtectedJsonConverter.cs   — JsonElement ↔ bytea.
+WorkflowWorkNotifyInterceptor.cs    — Producer half of the LISTEN/NOTIFY work push: pg_notify
+                                    after every flush that makes steps claimable.
+WorkflowWorkListener.cs             — Consumer half: one LISTEN connection per process pulsing
+                                    the engine's IWorkflowWorkSignal.
+WorkflowEfCoreStorageOptions.cs     — Composition-time knobs (EnableListenNotify, channel).
 WorkflowStorageServiceCollectionExtensions.cs
                                    — IWorkflowCoreBuilder.AddEfCoreStorage(connectionString) +
                                     DI registrations for the three store interfaces (composite
@@ -84,6 +90,41 @@ services.AddWorkflowCore(configuration)
 - `IWorkflowStorageMigrator` (manual migration trigger).
 - `WorkflowMigrationHostedService` by default (pass `autoMigrate: false` if you run migrations
   yourself via the migrator service).
+- The LISTEN/NOTIFY work push by default — a `SaveChanges` interceptor (producer) plus one
+  per-process listener connection (consumer). Disable / re-channel via the `configure`
+  parameter: `.AddEfCoreStorage(connStr, configure: o => o.EnableListenNotify = false)`.
+
+## Work push (LISTEN/NOTIFY)
+
+Worker loops find work by polling the claim query. Polling alone forces a trade-off between
+idle DB chatter and dispatch latency, so this plugin adds a Postgres-native push channel on
+top — strictly as an accelerator:
+
+- **Producer** — `WorkflowWorkNotifyInterceptor`. After every flush that wrote steps claimable
+  *right now* (`pending`, `next_attempt_at` due), it sends `pg_notify('workflow_work', lane)`
+  on the same connection. Under an ambient store transaction the notify joins it — Postgres
+  delivers only on commit, a rollback sends nothing. One producer point covers dispatcher,
+  fan-out, resumer, signaler and the maintenance sweep, because they all stage step rows
+  through the change tracker. Retry rows (future `next_attempt_at`) are not notified — nobody
+  could claim them yet; the fallback poll picks them up when due.
+- **Consumer** — `WorkflowWorkListener`, one dedicated non-pooled connection per process
+  (keepalive forced). Each notification pulses the engine's `IWorkflowWorkSignal` for the
+  payload's lane ("fast" / "long"); idle worker loops wake within milliseconds.
+
+The design assumption is that **notifications are lossy and that's fine**: Postgres NOTIFY is
+not durable (nothing queues for a disconnected listener), so the signal is a wake-up hint —
+the claim query over the table remains the single source of truth. Every failure mode
+degrades to poll latency, never to lost work:
+
+| Failure | Consequence |
+|---|---|
+| Listener connection drops | Reconnect loop with capped backoff; on re-attach it pulses all lanes once (work committed during the gap is claimed immediately). Workers keep polling at `PollIntervalSeconds` meanwhile. |
+| `pg_notify` fails on the producer side | Swallowed with a warning — the flush itself succeeded; the work is found by the next fallback poll. |
+| PgBouncer in transaction/statement pooling mode | LISTEN needs a session-scoped connection and won't work through it — the listener logs failures and workers permanently run on the fallback poll. Point the listener at a direct connection or a session-mode pool, or disable the feature. |
+
+Payload is only the lane name — never run data, so no PHI crosses the notification channel.
+The channel name (`workflow_work` by default) is global per database; override
+`ListenNotifyChannel` when several independent installations share one Postgres database.
 
 ## Schema
 
@@ -202,8 +243,10 @@ WHERE status = 'pending' AND next_attempt_at <= now()
 GROUP BY is_long_running;
 ```
 
-Healthy values are around `PollIntervalSeconds` (≤ 3-5s with default settings). Stable values
-of `oldest_ready_seconds > 30s` confirm the lane is undersized.
+Healthy values are near zero (LISTEN/NOTIFY wakes workers in milliseconds); occasional spikes
+up to `PollIntervalSeconds` mean a notification was lost and the fallback poll picked the work
+up — normal in small doses. Stable values past `PollIntervalSeconds` confirm the lane is
+undersized (or the listener is permanently down — check its log).
 
 **Throughput last hour, by lane:**
 

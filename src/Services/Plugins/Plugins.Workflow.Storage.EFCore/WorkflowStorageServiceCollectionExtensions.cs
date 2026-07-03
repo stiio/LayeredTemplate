@@ -1,7 +1,9 @@
+using System.Text.RegularExpressions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 using LayeredTemplate.Plugins.Workflow.Engine;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore;
 
@@ -22,15 +24,31 @@ public static class WorkflowStorageServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the plugin's <c>WorkflowDbContext</c>, the <see cref="IWorkflowStore"/>
-    /// implementation, and (by default) a hosted service that applies pending migrations on
-    /// startup. The DbContext lives in the <c>workflow</c> Postgres schema and keeps its own
-    /// migration history table there — independent from the consumer's app context.
+    /// implementation, (by default) a hosted service that applies pending migrations on
+    /// startup, and (by default) the LISTEN/NOTIFY work push — see
+    /// <see cref="WorkflowEfCoreStorageOptions.EnableListenNotify"/>. The DbContext lives in
+    /// the <c>workflow</c> Postgres schema and keeps its own migration history table there —
+    /// independent from the consumer's app context.
     /// </summary>
     public static IWorkflowCoreBuilder AddEfCoreStorage(
         this IWorkflowCoreBuilder builder,
         string connectionString,
-        bool autoMigrate = true)
+        bool autoMigrate = true,
+        Action<WorkflowEfCoreStorageOptions>? configure = null)
     {
+        var storageOptions = new WorkflowEfCoreStorageOptions();
+        configure?.Invoke(storageOptions);
+
+        // LISTEN takes the channel as a raw identifier (it can't be parameterised), so reject
+        // anything that isn't one at composition time instead of quoting at runtime.
+        if (storageOptions.EnableListenNotify
+            && !Regex.IsMatch(storageOptions.ListenNotifyChannel, "^[A-Za-z_][A-Za-z0-9_]*$"))
+        {
+            throw new ArgumentException(
+                $"ListenNotifyChannel '{storageOptions.ListenNotifyChannel}' must be a plain identifier (letters / digits / underscore, not starting with a digit).",
+                nameof(configure));
+        }
+
         builder.Services.AddDbContext<WorkflowDbContext>(opts =>
         {
             opts.UseNpgsql(connectionString, npgsql =>
@@ -43,6 +61,12 @@ public static class WorkflowStorageServiceCollectionExtensions
             // deriving it from a third-party convention.
             // PHI encryption converters are wired in WorkflowDbContext.OnModelCreating from its
             // ctor-injected (optional) IWorkflowDataProtector — no save interceptor needed.
+            if (storageOptions.EnableListenNotify)
+            {
+                // Producer half of the work push: NOTIFY on every flush that makes steps
+                // claimable. The consumer half is the WorkflowWorkListener hosted below.
+                opts.AddInterceptors(new WorkflowWorkNotifyInterceptor(storageOptions.ListenNotifyChannel));
+            }
         });
 
         // EfCoreWorkflowStore implements all three interfaces; we register the impl once as
@@ -60,6 +84,17 @@ public static class WorkflowStorageServiceCollectionExtensions
         if (autoMigrate)
         {
             builder.Services.AddHostedService<WorkflowMigrationHostedService>();
+        }
+
+        if (storageOptions.EnableListenNotify)
+        {
+            // Consumer half of the work push: one LISTEN connection per process pulsing the
+            // engine's IWorkflowWorkSignal (registered by AddWorkflowCore) on notifications.
+            builder.Services.AddHostedService(sp => new WorkflowWorkListener(
+                connectionString,
+                storageOptions.ListenNotifyChannel,
+                sp.GetRequiredService<IWorkflowWorkSignal>(),
+                sp.GetRequiredService<ILogger<WorkflowWorkListener>>()));
         }
 
         return builder;

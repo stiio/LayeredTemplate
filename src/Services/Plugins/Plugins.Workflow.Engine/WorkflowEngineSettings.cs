@@ -12,7 +12,17 @@ public class WorkflowEngineSettings
     /// <summary>Total attempts per step (1 = no retries, fail-fast to 'dead' on first error).</summary>
     public int MaxAttempts { get; set; } = 1;
 
-    public int PollIntervalSeconds { get; set; } = 3;
+    /// <summary>
+    /// Fallback poll cadence of an idle worker loop. With a push-capable storage (the EF Core
+    /// plugin wires Postgres LISTEN/NOTIFY by default) workers wake within milliseconds of new
+    /// work via <see cref="IWorkflowWorkSignal"/>, and this interval only bounds recovery when
+    /// a notification was lost (listener down / reconnect gap) — hence the relaxed default.
+    /// Two things still ride on it: lost-pulse recovery and retry backoffs (a retrying step
+    /// becomes due by clock, nothing pulses — it starts up to this much past its backoff).
+    /// Lower it back to a few seconds when running a storage without a push primitive or when
+    /// tight retry timing matters more than idle DB chatter.
+    /// </summary>
+    public int PollIntervalSeconds { get; set; } = 30;
 
     /// <summary>
     /// Cadence of the engine's single per-process maintenance loop: the expired-waiting sweep

@@ -54,6 +54,8 @@ Services/       — Engine entry-points and persistence boundary:
                   IStepExecutionBuilder (internal hook shared between runner + worker),
                   IWorkflowReadStore / IWorkflowRetentionStore / IWorkflowStore
                     (read / purge / full persistence boundary),
+                  IWorkflowWorkSignal (latching wake-up between "steps committed" and idle
+                    worker loops — pulsed by push-capable storage, e.g. LISTEN/NOTIFY),
                   WorkflowConcurrencyException (optimistic-concurrency signal),
                   IWorkflowDataProtector (PHI encryption hook).
 Telemetry/      — WorkflowTelemetry (ActivitySource name constant).

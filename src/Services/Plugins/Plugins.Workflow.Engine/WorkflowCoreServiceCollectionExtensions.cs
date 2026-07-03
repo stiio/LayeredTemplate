@@ -8,6 +8,7 @@ using LayeredTemplate.Plugins.Workflow.Engine.Expressions.Extensions;
 using LayeredTemplate.Plugins.Workflow.Engine.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace LayeredTemplate.Plugins.Workflow.Engine;
 
@@ -97,6 +98,12 @@ public static class WorkflowCoreServiceCollectionExtensions
         // Engine-built-in: writes a Liquid/JS-computed label onto run.Name. Operator-facing
         // QoL — distinguish runs in the dashboard without inspecting their static_context.
         services.AddScoped<IActionType, SetRunNameActionType>();
+
+        // Wake-up latch between "new steps committed" and idle worker loops. Deliberately a
+        // singleton: worker loops wait on it, a push-capable storage plugin (EF Core's
+        // LISTEN/NOTIFY listener) pulses it — both sides must resolve the same instance.
+        // TryAdd so a consumer / test can substitute its own signal before AddWorkflowCore.
+        services.TryAddSingleton<IWorkflowWorkSignal, WorkflowWorkSignal>();
 
         services.AddHostedService<WorkflowEngineWorker>();
         // Always-registered retention worker; effectively dormant unless

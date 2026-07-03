@@ -118,7 +118,7 @@ Bound from configuration section `WorkflowEngineSettings` (override via the opti
 | Setting | Default | Purpose |
 |---|---|---|
 | `MaxAttempts` | 1 | Total attempts per step before dead-lettering. |
-| `PollIntervalSeconds` | 3 | How often a worker loop polls when idle. |
+| `PollIntervalSeconds` | 30 | Fallback poll cadence of an idle worker loop. With the EF Core storage's LISTEN/NOTIFY push (on by default) workers wake in milliseconds and this only bounds lost-notification recovery + retry-backoff pickup; lower it to a few seconds when running a storage without a push primitive. |
 | `MaintenanceIntervalSeconds` | 5 | Cadence of the single per-process maintenance loop (expired-waiting timeout sweep + bookmark reconciliation). Bounds suspend-deadline granularity — a Delay fires within this many seconds past its deadline. |
 | `BatchSize` | 10 | Steps claimed per polling iteration. |
 | `BackoffSeconds` | `[30, 120, 600, 3600, 21600]` | Sequential backoff per retry attempt; last value repeats past the tail. Ignored when `MaxAttempts = 1`. |
@@ -185,6 +185,12 @@ Pair with `services.Configure<HostOptions>(o => o.ShutdownTimeout = TimeSpan.Fro
 on the host so it actually waits for the engine to drain.
 
 ## Worker batch & failure handling
+
+Idle wait: when a claim comes back empty the loop doesn't blindly sleep `PollIntervalSeconds` —
+it waits on `IWorkflowWorkSignal`, a latching per-lane wake-up event. A push-capable storage
+(the EF Core plugin's LISTEN/NOTIFY pair) pulses it the moment new steps are committed, so
+dispatch-to-pickup latency is milliseconds while the poll interval only serves as the safety
+net for lost notifications. Without a pulser the wait just times out — plain interval polling.
 
 Per-step DI scope model: a polling iteration claims pending step IDS in a short-lived scope
 (the claim SQL commits immediately), then loads, executes, and flushes every step in its OWN

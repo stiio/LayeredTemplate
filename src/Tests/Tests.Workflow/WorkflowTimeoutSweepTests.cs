@@ -120,6 +120,7 @@ public sealed class WorkflowTimeoutSweepTests
         var worker = new WorkflowEngineWorker(
             scopeFactory: null!,
             lifetime: null!,
+            workSignal: new WorkflowWorkSignal(),
             logger: NullLogger<WorkflowEngineWorker>.Instance,
             settings: Options.Create(Settings));
 

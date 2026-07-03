@@ -52,17 +52,20 @@ internal class WorkflowEngineWorker : BackgroundService
 {
     private readonly IServiceScopeFactory scopeFactory;
     private readonly IHostApplicationLifetime lifetime;
+    private readonly IWorkflowWorkSignal workSignal;
     private readonly ILogger<WorkflowEngineWorker> logger;
     private readonly WorkflowEngineSettings settings;
 
     public WorkflowEngineWorker(
         IServiceScopeFactory scopeFactory,
         IHostApplicationLifetime lifetime,
+        IWorkflowWorkSignal workSignal,
         ILogger<WorkflowEngineWorker> logger,
         IOptions<WorkflowEngineSettings> settings)
     {
         this.scopeFactory = scopeFactory;
         this.lifetime = lifetime;
+        this.workSignal = workSignal;
         this.logger = logger;
         this.settings = settings.Value;
     }
@@ -144,7 +147,11 @@ internal class WorkflowEngineWorker : BackgroundService
                 var processed = await this.ProcessBatchAsync(lane, stoppingToken);
                 if (processed == 0)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(this.settings.PollIntervalSeconds), stoppingToken);
+                    // Idle: sleep until a work pulse (push-capable storage — e.g. the EF Core
+                    // plugin's LISTEN/NOTIFY listener) or the fallback poll interval, whichever
+                    // fires first. Without a pulser this is exactly the old fixed-interval poll.
+                    await this.workSignal.WaitForWorkAsync(
+                        lane, TimeSpan.FromSeconds(this.settings.PollIntervalSeconds), stoppingToken);
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -156,6 +163,9 @@ internal class WorkflowEngineWorker : BackgroundService
                 this.logger.LogError(ex, "WorkflowEngineWorker loop error; continuing");
                 try
                 {
+                    // Deliberately a plain delay, not WaitForWorkAsync: after an unexpected
+                    // loop error this is a backoff, and work pulses must not be able to turn a
+                    // persistently-failing loop hot.
                     await Task.Delay(TimeSpan.FromSeconds(this.settings.PollIntervalSeconds), stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

@@ -556,6 +556,7 @@ public class WorkflowEngineWorkerTests
         var worker = new WorkflowEngineWorker(
             scopeFactory: null!,   // ExecuteOneAsync doesn't use it.
             lifetime: null!,       // ditto — only ExecuteAsync touches lifetime.
+            workSignal: new WorkflowWorkSignal(), // only the idle wait in WorkerLoopAsync uses it.
             logger: NullLogger<WorkflowEngineWorker>.Instance,
             settings: Options.Create(WorkerSettings));
 
