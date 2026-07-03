@@ -105,14 +105,19 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// <summary>Total executions for the run (saved + locally-staged). Used for max-steps-per-run cap.</summary>
     Task<int> CountStepsForRunAsync(Guid runId, CancellationToken cancellationToken);
 
-    /// <summary>Visit count per <c>NodeId</c> in the run (saved + locally-staged). Used for max-visits-per-node cap.</summary>
-    Task<IReadOnlyDictionary<string, int>> GetVisitsByNodeAsync(Guid runId, CancellationToken cancellationToken);
+    /// <summary>
+    /// Visit count for ONE node in the run (saved + locally-staged). Used for the
+    /// max-visits-per-node cap — fan-out only ever needs the enqueue target's count, so this
+    /// stays a targeted <c>COUNT</c> instead of a full per-node histogram of the run.
+    /// </summary>
+    Task<int> CountVisitsForNodeAsync(Guid runId, string nodeId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Single-query summary of step states for a run, used by the run-completion check.
-    /// Combines what used to be two separate <c>AnyOngoing</c> + <c>AnyDead</c> calls into one
-    /// scan, with Local-cache overrides applied so freshly-flipped statuses inside the same
-    /// worker batch are visible.
+    /// Summary of step states for a run, used by the run-completion check after every step
+    /// completion. Must stay cheap regardless of run history: rows tracked by the current scope
+    /// (freshly-flipped statuses inside the worker batch) are classified from the tracker, the
+    /// untracked remainder is aggregated store-side into the three flags without transferring
+    /// rows.
     /// </summary>
     /// <param name="excludingStepId">
     /// Step id whose status is ignored when computing <see cref="WorkflowRunStepStateSummary.HasOngoing"/>

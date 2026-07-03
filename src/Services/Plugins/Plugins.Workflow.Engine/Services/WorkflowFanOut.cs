@@ -149,8 +149,9 @@ internal class WorkflowFanOut : IWorkflowFanOut
 
         // Per-node visit cap — same rule for every node, including loop bodies. Bump
         // MaxVisitsPerNode if you're running ForEach with iteration counts close to the cap.
-        var visitsByNode = await this.store.GetVisitsByNodeAsync(run.Id, cancellationToken);
-        if (visitsByNode.GetValueOrDefault(edge.To) >= this.settings.MaxVisitsPerNode)
+        // Targeted count: only the enqueue TARGET's visits matter here.
+        var targetVisits = await this.store.CountVisitsForNodeAsync(run.Id, edge.To, cancellationToken);
+        if (targetVisits >= this.settings.MaxVisitsPerNode)
         {
             this.logger.LogWarning(
                 "Run {RunId} skipping enqueue of node {NodeId} — visit cap {Cap} reached",

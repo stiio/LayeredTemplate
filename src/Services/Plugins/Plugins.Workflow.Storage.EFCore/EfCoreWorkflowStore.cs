@@ -531,107 +531,109 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         return saved + localPending;
     }
 
-    public async Task<IReadOnlyDictionary<string, int>> GetVisitsByNodeAsync(Guid runId, CancellationToken cancellationToken)
+    public async Task<int> CountVisitsForNodeAsync(Guid runId, string nodeId, CancellationToken cancellationToken)
     {
+        // Targeted count for the fan-out's MaxVisitsPerNode check — the caller only ever needs
+        // the enqueue TARGET's count. The previous shape (GROUP BY node_id over every step of
+        // the run, histogram shipped to the client per enqueue) cost O(steps) per step and
+        // O(N²) per run. ix_workflow_step_executions_run_id_created_at serves the run_id
+        // prefix; no rows materialize client-side.
         var saved = await this.dbContext.WorkflowStepExecutions
-            .Where(s => s.RunId == runId)
-            .GroupBy(s => s.NodeId)
-            .Select(g => new { NodeId = g.Key, Count = g.Count() })
-            .ToListAsync(cancellationToken);
-
-        var result = saved.ToDictionary(x => x.NodeId, x => x.Count);
-
-        // Same EntityState.Added overlay as CountStepsForRunAsync — see explanation there.
-        var pendingLocals = this.dbContext.ChangeTracker
+            .CountAsync(s => s.RunId == runId && s.NodeId == nodeId, cancellationToken);
+        // Same EntityState.Added overlay as CountStepsForRunAsync — count steps staged in this
+        // batch but not yet flushed, narrowed to the one node we're checking.
+        var localPending = this.dbContext.ChangeTracker
             .Entries<WorkflowStepExecution>()
-            .Where(e => e.State == EntityState.Added && e.Entity.RunId == runId)
-            .Select(e => e.Entity);
-        foreach (var local in pendingLocals)
-        {
-            result[local.NodeId] = result.GetValueOrDefault(local.NodeId) + 1;
-        }
-
-        return result;
+            .Count(e => e.State == EntityState.Added
+                && e.Entity.RunId == runId
+                && e.Entity.NodeId == nodeId);
+        return saved + localPending;
     }
 
     public async Task<WorkflowRunStepStateSummary> GetStepStateSummaryAsync(
         Guid runId, Guid excludingStepId, CancellationToken cancellationToken)
     {
-        // Single SQL roundtrip + Local-overlay reclassification. ClaimPendingStepsAsync writes
-        // status='running' via raw SQL, then ApplyStepRecord flips entities to terminal states
-        // purely in the change tracker — a pure DB query would see the stale 'running' value
-        // for any step the worker just finished in this batch.
-        // Strategy: pull (id, status) for every step in the run, then for each row let the local
-        // entity (if tracked) override the DB status; also include local-only just-staged rows.
+        // Runs after EVERY step completion (CheckRunCompletionAsync), so the cost must not scale
+        // with run history. ClaimPendingStepsAsync writes status='running' via raw SQL, then
+        // ApplyStepRecord flips entities to terminal states purely in the change tracker — the
+        // DB status is stale exactly for the rows this scope tracks. Strategy therefore:
+        //   1. Classify tracked rows (claimed / staged in this batch — bounded by BatchSize)
+        //      from their in-memory statuses.
+        //   2. Aggregate the untracked remainder SERVER-SIDE into three booleans in one
+        //      roundtrip — no per-completion transfer of the run's step list (the previous
+        //      shape pulled (id, status) for every step: O(steps) per completion, O(N²) per run).
         // Three-way classification: PendingOrRunning (active progress), Waiting (parked on
         // external signal — drives run.Status = Suspended), Dead (terminal failure).
+        // excludingStepId only excludes from PendingOrRunning — that filter exists to avoid
+        // counting the just-finished step whose DB row may still say 'running'. Waiting / Dead
+        // include all steps so a just-suspended step contributes to HasWaiting and a just-Dead
+        // step contributes to HasDead.
         static bool IsPendingOrRunning(string? status) =>
             status == StepExecutionStatus.Pending
             || status == StepExecutionStatus.Running;
 
-        var dbItems = await this.dbContext.WorkflowStepExecutions
-            .AsNoTracking()
+        var tracked = this.dbContext.WorkflowStepExecutions.Local
             .Where(s => s.RunId == runId)
-            .Select(s => new { s.Id, s.Status })
-            .ToListAsync(cancellationToken);
-
-        var localById = this.dbContext.WorkflowStepExecutions.Local
-            .Where(s => s.RunId == runId)
-            .ToDictionary(s => s.Id, s => s.Status);
+            .ToList();
 
         bool hasPendingOrRunning = false;
         bool hasWaiting = false;
         bool hasDead = false;
 
-        foreach (var row in dbItems)
+        foreach (var step in tracked)
         {
-            var status = localById.TryGetValue(row.Id, out var local) ? local : row.Status;
-            // excludingStepId only excludes from PendingOrRunning — that filter exists to avoid
-            // counting the just-finished step that may still be 'running' in stale DB rows.
-            // Waiting / Dead categories include all steps so a just-suspended step contributes
-            // to HasWaiting and a just-Dead step contributes to HasDead.
-            if (row.Id != excludingStepId && IsPendingOrRunning(status))
+            if (step.Id != excludingStepId && IsPendingOrRunning(step.Status))
             {
                 hasPendingOrRunning = true;
             }
-            if (status == StepExecutionStatus.Waiting)
+            if (step.Status == StepExecutionStatus.Waiting)
             {
                 hasWaiting = true;
             }
-            if (status == StepExecutionStatus.Dead)
+            if (step.Status == StepExecutionStatus.Dead)
             {
                 hasDead = true;
             }
-            if (hasPendingOrRunning && hasWaiting && hasDead)
-            {
-                return new WorkflowRunStepStateSummary(true, true, true);
-            }
         }
 
-        // Local-only rows (AddStep'd this batch, not yet flushed) — same classification.
-        var dbIds = dbItems.Select(r => r.Id).ToHashSet();
-        foreach (var (id, status) in localById)
+        // All three already proven by tracked rows — the DB can't subtract, only add.
+        if (hasPendingOrRunning && hasWaiting && hasDead)
         {
-            if (dbIds.Contains(id)) continue;
-            if (id != excludingStepId && IsPendingOrRunning(status))
-            {
-                hasPendingOrRunning = true;
-            }
-            if (status == StepExecutionStatus.Waiting)
-            {
-                hasWaiting = true;
-            }
-            if (status == StepExecutionStatus.Dead)
-            {
-                hasDead = true;
-            }
-            if (hasPendingOrRunning && hasWaiting && hasDead)
-            {
-                break;
-            }
+            return new WorkflowRunStepStateSummary(true, true, true);
         }
 
-        return new WorkflowRunStepStateSummary(hasPendingOrRunning, hasWaiting, hasDead);
+        // bool_or aggregates the untracked remainder without shipping rows; COALESCE covers the
+        // zero-row case (an aggregate over nothing yields NULL). Tracked ids are excluded — their
+        // in-memory classification above is authoritative — and `<> ALL('{}')` is true, so an
+        // empty tracked set degrades to a plain run-wide aggregate. Quoted aliases pin the exact
+        // casing EF's unmapped-type materializer matches properties by. ToListAsync on purpose:
+        // it runs the raw SQL verbatim, while Single/FirstAsync would compose (wrap in a
+        // subquery + LIMIT) — an aggregate without GROUP BY always yields exactly one row anyway.
+        const string sql = """
+            SELECT
+                COALESCE(bool_or(status IN ({0}, {1}) AND id <> {2}), FALSE) AS "HasOngoing",
+                COALESCE(bool_or(status = {3}), FALSE) AS "HasWaiting",
+                COALESCE(bool_or(status = {4}), FALSE) AS "HasDead"
+            FROM workflow.workflow_step_executions
+            WHERE run_id = {5} AND id <> ALL({6});
+        """;
+
+        var dbFlags = (await this.dbContext.Database
+            .SqlQueryRaw<StepStateFlagsRow>(
+                sql,
+                StepExecutionStatus.Pending,
+                StepExecutionStatus.Running,
+                excludingStepId,
+                StepExecutionStatus.Waiting,
+                StepExecutionStatus.Dead,
+                runId,
+                tracked.Select(s => s.Id).ToArray())
+            .ToListAsync(cancellationToken))[0];
+
+        return new WorkflowRunStepStateSummary(
+            hasPendingOrRunning || dbFlags.HasOngoing,
+            hasWaiting || dbFlags.HasWaiting,
+            hasDead || dbFlags.HasDead);
     }
 
     // ===== Suspend / timeout =====
@@ -1003,4 +1005,18 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         CreatedAt = e.CreatedAt,
         UpdatedAt = e.UpdatedAt,
     };
+}
+
+/// <summary>
+/// Row shape for the aggregated step-state probe in
+/// <see cref="EfCoreWorkflowStore.GetStepStateSummaryAsync"/>. Deliberately top-level — EF's
+/// ad-hoc <c>SqlQuery</c> materialization refuses nested CLR types.
+/// </summary>
+internal sealed class StepStateFlagsRow
+{
+    public bool HasOngoing { get; set; }
+
+    public bool HasWaiting { get; set; }
+
+    public bool HasDead { get; set; }
 }
