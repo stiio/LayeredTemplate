@@ -177,7 +177,7 @@ public class WorkflowEngineSettings
     /// Optional automatic retention of finished and stale runs. Disabled by default (both
     /// sub-flags false). When enabled the engine spawns a low-frequency background worker that
     /// runs <see cref="IWorkflowStore.PurgeFinishedRunsAsync"/> /
-    /// <see cref="IWorkflowStore.PurgeStaleRunningRunsAsync"/> on a sweep schedule.
+    /// <see cref="IWorkflowStore.FailStaleRunningRunsAsync"/> on a sweep schedule.
     /// </summary>
     public WorkflowRetentionSettings Retention { get; set; } = new();
 }
@@ -195,12 +195,16 @@ public class WorkflowRetentionSettings
     public bool EnableFinishedPurge { get; set; } = false;
 
     /// <summary>
-    /// When true, periodically purges <c>Running</c> runs whose <c>UpdatedAt</c> is older than
-    /// <see cref="StaleRunningRetentionDays"/> — orphans from worker / pod crashes. Runs in the
-    /// <c>Suspended</c> status (parked on Approve / Delay / RunWorkflow wait) are <i>not</i>
-    /// touched: the dedicated status keeps them out of this scan. Default false.
+    /// When true, periodically marks <c>Running</c> runs whose <c>UpdatedAt</c> is older than
+    /// <see cref="StaleRunningRetentionDays"/> as <c>Failed</c> with
+    /// <c>abort_reason = "stale: …"</c> — orphans from worker / pod crashes. Two-phase by
+    /// design: the run and its step history stay inspectable for the incident window instead of
+    /// silently vanishing; the finished purge (<see cref="EnableFinishedPurge"/>) deletes them
+    /// later like any other failed run. Runs in the <c>Suspended</c> status (parked on Delay /
+    /// WaitSignal / RunWorkflow wait) are <i>not</i> touched: the dedicated status keeps them
+    /// out of this scan. Default false.
     /// </summary>
-    public bool EnableStalePurge { get; set; } = false;
+    public bool EnableStaleFail { get; set; } = false;
 
     /// <summary>
     /// How often the retention worker sweeps. Default 12h — purge isn't latency-sensitive,
@@ -217,9 +221,10 @@ public class WorkflowRetentionSettings
     public int FinishedRunRetentionDays { get; set; } = 30;
 
     /// <summary>
-    /// <c>Running</c> runs whose <c>UpdatedAt</c> is older than this are purged. Default 7 days
-    /// — a healthy run advances within seconds; a week of inactivity strongly implies the
-    /// worker that owned it died mid-flight without final state transition.
+    /// <c>Running</c> runs whose <c>UpdatedAt</c> is older than this are marked <c>Failed</c>
+    /// (see <see cref="EnableStaleFail"/>). Default 7 days — a healthy run advances within
+    /// seconds; a week of inactivity strongly implies the worker that owned it died mid-flight
+    /// without a final state transition.
     /// </summary>
     public int StaleRunningRetentionDays { get; set; } = 7;
 

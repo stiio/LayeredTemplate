@@ -139,7 +139,7 @@ methods they don't use:
 - **`IWorkflowReadStore`** — `Get*`, `Find*`, `List*`, `Count*`. App-side handlers that just
   project workflow data into DTOs depend on this.
 - **`IWorkflowRetentionStore`** — `PurgeFinishedRunsAsync`, `PurgeAllForTenantAsync`,
-  `PurgeStaleRunningRunsAsync`. The retention background worker depends only on this.
+  `FailStaleRunningRunsAsync`. The retention background worker depends only on this.
 - **`IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore`** — composite, adds writes
   + worker hot path (`Claim*`, `Release*`, `AbortActiveSteps*`, `TryResumeWaitingStep*`,
   `GetStepStateSummary*`) + `SaveChangesAsync`. Engine internals depend on this.

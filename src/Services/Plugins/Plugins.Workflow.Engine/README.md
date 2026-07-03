@@ -134,10 +134,10 @@ Bound from configuration section `WorkflowEngineSettings` (override via the opti
 | `ShutdownDrainSeconds` | 30 | Per-action grace after SIGTERM. The in-flight action gets this long to finish naturally before its CT fires; after shutdown signal, claimed-but-untouched steps are released back to `pending`. |
 | `FastLaneActionTimeoutSeconds` | 30 | Hard per-action timeout for the fast lane. Long lane has no upfront timeout — only the shutdown drain. |
 | `Retention.EnableFinishedPurge` | `false` | Periodically purge `Completed`/`Failed` runs older than `FinishedRunRetentionDays`. |
-| `Retention.EnableStalePurge` | `false` | Periodically purge `Running` runs idle longer than `StaleRunningRetentionDays`. |
+| `Retention.EnableStaleFail` | `false` | Periodically mark `Running` runs idle longer than `StaleRunningRetentionDays` as `Failed` with `abort_reason = "stale: …"` (trace preserved); the finished purge deletes them later like any failed run. |
 | `Retention.SweepIntervalSeconds` | 12 h | How often the retention worker sweeps. |
 | `Retention.FinishedRunRetentionDays` | 30 | Threshold for finished-run purge. |
-| `Retention.StaleRunningRetentionDays` | 7 | Threshold for stale-running purge. |
+| `Retention.StaleRunningRetentionDays` | 7 | Idle threshold past which a `Running` run is marked `Failed` as stale. |
 | `Retention.BatchSize` | 1000 | Per-iteration delete batch. |
 
 ## Built-in actions

@@ -237,7 +237,7 @@ internal class FakeStore : IWorkflowStore
     public Task<int> PurgeAllForTenantAsync(Guid tenantId, int limit, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
-    public Task<int> PurgeStaleRunningRunsAsync(DateTime olderThan, int limit, Guid? tenantId = null, CancellationToken cancellationToken = default)
+    public Task<int> FailStaleRunningRunsAsync(DateTime olderThan, int limit, Guid? tenantId = null, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
     public Task<int> PurgeRunsByDefinitionAsync(Guid tenantId, Guid definitionId, int limit, CancellationToken cancellationToken = default)

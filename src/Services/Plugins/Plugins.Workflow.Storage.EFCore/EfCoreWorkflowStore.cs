@@ -756,14 +756,17 @@ internal class EfCoreWorkflowStore : IWorkflowStore
             .ExecuteDeleteAsync(cancellationToken);
     }
 
-    public Task<int> PurgeStaleRunningRunsAsync(
+    /// <summary>Diagnostic abort reason stamped on stale-failed runs — greppable in dashboards.</summary>
+    internal const string StaleAbortReason = "stale: run showed no activity within the stale-running retention window";
+
+    public Task<int> FailStaleRunningRunsAsync(
         DateTime olderThan,
         int limit,
         Guid? tenantId = null,
         CancellationToken cancellationToken = default)
     {
         // Status='running' here strictly means "actively progressing" — runs parked on an
-        // external signal (Approve / Delay / RunWorkflow wait-for-completion) carry the
+        // external signal (Delay / WaitSignal / RunWorkflow wait-for-completion) carry the
         // dedicated 'suspended' status set by CheckRunCompletionAsync, so they're naturally
         // excluded from this scan. No NOT EXISTS subquery needed.
         var query = this.dbContext.WorkflowRuns
@@ -775,10 +778,21 @@ internal class EfCoreWorkflowStore : IWorkflowStore
             query = query.Where(r => r.TenantId == tid);
         }
 
+        // Two-phase reaping: flip to Failed with a diagnostic abort_reason instead of deleting —
+        // the run (and its step history) stays inspectable until the FINISHED purge removes it
+        // like any other failed run. Set-based ExecuteUpdate goes through EF's translation, so
+        // the abort_reason constant passes the protected-column converter like a tracked write.
+        var now = DateTime.UtcNow;
         return query
             .OrderBy(r => r.UpdatedAt)
             .Take(limit)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(r => r.Status, WorkflowRunStatus.Failed)
+                    .SetProperty(r => r.AbortReason, StaleAbortReason)
+                    .SetProperty(r => r.FinishedAt, now)
+                    .SetProperty(r => r.UpdatedAt, now),
+                cancellationToken);
     }
 
     // ===== Atomic flush =====

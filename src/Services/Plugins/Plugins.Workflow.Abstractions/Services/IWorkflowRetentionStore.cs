@@ -47,12 +47,16 @@ public interface IWorkflowRetentionStore
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Removes runs in <c>Running</c> status whose last activity (<c>UpdatedAt</c>) is older than
-    /// <paramref name="olderThan"/>. Step executions cascade. Catches runs stuck because of a
-    /// crashed worker, dropped tenant config, never-arriving Join inputs without configured
-    /// timeout, etc. Optionally scope by <paramref name="tenantId"/>.
+    /// Marks runs in <c>Running</c> status whose last activity (<c>UpdatedAt</c>) is older than
+    /// <paramref name="olderThan"/> as <c>Failed</c> with a diagnostic
+    /// <c>abort_reason = "stale: …"</c> and <c>FinishedAt = now</c>. Catches runs stuck because
+    /// of a crashed worker, dropped tenant config, etc. Deliberately does NOT delete: the run
+    /// and its step history stay inspectable for the incident window; the regular finished
+    /// purge (<see cref="PurgeFinishedRunsAsync"/>) removes them later like any other failed
+    /// run. Optionally scope by <paramref name="tenantId"/>. Returns the number of runs failed;
+    /// loop until it returns less than <paramref name="limit"/> to drain a backlog.
     /// </summary>
-    Task<int> PurgeStaleRunningRunsAsync(
+    Task<int> FailStaleRunningRunsAsync(
         DateTime olderThan,
         int limit,
         Guid? tenantId = null,

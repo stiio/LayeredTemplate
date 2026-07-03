@@ -68,5 +68,5 @@ internal static class WorkflowTags
 
     // Retention
     public const string RetentionFinishedPurged = "workflow.retention.finished_purged";
-    public const string RetentionStalePurged = "workflow.retention.stale_purged";
+    public const string RetentionStaleFailed = "workflow.retention.stale_failed";
 }

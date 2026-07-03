@@ -9,10 +9,10 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Services;
 
 /// <summary>
 /// Low-frequency background worker that calls <see cref="IWorkflowRetentionStore.PurgeFinishedRunsAsync"/>
-/// and <see cref="IWorkflowRetentionStore.PurgeStaleRunningRunsAsync"/> on a configurable schedule.
+/// and <see cref="IWorkflowRetentionStore.FailStaleRunningRunsAsync"/> on a configurable schedule.
 /// Always registered; effectively dormant unless at least one of
 /// <see cref="WorkflowRetentionSettings.EnableFinishedPurge"/> /
-/// <see cref="WorkflowRetentionSettings.EnableStalePurge"/> is set in
+/// <see cref="WorkflowRetentionSettings.EnableStaleFail"/> is set in
 /// <see cref="WorkflowEngineSettings.Retention"/>.
 /// <para>
 /// Scoped per sweep: each iteration creates its own DI scope for the store, so a long-running
@@ -46,7 +46,7 @@ internal class WorkflowRetentionWorker : BackgroundService
 
         // Both knobs off → worker doesn't even wait for ApplicationStarted, just exits. The
         // service descriptor stays in the host's collection for symmetry but does no work.
-        if (!retention.EnableFinishedPurge && !retention.EnableStalePurge)
+        if (!retention.EnableFinishedPurge && !retention.EnableStaleFail)
         {
             this.logger.LogDebug("Workflow retention disabled — worker idle.");
             return;
@@ -63,11 +63,11 @@ internal class WorkflowRetentionWorker : BackgroundService
 
         var interval = TimeSpan.FromSeconds(retention.SweepIntervalSeconds);
         this.logger.LogInformation(
-            "Workflow retention worker enabled — sweep every {Interval} (finishedPurge={Finished} >{FinishedDays}d, stalePurge={Stale} >{StaleDays}d, batch={Batch})",
+            "Workflow retention worker enabled — sweep every {Interval} (finishedPurge={Finished} >{FinishedDays}d, staleFail={Stale} >{StaleDays}d, batch={Batch})",
             interval,
             retention.EnableFinishedPurge,
             retention.FinishedRunRetentionDays,
-            retention.EnableStalePurge,
+            retention.EnableStaleFail,
             retention.StaleRunningRetentionDays,
             retention.BatchSize);
 
@@ -125,19 +125,22 @@ internal class WorkflowRetentionWorker : BackgroundService
             }
         }
 
-        if (retention.EnableStalePurge)
+        if (retention.EnableStaleFail)
         {
             var threshold = now - TimeSpan.FromDays(retention.StaleRunningRetentionDays);
-            // Suspended runs are excluded by status — see PurgeStaleRunningRunsAsync impl. Only
-            // genuinely-orphaned Running runs (worker died mid-flight) are caught.
+            // Suspended runs are excluded by status — see FailStaleRunningRunsAsync impl. Only
+            // genuinely-orphaned Running runs (worker died mid-flight) are caught. Two-phase:
+            // they're FAILED here (abort_reason = "stale: …", trace preserved for the incident
+            // window); the finished purge above deletes them on its own schedule like any other
+            // failed run.
             while (!ct.IsCancellationRequested)
             {
-                var deleted = await store.PurgeStaleRunningRunsAsync(
+                var failed = await store.FailStaleRunningRunsAsync(
                     olderThan: threshold,
                     limit: retention.BatchSize,
                     cancellationToken: ct);
-                totalStale += deleted;
-                if (deleted < retention.BatchSize) break;
+                totalStale += failed;
+                if (failed < retention.BatchSize) break;
             }
         }
 
@@ -146,13 +149,13 @@ internal class WorkflowRetentionWorker : BackgroundService
         if (totalFinished > 0 || totalStale > 0)
         {
             this.logger.LogInformation(
-                "Retention sweep purged {Finished} finished + {Stale} stale-running runs",
+                "Retention sweep purged {Finished} finished run(s) and failed {Stale} stale-running run(s)",
                 totalFinished, totalStale);
 
             using var activity = WorkflowActivitySource.Instance.StartActivity(
                 "workflow.retention.sweep", ActivityKind.Internal);
             activity?.SetTag(WorkflowTags.RetentionFinishedPurged, totalFinished);
-            activity?.SetTag(WorkflowTags.RetentionStalePurged, totalStale);
+            activity?.SetTag(WorkflowTags.RetentionStaleFailed, totalStale);
         }
     }
 }

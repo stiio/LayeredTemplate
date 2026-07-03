@@ -261,7 +261,8 @@ ORDER BY updated_at;
   force-cancelled by the per-step CTS (normal protection, not a problem).
 - Anything with `running_seconds > 5 × FastLaneActionTimeoutSeconds` indicates a worker died
   mid-action — the step won't recover until the next worker startup releases it (or until
-  `Retention.EnableStalePurge` cleans the run after `StaleRunningRetentionDays`).
+  `Retention.EnableStaleFail` marks the run `Failed` as stale after `StaleRunningRetentionDays`;
+  the finished purge deletes it later).
 
 **Stuck running rows (dead workers, or in-flight at cancel time):**
 
@@ -283,8 +284,8 @@ Two normal sources of these rows:
    `ShutdownDrainSeconds + buffer` and the OS is force-killing.
 2. **Cancel during in-flight action.** `run_status = 'failed'`. Cancel only writes the run
    row; the step keeps running until the action returns, then the worker writes its real
-   outcome. If the worker subsequently died, the step is stuck. Stale-purge cleans these via
-   `Retention.EnableStalePurge` after `StaleRunningRetentionDays`.
+   outcome. If the worker subsequently died, the step is stuck. The run is already `failed`
+   here, so the finished purge (`Retention.EnableFinishedPurge`) reaps it on schedule.
 
 Filter by `run_status` to separate the two: rows with `run_status = 'failed'` are cancellation
 fallout, not worker death.
