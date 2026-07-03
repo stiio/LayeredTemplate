@@ -130,6 +130,15 @@ App.Web/
 | **Plugins.Logging.HttpClientLog** | DelegatingHandler для логирования HttpClient с маскировкой |
 | **Plugins.PhoneHelpers** | libphonenumber-csharp wrappers + DataAnnotations |
 | **Plugins.StartupRunner** | HostedService для запуска `IStartupTask` при старте |
+| **Plugins.Workflow.\*** (Abstractions / Engine / Storage.EFCore) | Durable workflow engine: графы-определения, раны со снапшотом графа, claim шагов через `FOR UPDATE SKIP LOCKED`, ретраи с backoff, suspend/resume + bookmarks/сигналы, sub-workflows, retention. Хранилище Postgres-only в отдельной схеме `workflow` со своей историей миграций, опциональное шифрование PHI-колонок. Подключение: `services.AddWorkflowCore(cfg).AddEfCoreStorage(connStr)`, кастомные экшены — `.AddActionType<T>()`. Детали: [Engine README](Services/Plugins/Plugins.Workflow.Engine/README.md) |
+
+## `Tests/` — тесты
+
+| Проект | Что покрывает |
+|--------|---------------|
+| **Tests.Workflow** | Функциональные тесты workflow-движка (xUnit, без БД): worker (порты/ретраи/suspend/FinishRun), timeout-sweep, экшены (ForEach, Delay). In-memory фейки `IWorkflowStore` и др. живут в `TestDoubles/`; internal-швы движка (`ExecuteOneAsync`, `SweepExpiredWaitingStepsOnceAsync`) открыты через `InternalsVisibleTo` в [Directory.Build.props](Directory.Build.props) |
+
+Тестовые проекты кладём в `Tests/` (naming: `Tests.<Область>[.<Вид>]`). Assembly-имена `Tests.App.Functional`, `Tests.App.Integration` и `Tests.Workflow` уже включены в repo-wide `InternalsVisibleTo`.
 
 ## `Pipelines/` — CI/CD
 
@@ -152,6 +161,9 @@ dotnet run --project Services/Auth/Auth.Web
 # Миграции App.Web
 cd Services/App/App.Web
 dotnet ef migrations add <Name> -o Migrations
+
+# Тесты
+dotnet test Tests/Tests.Workflow
 
 # Docker
 docker-compose -f docker-compose.yml up

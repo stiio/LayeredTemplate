@@ -37,6 +37,11 @@
     <Project Path="Services/Plugins/Plugins.Workflow.Storage.EFCore/Plugins.Workflow.Storage.EFCore.csproj" />
     <!--#endif-->
   </Folder>
+  <!--#if (!minimal)-->
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Tests.Workflow/Tests.Workflow.csproj" />
+  </Folder>
+  <!--#endif-->
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <!--#if (!minimal)-->

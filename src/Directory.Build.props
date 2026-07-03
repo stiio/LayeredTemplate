@@ -12,6 +12,7 @@
 	<ItemGroup Condition="'$(MSBuildProjectExtension)' != '.dcproj'">
 		<InternalsVisibleTo Include="Tests.App.Functional" />
 		<InternalsVisibleTo Include="Tests.App.Integration" />
+		<InternalsVisibleTo Include="Tests.Workflow" />
 	</ItemGroup>
 
 	<!--
