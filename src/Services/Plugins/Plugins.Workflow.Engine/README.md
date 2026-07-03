@@ -186,20 +186,29 @@ on the host so it actually waits for the engine to drain.
 
 ## Worker batch & failure handling
 
-A polling iteration runs in a single DI scope: the claim SQL, every step's `ExecuteOneAsync`,
-and `SaveChangesAsync` after each one. Per-step save commits results incrementally — if the
-host kills us between step N and N+1, steps 1..N are durably persisted. The expired-waiting
-timeout sweep and the bookmark reconciliation sweep run on a separate single per-process
-maintenance loop (`MaintenanceIntervalSeconds`), not on worker iterations.
+Per-step DI scope model: a polling iteration claims pending step IDS in a short-lived scope
+(the claim SQL commits immediately), then loads, executes, and flushes every step in its OWN
+scope — the same lifetime an action would see inside a web request. Consumer scoped services
+an action takes by constructor can't leak state into the next step (which may belong to another
+run / tenant), and each step gets a fresh identity map (an operator cancel committed mid-batch
+is visible to the very next step). Per-step save commits results incrementally — if the host
+kills us between step N and N+1, steps 1..N are durably persisted. The expired-waiting timeout
+sweep and the bookmark reconciliation sweep run on a separate single per-process maintenance
+loop (`MaintenanceIntervalSeconds`), each expired step handled in its own scope too.
 
-If a step's processing throws (cancellation token elapsed, DB blip, anything else):
+If a step's processing throws (DB blip, anything else):
 
-- Mid-flight tracker mutations from that step are dropped via
-  `IWorkflowStore.DiscardPendingChanges` — keeps the next step's save clean.
+- The step's scope is disposed unsaved — nothing to clean up, no cross-step tracker pollution.
 - The step is NOT marked as processed.
-- Subsequent steps in the batch continue in the same scope.
+- Subsequent steps continue, each in a fresh scope.
 - After the loop, claimed-but-unprocessed step ids are released back to `pending` via
   `ReleaseClaimedStepsAsync` (decrements `attempt_count`).
+
+A fast-lane action timeout is the exception: releasing would refund the attempt while
+`next_attempt_at` stays in the past (instant re-claim → hot loop), so the worker instead
+applies the standard transient-error outcome in a fresh scope — backoff retry, dead-letter at
+`MaxAttempts`. Shutdown-drain cancellation keeps the release path (a deploy must not consume
+attempts).
 
 There is no optimistic-concurrency guard between worker writes and racing cancel/restart.
 Cancel writes only to `workflow_runs.status` and leaves step rows alone, so the only race

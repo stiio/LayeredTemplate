@@ -103,7 +103,7 @@ public class WorkflowEngineSettings
 
     /// <summary>
     /// Number of concurrent worker loops the engine runs inside a single host process. Each
-    /// loop independently calls <c>ClaimPendingStepsAsync</c> with its own DI scope, so they
+    /// loop independently calls <c>ClaimPendingStepIdsAsync</c> with its own DI scope, so they
     /// scale linearly without coordinating: Postgres' <c>FOR UPDATE SKIP LOCKED</c> prevents
     /// double-claims at the row level.
     /// <para>

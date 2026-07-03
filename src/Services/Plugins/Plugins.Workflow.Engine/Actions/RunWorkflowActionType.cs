@@ -50,7 +50,7 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
     // enumerated by ActionTypeRegistry, which is reached transitively from IWorkflowDispatcher
     // (StepExecutionBuilder needs it), so injecting the dispatcher directly would close a
     // constructor DI cycle. Resolving at call time from the SAME scope's provider breaks the
-    // cycle without giving up scoped lifetime — and keeps the dispatcher on the worker's shared
+    // cycle without giving up scoped lifetime — and keeps the dispatcher on this step's scoped
     // store, so the child run stages into the same unit of work as this step's transition
     // (same trick WorkflowFanOut uses for IWorkflowResumer).
     private readonly IServiceProvider services;
@@ -122,9 +122,9 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
             ParentStepId = context.Config.WaitForCompletion ? context.StepExecutionId : null,
         };
 
-        // Dispatch on the CURRENT scope's dispatcher with flush:false — the child run + its
-        // initial step are only STAGED on the worker's shared store here and commit atomically
-        // with THIS step's own transition in the worker's per-step flush. That single commit
+        // Dispatch on the CURRENT (step-scoped) dispatcher with flush:false — the child run +
+        // its initial step are only STAGED on this step's scoped store here and commit
+        // atomically with THIS step's own transition in the per-step flush. That single commit
         // closes two holes the previous fresh-scope + immediate-commit design had:
         //   1. Fast-child race: a child committed before this step's Waiting transition could
         //      run to completion first; its parent auto-resume then found this step not Waiting

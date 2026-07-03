@@ -1,8 +1,8 @@
 namespace LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 
 /// <summary>
-/// Worker-pool routing hint for <see cref="Services.IWorkflowStore.ClaimPendingStepsAsync"/> /
-/// <see cref="Services.IWorkflowStore.ClaimExpiredWaitingStepsAsync"/>. Lets the host run two
+/// Worker-pool routing hint for <see cref="Services.IWorkflowStore.ClaimPendingStepIdsAsync"/>.
+/// Lets the host run two
 /// independent pools — a fast lane for sub-second actions (Transform / Condition / Switch) and
 /// a long-running lane for actions that may block their worker thread for tens of seconds
 /// (HttpRequest with 30-60s timeouts, slow S3 transfers, etc.). Without separation a handful of

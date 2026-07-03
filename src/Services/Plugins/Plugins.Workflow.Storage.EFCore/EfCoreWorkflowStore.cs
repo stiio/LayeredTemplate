@@ -13,7 +13,7 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore;
 
 /// <summary>
 /// EF Core impl of <see cref="IWorkflowStore"/>. Postgres-specific only in the
-/// <see cref="ClaimPendingStepsAsync"/> raw SQL (FOR UPDATE SKIP LOCKED + RETURNING).
+/// <see cref="ClaimPendingStepIdsAsync"/> raw SQL (FOR UPDATE SKIP LOCKED + RETURNING).
 /// To swap for SQL Server / etc., implement <see cref="IWorkflowStore"/> against the equivalent
 /// vendor primitives — the engine is unchanged.
 /// </summary>
@@ -161,10 +161,9 @@ internal class EfCoreWorkflowStore : IWorkflowStore
     public void UpdateRun(WorkflowRunRecord run)
     {
         // Local-only lookup: the worker / fan-out / canceller / restarter all ensure the run
-        // is tracked in this scope before mutating (via GetRunAsync) — claim's tracked load +
-        // GetRunAsync calls keep the entity alive in Local for the batch's lifetime. A Local
-        // miss means the caller broke that contract and the mutation would be silently lost;
-        // fail fast instead of round-tripping stale state.
+        // is tracked in this scope before mutating (via GetRunAsync). A Local miss means the
+        // caller broke that contract and the mutation would be silently lost; fail fast
+        // instead of round-tripping stale state.
         var entity = this.dbContext.WorkflowRuns.Local.FirstOrDefault(e => e.Id == run.Id);
         if (entity is null)
         {
@@ -269,7 +268,7 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         var saved = await this.dbContext.WorkflowRuns
             .CountAsync(r => r.ParentRunId == parentRunId, cancellationToken);
         // Local overlay, same EntityState.Added pattern as CountStepsForRunAsync: the RunWorkflow
-        // action dispatches with flush:false, staging the child on the worker's shared context so
+        // action dispatches with flush:false, staging the child on the step's scoped context so
         // it commits atomically with the dispatching step's transition. A cap check that runs
         // before that flush must still see the staged child, or a same-flush sequence could
         // overshoot MaxSubRunsPerRun.
@@ -301,8 +300,8 @@ internal class EfCoreWorkflowStore : IWorkflowStore
 
     public void UpdateStep(WorkflowStepRecord step)
     {
-        // Local-only lookup: caller has tracked-loaded the step earlier in this scope (claim
-        // returns tracked entities; resumer / restarter call GetStepAsync first). A Local miss
+        // Local-only lookup: caller has tracked-loaded the step earlier in this scope (the
+        // per-step worker scope and the resumer both call GetStepAsync first). A Local miss
         // means the caller broke that contract and the mutation would be silently lost; fail
         // fast instead of round-tripping stale state.
         var entity = this.dbContext.WorkflowStepExecutions.Local.FirstOrDefault(e => e.Id == step.Id);
@@ -465,7 +464,7 @@ internal class EfCoreWorkflowStore : IWorkflowStore
 
     // ===== Worker hot path =====
 
-    public async Task<IReadOnlyList<WorkflowStepRecord>> ClaimPendingStepsAsync(
+    public async Task<IReadOnlyList<Guid>> ClaimPendingStepIdsAsync(
         int batchSize,
         WorkflowStepLane lane,
         CancellationToken cancellationToken)
@@ -474,22 +473,16 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         // workers can run concurrently without re-claiming each other's rows. Postgres-specific.
         // Two SQL variants: with or without the is_long_running filter. Branching by lane keeps
         // the Any-mode query identical to its pre-lane shape, so the planner re-uses cached
-        // plans and the index scan stays optimal.
-        var claimedIds = lane switch
+        // plans and the index scan stays optimal. Ids only — the worker loads each step through
+        // its own per-step scope's GetStepAsync; the claim UPDATE commits immediately (raw SQL),
+        // so the claim survives this scope's disposal.
+        return lane switch
         {
             WorkflowStepLane.Any => await this.ClaimPendingAnyAsync(batchSize, cancellationToken),
             WorkflowStepLane.FastOnly => await this.ClaimPendingByLaneAsync(batchSize, isLongRunning: false, cancellationToken),
             WorkflowStepLane.LongOnly => await this.ClaimPendingByLaneAsync(batchSize, isLongRunning: true, cancellationToken),
             _ => throw new ArgumentOutOfRangeException(nameof(lane), lane, "Unknown WorkflowStepLane value."),
         };
-
-        if (claimedIds.Count == 0) return Array.Empty<WorkflowStepRecord>();
-
-        // Tracked load — caller mutates and UpdateStep applies in place.
-        var entities = await this.dbContext.WorkflowStepExecutions
-            .Where(s => claimedIds.Contains(s.Id))
-            .ToListAsync(cancellationToken);
-        return entities.Select(MapStepEntityToRecord).ToList();
     }
 
     private Task<List<Guid>> ClaimPendingAnyAsync(int batchSize, CancellationToken cancellationToken)
@@ -565,10 +558,10 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         Guid runId, Guid excludingStepId, CancellationToken cancellationToken)
     {
         // Runs after EVERY step completion (CheckRunCompletionAsync), so the cost must not scale
-        // with run history. ClaimPendingStepsAsync writes status='running' via raw SQL, then
+        // with run history. ClaimPendingStepIdsAsync writes status='running' via raw SQL, then
         // ApplyStepRecord flips entities to terminal states purely in the change tracker — the
         // DB status is stale exactly for the rows this scope tracks. Strategy therefore:
-        //   1. Classify tracked rows (claimed / staged in this batch — bounded by BatchSize)
+        //   1. Classify tracked rows (the current step + anything its scope staged — a handful)
         //      from their in-memory statuses.
         //   2. Aggregate the untracked remainder SERVER-SIDE into three booleans in one
         //      roundtrip — no per-completion transfer of the run's step list (the previous
@@ -658,7 +651,7 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         // Guarded SQL: only revert rows that are still in 'running' (those we claimed but
         // didn't finish executing). Rows already moved on by a concurrent cancel / external
         // mutation stay where they are — `status='running'` filter excludes them naturally.
-        // attempt_count -= 1 reverses the bump that ClaimPendingStepsAsync applied "on credit"
+        // attempt_count -= 1 reverses the bump that ClaimPendingStepIdsAsync applied "on credit"
         // when it claimed; the upcoming retry isn't penalised for a non-attempt.
         const string sql = """
             UPDATE workflow.workflow_step_executions
@@ -678,18 +671,19 @@ internal class EfCoreWorkflowStore : IWorkflowStore
             cancellationToken);
     }
 
-    public async Task<IReadOnlyList<WorkflowStepRecord>> ClaimExpiredWaitingStepsAsync(
+    public async Task<IReadOnlyList<Guid>> ClaimExpiredWaitingStepIdsAsync(
         int limit,
         CancellationToken cancellationToken)
     {
-        // Same atomic claim shape as ClaimPendingStepsAsync — FOR UPDATE SKIP LOCKED guarantees
+        // Same atomic claim shape as ClaimPendingStepIdsAsync — FOR UPDATE SKIP LOCKED guarantees
         // no two sweep passes see the same expired-waiting step. Status flips Waiting → Running
         // in one statement; the caller's HandleTimeoutGracefullyAsync drives the timeout outcome
         // and ApplyResultAsync moves it to Completed/Dead like a regular step termination.
         // attempt_count is NOT incremented — this isn't a retry, it's a one-shot timeout fire.
         // No lane filter: timeouts are swept by the engine's single maintenance loop regardless
         // of the step's lane — OnStepTimedOutAsync hooks are quick decision code, not action
-        // bodies, so lane isolation buys nothing here.
+        // bodies, so lane isolation buys nothing here. Ids only: each expired step is handled
+        // in its own per-step scope, which tracked-loads it via GetStepAsync.
         const string sql = """
             UPDATE workflow.workflow_step_executions
             SET status = {0}, updated_at = now()
@@ -702,17 +696,9 @@ internal class EfCoreWorkflowStore : IWorkflowStore
             )
             RETURNING id;
         """;
-        var claimedIds = await this.dbContext.Database
+        return await this.dbContext.Database
             .SqlQueryRaw<Guid>(sql, StepExecutionStatus.Running, StepExecutionStatus.Waiting, limit)
             .ToListAsync(cancellationToken);
-
-        if (claimedIds.Count == 0) return Array.Empty<WorkflowStepRecord>();
-
-        // Tracked load — caller mutates and UpdateStep applies in place.
-        var entities = await this.dbContext.WorkflowStepExecutions
-            .Where(s => claimedIds.Contains(s.Id))
-            .ToListAsync(cancellationToken);
-        return entities.Select(MapStepEntityToRecord).ToList();
     }
 
     // ===== Purge =====
@@ -810,21 +796,6 @@ internal class EfCoreWorkflowStore : IWorkflowStore
 
     public Task SaveChangesAsync(CancellationToken cancellationToken) =>
         this.dbContext.SaveChangesAsync(cancellationToken);
-
-    public void DiscardPendingChanges()
-    {
-        // Detach every entry that has dirty state. Unchanged entries (already-flushed reads
-        // from earlier in the same scope) stay tracked so subsequent code paths benefit from
-        // the cache rather than re-loading. ToList() materialises before mutating, since
-        // changing entry.State during iteration would invalidate the enumerator.
-        foreach (var entry in this.dbContext.ChangeTracker.Entries().ToList())
-        {
-            if (entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
-            {
-                entry.State = EntityState.Detached;
-            }
-        }
-    }
 
     /// <summary>
     /// Thin adapter from EF's <see cref="IDbContextTransaction"/> to the storage-agnostic

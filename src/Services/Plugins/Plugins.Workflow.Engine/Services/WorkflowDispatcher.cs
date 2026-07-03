@@ -107,7 +107,7 @@ internal class WorkflowDispatcher : IWorkflowDispatcher
 
         // Plugin owns its DbContext: flushing here doesn't touch any consumer transaction.
         // Engine-internal callers (RunWorkflow) pass flush:false — their child run stays staged
-        // on the worker's shared scope and commits atomically with the dispatching step's own
+        // on the dispatching step's scoped store and commits atomically with that step's own
         // transition in the per-step flush (see IWorkflowDispatcher.DispatchAsync remarks).
         if (flush)
         {

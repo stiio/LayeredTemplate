@@ -35,8 +35,8 @@ public class WorkflowStepExecution
 
     /// <summary>
     /// Stamped at insert-time from <c>IActionType.IsLongRunning</c>. Drives the lane filter in
-    /// <c>ClaimPendingStepsAsync</c> / <c>ClaimExpiredWaitingStepsAsync</c> — see
-    /// <c>WorkflowStepLane</c>. Defaults to <c>false</c> so legacy rows behave as fast steps.
+    /// <c>ClaimPendingStepIdsAsync</c> — see <c>WorkflowStepLane</c>. Defaults to <c>false</c>
+    /// so legacy rows behave as fast steps.
     /// </summary>
     public bool IsLongRunning { get; set; }
 

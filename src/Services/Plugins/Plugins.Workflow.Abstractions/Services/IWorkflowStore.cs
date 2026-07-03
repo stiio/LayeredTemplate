@@ -89,7 +89,10 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// Atomically claim a batch of <c>Pending</c> steps whose <c>NextAttemptAt &lt;= now</c>,
     /// transitioning each to <c>Running</c> and incrementing <c>AttemptCount</c>. Postgres
     /// uses <c>FOR UPDATE SKIP LOCKED</c>; other backends use their equivalent.
-    /// Returns the claimed step records (empty if nothing pending).
+    /// Returns the claimed step IDS (empty if nothing pending) — ids only, because the claim
+    /// runs in a short-lived scope and each step is then loaded (<see cref="IWorkflowReadStore.GetStepAsync"/>)
+    /// and executed in its OWN per-step DI scope. The claim UPDATE commits at the DB level
+    /// immediately (raw SQL), so it survives the claiming scope's disposal.
     /// <para>
     /// <paramref name="lane"/> filters by the row's <c>is_long_running</c> column so two worker
     /// pools can run side by side without interfering. <see cref="WorkflowStepLane.Any"/> is the
@@ -97,7 +100,7 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// <see cref="WorkflowStepLane.LongOnly"/> only when <c>LongRunningWorkerCount &gt; 0</c>.
     /// </para>
     /// </summary>
-    Task<IReadOnlyList<WorkflowStepRecord>> ClaimPendingStepsAsync(
+    Task<IReadOnlyList<Guid>> ClaimPendingStepIdsAsync(
         int batchSize,
         WorkflowStepLane lane,
         CancellationToken cancellationToken);
@@ -135,9 +138,10 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// Atomically claims expired Waiting steps — those whose <c>NextAttemptAt</c> has passed
     /// while still in <c>Waiting</c> status — by flipping them to <c>Running</c> in a single
     /// SQL with <c>FOR UPDATE SKIP LOCKED</c>. Mirrors the
-    /// <see cref="ClaimPendingStepsAsync"/> pattern so multi-process setups never see two
-    /// sweepers fire <c>OnStepTimedOutAsync</c> for the same step. No lane filter — the
-    /// engine's single maintenance loop sweeps timeouts for both lanes.
+    /// <see cref="ClaimPendingStepIdsAsync"/> pattern (ids only — each expired step is then
+    /// handled in its own per-step DI scope) so multi-process setups never see two sweepers
+    /// fire <c>OnStepTimedOutAsync</c> for the same step. No lane filter — the engine's single
+    /// maintenance loop sweeps timeouts for both lanes.
     /// <para>
     /// Caller (engine maintenance loop) drives the timeout outcome via the action's
     /// <c>OnStepTimedOutAsync</c> and then routes through the regular
@@ -145,7 +149,7 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// just like an ordinary execution.
     /// </para>
     /// </summary>
-    Task<IReadOnlyList<WorkflowStepRecord>> ClaimExpiredWaitingStepsAsync(
+    Task<IReadOnlyList<Guid>> ClaimExpiredWaitingStepIdsAsync(
         int limit,
         CancellationToken cancellationToken);
 
@@ -215,15 +219,6 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
 
     /// <summary>Flush staged inserts/updates. Call once per logical unit-of-work.</summary>
     Task SaveChangesAsync(CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Drops any in-memory pending mutations (Added / Modified / Deleted) that haven't been
-    /// flushed yet. Used by the worker when a step's processing fails mid-batch — without
-    /// this, the next step's <see cref="SaveChangesAsync"/> would attempt to re-flush the
-    /// failed step's dirty entities. Successful steps' state (already flushed, in Unchanged)
-    /// stays in the tracker so subsequent reads benefit from the cache.
-    /// </summary>
-    void DiscardPendingChanges();
 }
 
 /// <summary>

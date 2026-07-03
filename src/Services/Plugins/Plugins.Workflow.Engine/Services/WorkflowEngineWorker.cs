@@ -25,11 +25,21 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Services;
 /// <see cref="WorkflowStepLane"/> for the filter semantics.
 /// </para>
 /// <para>
-/// Graceful shutdown: <see cref="ProcessBatchAsync"/> calls <c>SaveChangesAsync</c> after each
-/// step (not once per batch) so a SIGTERM mid-batch loses at most the currently-executing
-/// step. The action's cancellation token is a separate "drain" token that fires only after
-/// <see cref="WorkflowEngineSettings.ShutdownDrainSeconds"/> elapses past the stop signal —
-/// in-flight HTTP calls get to finish naturally rather than being yanked out mid-flight.
+/// Per-step DI scope model: the claim runs in a short-lived scope (its UPDATE … RETURNING
+/// commits immediately), then every claimed step is loaded, executed, and flushed in its OWN
+/// scope — the same lifetime an action would see inside a web request. That gives isolation
+/// for consumer scoped services (an action's scoped tenant context can't leak into the next
+/// step, which may belong to another run / tenant), failure isolation for free (on any error
+/// the scope is disposed unsaved — no cross-step change-tracker pollution), and a fresh
+/// identity map per step (an operator cancel committed mid-batch is visible to the very next
+/// step instead of being stale-cached until the batch ends).
+/// </para>
+/// <para>
+/// Graceful shutdown: each step's scope flushes on completion, so a SIGTERM mid-batch loses at
+/// most the currently-executing step. The action's cancellation token is a separate "drain"
+/// token that fires only after <see cref="WorkflowEngineSettings.ShutdownDrainSeconds"/>
+/// elapses past the stop signal — in-flight HTTP calls get to finish naturally rather than
+/// being yanked out mid-flight.
 /// </para>
 /// <para>
 /// A single per-process maintenance loop owns the expired-waiting timeout sweep and the
@@ -107,8 +117,8 @@ internal class WorkflowEngineWorker : BackgroundService
     /// <summary>
     /// One independent worker loop. <paramref name="workerId"/> is purely cosmetic — appears in
     /// logs to disambiguate which loop did what. Loops don't coordinate with each other; their
-    /// only synchronisation is the database row-lock on <c>ClaimPendingStepsAsync</c> /
-    /// <c>ClaimExpiredWaitingStepsAsync</c>.
+    /// only synchronisation is the database row-lock on <c>ClaimPendingStepIdsAsync</c> /
+    /// <c>ClaimExpiredWaitingStepIdsAsync</c>.
     /// </summary>
     /// <param name="lane">Which subset of pending rows this loop is allowed to claim.</param>
     /// <param name="stoppingToken">
@@ -160,31 +170,26 @@ internal class WorkflowEngineWorker : BackgroundService
         WorkflowStepLane lane,
         CancellationToken stoppingToken)
     {
-        // Single shared scope for the whole batch — claim and per-step execute share one
-        // DbContext. Claim's tracked load populates Local with the just-claimed entities so
-        // UpdateStep / UpdateRun find them in-memory without an extra Find roundtrip.
-        // (Per-step scopes were introduced when WorkflowConcurrencyException isolation mattered;
-        // since concurrency tokens were dropped, that complexity is gone — shared scope is
-        // simpler and lets FanOut's per-run graph cache live across the whole batch.)
-        await using var scope = this.scopeFactory.CreateAsyncScope();
-        var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
-        var registry = scope.ServiceProvider.GetRequiredService<IActionTypeRegistry>();
-        var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
+        // Claim pending step ids in a short-lived scope. The claim UPDATE … RETURNING commits at
+        // the DB level immediately (raw SQL), so the claim survives disposing this scope; each id
+        // is then loaded + processed in its OWN scope below (see the class doc for why).
+        IReadOnlyList<Guid> claimedIds;
+        await using (var claimScope = this.scopeFactory.CreateAsyncScope())
+        {
+            var claimStore = claimScope.ServiceProvider.GetRequiredService<IWorkflowStore>();
+            claimedIds = await claimStore.ClaimPendingStepIdsAsync(this.settings.BatchSize, lane, stoppingToken);
+        }
 
-        // Don't claim work after shutdown — new claims would just need to be released right back.
-        if (stoppingToken.IsCancellationRequested) return 0;
+        if (claimedIds.Count == 0) return 0;
 
-        var claimed = await store.ClaimPendingStepsAsync(this.settings.BatchSize, lane, stoppingToken);
-        if (claimed.Count == 0) return 0;
-
-        // processed = step ids whose save committed successfully. Anything left over at the
-        // end = "claimed but not consumed", released back to pending below.
+        // processed = step ids whose own-scope save committed. Anything left over at the end =
+        // "claimed but not consumed", released back to pending below.
         var processed = new HashSet<Guid>();
 
-        foreach (var step in claimed)
+        foreach (var stepId in claimedIds)
         {
-            // Shutdown signal between steps: stop here. Whatever's left in `claimed` after the
-            // break gets released back to pending — the next worker startup picks them up
+            // Shutdown signal between steps: stop here. Whatever's left in `claimedIds` after
+            // the break gets released back to pending — the next worker startup picks them up
             // immediately rather than waiting for stale-purge.
             if (stoppingToken.IsCancellationRequested) break;
 
@@ -202,90 +207,19 @@ internal class WorkflowEngineWorker : BackgroundService
             using var stopReg = stoppingToken.Register(() =>
                 stepCts.CancelAfter(TimeSpan.FromSeconds(this.settings.ShutdownDrainSeconds)));
 
-            try
+            if (await this.ProcessClaimedStepAsync(stepId, lane, stepCts.Token, stoppingToken))
             {
-                await this.ExecuteOneAsync(step, store, registry, fanOut, lane, stepCts.Token);
-                // CT.None on purpose: the action has already run (side effects possibly issued);
-                // this flush persists its computed outcome. Cancelling here — lane deadline
-                // landing between action completion and save, or shutdown drain — would discard
-                // the outcome and force a duplicate execution on the next claim. Single bounded
-                // flush; same rationale as the release path below.
-                await store.SaveChangesAsync(CancellationToken.None);
-                processed.Add(step.Id);
-            }
-            catch (OperationCanceledException) when (stepCts.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
-            {
-                // Fast-lane action timeout (shutdown not involved). Do NOT release the claim:
-                // release refunds the attempt_count bump while next_attempt_at stays in the
-                // past, so a deterministically-slow action would be re-claimed immediately
-                // (claim orders by next_attempt_at — the timed-out step always sorts first)
-                // and spin this worker forever, one timeout budget per revolution. Count the
-                // attempt instead: the standard transient-error outcome retries with backoff
-                // and dead-letters once MaxAttempts is exhausted.
-                store.DiscardPendingChanges();
-                try
-                {
-                    var timeoutResult = ActionExecutionResult.OnError(
-                        $"Step did not complete within the fast-lane action timeout ({this.settings.FastLaneActionTimeoutSeconds}s). "
-                        + "Actions that legitimately run this long should declare IsLongRunning = true.",
-                        transient: true);
-                    await this.ApplyResultAsync(step, timeoutResult, store, fanOut, CancellationToken.None);
-                    await store.SaveChangesAsync(CancellationToken.None);
-                    processed.Add(step.Id);
-                    this.logger.LogWarning(
-                        "Step {StepId} hit the fast-lane action timeout ({Timeout}s) on attempt {Attempt}/{Max}; timeout outcome applied.",
-                        step.Id, this.settings.FastLaneActionTimeoutSeconds, step.AttemptCount, this.settings.MaxAttempts);
-                }
-                catch (Exception applyEx)
-                {
-                    // Persisting the timeout outcome failed (DB blip mid-handling). Fall back to
-                    // the release path: drop the staged outcome and leave the step out of
-                    // `processed` so the block below returns it to pending — the invariant
-                    // "claimed but not consumed ⇒ released" survives this degraded path too.
-                    this.logger.LogError(applyEx,
-                        "Failed to persist fast-lane timeout outcome for step {StepId}; releasing claim instead.",
-                        step.Id);
-                    store.DiscardPendingChanges();
-                }
-            }
-            catch (OperationCanceledException) when (stepCts.IsCancellationRequested)
-            {
-                // Shutdown drain elapsed mid-step. Release the claim (the attempt bump is
-                // refunded by ReleaseClaimedStepsAsync) so the next worker startup retries
-                // immediately — a routine deploy must not consume attempts: with MaxAttempts = 1
-                // a counted shutdown cancellation would dead-letter perfectly healthy steps.
-                // With shared scope, in-tracker mutations from this step are still pending;
-                // clear them so the NEXT step's SaveChanges doesn't flush this step's failed
-                // write.
-                this.logger.LogWarning(
-                    "Step {StepId} cancelled by shutdown drain; will be released back to pending.",
-                    step.Id);
-                store.DiscardPendingChanges();
-            }
-            catch (Exception ex)
-            {
-                // Any other unhandled error during step processing (DB connection blip, OOM,
-                // unhandled exception that escaped ExecuteOneAsync's inner action try/catch, etc).
-                // Same cleanup as the OCE branch — drop tracker mutations so the rest of the
-                // batch can save cleanly. Side effects already issued by the action are
-                // at-least-once: next claim retries them, matching the general engine contract.
-                this.logger.LogError(ex,
-                    "Unhandled error processing step {StepId}; will be released back to pending.",
-                    step.Id);
-                store.DiscardPendingChanges();
+                processed.Add(stepId);
             }
         }
 
-        // Release path: anything in `claimed` but not in `processed` was claimed via raw SQL
-        // (status='running', attempt_count++) but never actually executed — the worker either
-        // bailed on a shutdown signal before reaching it OR hit an exception mid-step. Reset
-        // to 'pending' and decrement the count so the next claim sees a clean retry slot.
-        if (processed.Count < claimed.Count)
+        // Release path: anything in `claimedIds` but not in `processed` was claimed via raw SQL
+        // (status='running', attempt_count++) but its outcome never committed — the worker either
+        // bailed on a shutdown signal before reaching it OR its own-scope processing failed.
+        // Reset to 'pending' and decrement the count so the next claim sees a clean retry slot.
+        if (processed.Count < claimedIds.Count)
         {
-            var toRelease = claimed
-                .Where(s => !processed.Contains(s.Id))
-                .Select(s => s.Id)
-                .ToList();
+            var toRelease = claimedIds.Where(id => !processed.Contains(id)).ToList();
 
             try
             {
@@ -312,6 +246,119 @@ internal class WorkflowEngineWorker : BackgroundService
         }
 
         return processed.Count;
+    }
+
+    /// <summary>
+    /// Processes a single claimed step in its OWN DI scope: loads the step, runs it through
+    /// <see cref="ExecuteOneAsync(WorkflowStepRecord, IWorkflowStore, IActionTypeRegistry, IWorkflowFanOut, WorkflowStepLane, CancellationToken)"/>,
+    /// and flushes. A fresh scope per step gives per-request-style scoped-service lifetimes and
+    /// full failure isolation: on any error the scope is simply disposed unsaved, leaving the row
+    /// 'running' for the release path to revert. Returns true when the step's outcome was durably
+    /// persisted (or the row vanished and there is nothing to release).
+    /// </summary>
+    private async Task<bool> ProcessClaimedStepAsync(
+        Guid stepId,
+        WorkflowStepLane lane,
+        CancellationToken ct,
+        CancellationToken stoppingToken)
+    {
+        try
+        {
+            await using var scope = this.scopeFactory.CreateAsyncScope();
+            var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
+            var registry = scope.ServiceProvider.GetRequiredService<IActionTypeRegistry>();
+            var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
+
+            var step = await store.GetStepAsync(stepId, ct);
+            if (step is null)
+            {
+                // Vanished between claim and load (tenant purge / external delete). Nothing to
+                // execute and no row to revert — treat as processed.
+                return true;
+            }
+
+            await this.ExecuteOneAsync(step, store, registry, fanOut, lane, ct);
+            // CT.None on purpose: the action has already run (side effects possibly issued);
+            // this flush persists its computed outcome. Cancelling here — lane deadline landing
+            // between action completion and save, or shutdown drain — would discard the outcome
+            // and force a duplicate execution on the next claim. Single bounded flush; same
+            // rationale as the release path.
+            await store.SaveChangesAsync(CancellationToken.None);
+            return true;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
+        {
+            // Fast-lane action timeout (shutdown not involved). The step's scope has been
+            // disposed with whatever it staged — but do NOT just release the claim: release
+            // refunds the attempt_count bump while next_attempt_at stays in the past, so a
+            // deterministically-slow action would be re-claimed immediately (claim orders by
+            // next_attempt_at — the timed-out step always sorts first) and spin this worker
+            // forever, one timeout budget per revolution. Count the attempt instead, in a
+            // fresh scope: the standard transient-error outcome retries with backoff and
+            // dead-letters once MaxAttempts is exhausted.
+            return await this.TryApplyLaneTimeoutOutcomeAsync(stepId);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Shutdown drain elapsed mid-step. The scope's DbContext is disposed with its
+            // tracked mutations — nothing persisted; return false so the release path reverts
+            // the claim (attempt bump refunded): a routine deploy must not consume attempts —
+            // with MaxAttempts = 1 a counted shutdown cancellation would dead-letter perfectly
+            // healthy steps.
+            this.logger.LogWarning(
+                "Step {StepId} cancelled by shutdown drain; will be released back to pending.",
+                stepId);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            // Any other unhandled error (DB connection blip, OOM, an exception that escaped
+            // ExecuteOneAsync's inner action try/catch, …). Scope disposed unsaved; the release
+            // path reverts the claim. Side effects already issued by the action are
+            // at-least-once: the next claim retries them, matching the general engine contract.
+            this.logger.LogError(ex,
+                "Unhandled error processing step {StepId}; will be released back to pending.",
+                stepId);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Persists the fast-lane timeout outcome for <paramref name="stepId"/> in a fresh scope
+    /// (the step's own scope died with the cancellation): standard transient-error semantics —
+    /// backoff retry, dead-letter at the attempts cap. Returns true when the outcome committed;
+    /// false falls back to the release path so the invariant "claimed but not consumed ⇒
+    /// released" survives even a DB blip here.
+    /// </summary>
+    private async Task<bool> TryApplyLaneTimeoutOutcomeAsync(Guid stepId)
+    {
+        try
+        {
+            await using var scope = this.scopeFactory.CreateAsyncScope();
+            var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
+            var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
+
+            var step = await store.GetStepAsync(stepId, CancellationToken.None);
+            if (step is null) return true;
+
+            var timeoutResult = ActionExecutionResult.OnError(
+                $"Step did not complete within the fast-lane action timeout ({this.settings.FastLaneActionTimeoutSeconds}s). "
+                + "Actions that legitimately run this long should declare IsLongRunning = true.",
+                transient: true);
+            await this.ApplyResultAsync(step, timeoutResult, store, fanOut, CancellationToken.None);
+            await store.SaveChangesAsync(CancellationToken.None);
+            this.logger.LogWarning(
+                "Step {StepId} hit the fast-lane action timeout ({Timeout}s) on attempt {Attempt}/{Max}; timeout outcome applied.",
+                stepId, this.settings.FastLaneActionTimeoutSeconds, step.AttemptCount, this.settings.MaxAttempts);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex,
+                "Failed to persist fast-lane timeout outcome for step {StepId}; releasing claim instead.",
+                stepId);
+            return false;
+        }
     }
 
     /// <summary>
@@ -356,89 +403,129 @@ internal class WorkflowEngineWorker : BackgroundService
     }
 
     /// <summary>
-    /// One maintenance pass with a fresh DI scope: drain expired-waiting steps in BatchSize
-    /// chunks until dry (a burst of simultaneously-expiring Delays clears within one pass
-    /// instead of one chunk per interval), then reconcile bookmarks.
+    /// One maintenance pass: drain expired-waiting steps in BatchSize chunks until dry (a burst
+    /// of simultaneously-expiring Delays clears within one pass instead of one chunk per
+    /// interval), then reconcile bookmarks. Ids are claimed in a short-lived scope (the claim
+    /// SQL commits immediately); each timeout handler then runs in its OWN scope —
+    /// <c>OnStepTimedOutAsync</c> is consumer-extensible code and gets the same scoped-service
+    /// isolation as a regular action dispatch.
     /// </summary>
     private async Task RunMaintenancePassAsync(CancellationToken stoppingToken)
     {
-        await using var scope = this.scopeFactory.CreateAsyncScope();
-        var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
-        var registry = scope.ServiceProvider.GetRequiredService<IActionTypeRegistry>();
-        var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
-
         while (!stoppingToken.IsCancellationRequested)
         {
-            var swept = await this.ExpireStaleWaitingStepsAsync(store, registry, fanOut, stoppingToken);
-            if (swept > 0)
+            IReadOnlyList<Guid> expiredIds;
+            await using (var claimScope = this.scopeFactory.CreateAsyncScope())
             {
-                // Commit timeout outcomes as their own logical unit — without this save the
-                // chunk's mutations would be discarded on scope dispose. (Parent auto-resumes
-                // triggered inside the sweep have already committed via the resumer's own
-                // transaction.)
-                await store.SaveChangesAsync(stoppingToken);
+                var claimStore = claimScope.ServiceProvider.GetRequiredService<IWorkflowStore>();
+                expiredIds = await claimStore.ClaimExpiredWaitingStepIdsAsync(this.settings.BatchSize, stoppingToken);
             }
-            if (swept < this.settings.BatchSize) break;
+
+            if (expiredIds.Count == 0) break;
+            this.logger.LogWarning("Sweeping {Count} expired waiting step(s)", expiredIds.Count);
+
+            foreach (var stepId in expiredIds)
+            {
+                if (stoppingToken.IsCancellationRequested) break;
+                await this.ProcessExpiredStepAsync(stepId, stoppingToken);
+            }
+
+            if (expiredIds.Count < this.settings.BatchSize) break;
         }
 
-        // Reconciliation backstop for signal-wait bookmarks. Deletes bookmarks whose target
-        // step is no longer Waiting (resumed elsewhere, timed-out, dead-lettered, cancelled).
-        // This is what makes bookmark cleanup CORRECT regardless of path; the eager
-        // delete-on-resume in the signaler is just an optimization. Set-based DELETE; no-ops
-        // when nothing's stale.
-        await this.SweepResolvedBookmarksAsync(store, stoppingToken);
+        // Reconciliation backstop for signal-wait bookmarks (own lightweight scope — set-based
+        // DELETE, no action code involved). Deletes bookmarks whose target step is no longer
+        // Waiting (resumed elsewhere, timed-out, dead-lettered, cancelled). This is what makes
+        // bookmark cleanup CORRECT regardless of path; the eager delete-on-resume in the
+        // signaler is just an optimization. No-ops when nothing's stale.
+        await using var bookmarkScope = this.scopeFactory.CreateAsyncScope();
+        var bookmarkStore = bookmarkScope.ServiceProvider.GetRequiredService<IWorkflowStore>();
+        await this.SweepResolvedBookmarksAsync(bookmarkStore, stoppingToken);
+    }
+
+    /// <summary>
+    /// Handles one claimed expired step in its OWN DI scope and flushes the outcome. A failure
+    /// disposes the scope unsaved and leaves the row 'running' until the stale-running purge —
+    /// the same recovery story as a worker crash mid-step.
+    /// </summary>
+    private async Task ProcessExpiredStepAsync(Guid stepId, CancellationToken ct)
+    {
+        try
+        {
+            await using var scope = this.scopeFactory.CreateAsyncScope();
+            var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
+            var registry = scope.ServiceProvider.GetRequiredService<IActionTypeRegistry>();
+            var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
+
+            await this.HandleExpiredStepAsync(stepId, store, registry, fanOut, ct);
+            // Commit the timeout outcome as its own unit. (A parent auto-resume triggered inside
+            // the handler has already committed via the resumer's own transaction.)
+            await store.SaveChangesAsync(ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Shutdown mid-sweep — unwind to the maintenance loop, which exits cleanly.
+            throw;
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex,
+                "Failed to process expired waiting step {StepId}; row stays 'running' until stale-purge.",
+                stepId);
+        }
     }
 
     /// <summary>
     /// Internal for the test harness — runs ONE timeout-sweep pass (claim expired waiting steps →
-    /// per-action <c>OnStepTimedOutAsync</c> → <see cref="ApplyResultAsync"/>) without spinning up a
-    /// scope factory + hosted service. Production callers go through <see cref="RunMaintenancePassAsync"/>,
-    /// which wraps this in the scope / save plumbing. Mirrors the <see cref="ExecuteOneAsync"/>
-    /// test seam.
+    /// per-action <c>OnStepTimedOutAsync</c> → <see cref="ApplyResultAsync"/>) on the supplied
+    /// store without spinning up a scope factory + hosted service. Production callers go through
+    /// <see cref="RunMaintenancePassAsync"/>, which wraps each step in its own scope. Mirrors the
+    /// <see cref="ExecuteOneAsync"/> test seam.
     /// </summary>
-    internal Task SweepExpiredWaitingStepsOnceAsync(
-        IWorkflowStore store,
-        IActionTypeRegistry registry,
-        IWorkflowFanOut fanOut,
-        CancellationToken ct)
-        => this.ExpireStaleWaitingStepsAsync(store, registry, fanOut, ct);
-
-    private async Task<int> ExpireStaleWaitingStepsAsync(
+    internal async Task SweepExpiredWaitingStepsOnceAsync(
         IWorkflowStore store,
         IActionTypeRegistry registry,
         IWorkflowFanOut fanOut,
         CancellationToken ct)
     {
-        // Atomic claim — Waiting → Running with FOR UPDATE SKIP LOCKED. Replaces the previous
-        // read-only listing that wasn't multi-worker-safe (two loops could see the same expired
-        // row and double-fire OnTimeoutAsync). Step is now logically "claimed" by us; the
-        // ApplyResultAsync below moves it to a terminal state.
-        var expired = await store.ClaimExpiredWaitingStepsAsync(this.settings.BatchSize, ct);
-        if (expired.Count == 0) return 0;
-
-        foreach (var step in expired)
+        var expiredIds = await store.ClaimExpiredWaitingStepIdsAsync(this.settings.BatchSize, ct);
+        foreach (var stepId in expiredIds)
         {
-            // Per-action policy: every action's OnStepTimedOutAsync decides the outcome. Suspending
-            // actions override it to fire a graceful port (Delay → done, WaitForm / task-actions →
-            // timedOut + task expiry); the base default raises a non-transient OnError, landing the
-            // step in Dead with a generic message — same outcome as the pre-ADR-027 "no timeout
-            // policy" branch, now expressed as the base virtual rather than an absent interface.
-            var actionType = registry.TryGet(step.Kind);
-            if (actionType is null)
-            {
-                step.Status = StepExecutionStatus.Dead;
-                step.LastError = $"Step '{step.Kind}' timed out while waiting and the action kind is unknown.";
-                step.CompletedAt = DateTime.UtcNow;
-                store.UpdateStep(step);
-                await fanOut.CheckRunCompletionAsync(step, ct);
-                continue;
-            }
+            await this.HandleExpiredStepAsync(stepId, store, registry, fanOut, ct);
+        }
+    }
 
-            await this.HandleTimeoutGracefullyAsync(step, store, fanOut, actionType, ct);
+    /// <summary>
+    /// Core of one expired step's timeout handling — shared by the production per-scope path and
+    /// the test seam. Tracked-loads the claimed step and routes it through its action's timeout
+    /// policy; stages mutations on <paramref name="store"/> without flushing.
+    /// </summary>
+    private async Task HandleExpiredStepAsync(
+        Guid stepId,
+        IWorkflowStore store,
+        IActionTypeRegistry registry,
+        IWorkflowFanOut fanOut,
+        CancellationToken ct)
+    {
+        var step = await store.GetStepAsync(stepId, ct);
+        if (step is null) return;
+
+        // Per-action policy: every action's OnStepTimedOutAsync decides the outcome. Suspending
+        // actions override it to fire a graceful port (Delay → done, WaitSignal / RunWorkflow →
+        // timedOut); the base default raises a non-transient OnError, landing the step in Dead
+        // with a generic message.
+        var actionType = registry.TryGet(step.Kind);
+        if (actionType is null)
+        {
+            step.Status = StepExecutionStatus.Dead;
+            step.LastError = $"Step '{step.Kind}' timed out while waiting and the action kind is unknown.";
+            step.CompletedAt = DateTime.UtcNow;
+            store.UpdateStep(step);
+            await fanOut.CheckRunCompletionAsync(step, ct);
+            return;
         }
 
-        this.logger.LogWarning("Swept {Count} expired waiting step(s)", expired.Count);
-        return expired.Count;
+        await this.HandleTimeoutGracefullyAsync(step, store, fanOut, actionType, ct);
     }
 
     /// <summary>

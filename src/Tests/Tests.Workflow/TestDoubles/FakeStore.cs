@@ -32,7 +32,7 @@ internal class FakeStore : IWorkflowStore
     public List<FakeStoreTransaction> Transactions { get; } = new();
 
     /// <summary>
-    /// Seed for <see cref="ClaimExpiredWaitingStepsAsync"/>. Drained in claim order; like the
+    /// Seed for <see cref="ClaimExpiredWaitingStepIdsAsync"/>. Drained in claim order; like the
     /// real store's guarded UPDATE, claiming flips the step to <c>Running</c>.
     /// </summary>
     public Queue<WorkflowStepRecord> ExpiredWaitingSteps { get; } = new();
@@ -99,19 +99,25 @@ internal class FakeStore : IWorkflowStore
         Guid runId, Guid excludingStepId, CancellationToken cancellationToken)
         => Task.FromResult(this.StepStateSummary);
 
-    public Task<IReadOnlyList<WorkflowStepRecord>> ClaimExpiredWaitingStepsAsync(int limit, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<Guid>> ClaimExpiredWaitingStepIdsAsync(int limit, CancellationToken cancellationToken)
     {
-        var claimed = new List<WorkflowStepRecord>();
-        while (claimed.Count < limit && this.ExpiredWaitingSteps.Count > 0)
+        var claimedIds = new List<Guid>();
+        while (claimedIds.Count < limit && this.ExpiredWaitingSteps.Count > 0)
         {
             var step = this.ExpiredWaitingSteps.Dequeue();
             // Claim flips Waiting → Running (FOR UPDATE SKIP LOCKED in prod); mirror it so the
-            // swept step is logically ours before ApplyResult moves it terminal.
+            // swept step is logically ours before ApplyResult moves it terminal. Register the
+            // step for the follow-up GetStepAsync load, like the real row would be found by id.
             step.Status = StepExecutionStatus.Running;
-            claimed.Add(step);
+            if (!this.Steps.Contains(step))
+            {
+                this.Steps.Add(step);
+            }
+
+            claimedIds.Add(step.Id);
         }
 
-        return Task.FromResult<IReadOnlyList<WorkflowStepRecord>>(claimed);
+        return Task.FromResult<IReadOnlyList<Guid>>(claimedIds);
     }
 
     public Task<int> ReleaseClaimedStepsAsync(IReadOnlyList<Guid> stepIds, CancellationToken cancellationToken)
@@ -154,10 +160,6 @@ internal class FakeStore : IWorkflowStore
     {
         this.SaveCount++;
         return Task.CompletedTask;
-    }
-
-    public void DiscardPendingChanges()
-    {
     }
 
     // ===== Definitions / dispatch path =====
@@ -207,7 +209,7 @@ internal class FakeStore : IWorkflowStore
     public Task<WorkflowStepRecord?> GetStepAsync(Guid stepId, CancellationToken cancellationToken)
         => Task.FromResult(this.Steps.FirstOrDefault(s => s.Id == stepId));
 
-    public Task<IReadOnlyList<WorkflowStepRecord>> ClaimPendingStepsAsync(int batchSize, WorkflowStepLane lane, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<Guid>> ClaimPendingStepIdsAsync(int batchSize, WorkflowStepLane lane, CancellationToken cancellationToken)
         => throw new NotSupportedException();
 
     public Task<WorkflowStepRecord?> TryResumeWaitingStepAsync(Guid stepId, string outputPort, object? outputs, CancellationToken cancellationToken)

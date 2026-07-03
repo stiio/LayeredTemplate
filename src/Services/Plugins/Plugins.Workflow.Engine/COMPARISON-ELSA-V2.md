@@ -90,7 +90,7 @@
 - Key id встроен per-value в blob (wire format), поэтому re-encryption sweep инспектирует значения, а не per-row stamp.
 - Hot path остаётся на `JsonElement` (не string round-trip): `WorkflowProtectedJsonConverter` хранит UTF-8 bytes от `el.GetRawText()`, парсинг только на чтение.
 
-Concurrency: `FOR UPDATE SKIP LOCKED` в `ClaimPendingStepsAsync` (raw SQL под Postgres). Run-record concurrency token раньше был (`xmin`), потом удалён — не нужен под shared-scope worker'ом, который держит запись в Local трекере между Get → Update. Race window между cancel и worker terminal write — accepted (single-digit ms).
+Concurrency: `FOR UPDATE SKIP LOCKED` в `ClaimPendingStepIdsAsync` (raw SQL под Postgres). Run-record concurrency token раньше был (`xmin`), потом удалён — не нужен: worker держит запись в Local трекере per-step scope'а между Get → Update. Race window между cancel и worker terminal write — accepted (single-digit ms).
 
 ### Elsa v2 — JSON-blob
 
@@ -340,7 +340,7 @@ OpenTelemetry — не нашёл встроенной интеграции в v
 
 ### Throughput steps/sec на одной БД (Postgres)
 
-**Наш**: bottleneck — `ClaimPendingStepsAsync` (raw SQL `FOR UPDATE SKIP LOCKED ... LIMIT N`). На batch_size=10, poll 3s, 4 worker'а — в idle ~3.3 batches/sec → 33 steps/sec. Под нагрузкой когда batch'и всегда полны — ограничено лочистикой Postgres + JSON сериализация. Estimate ~200-500 steps/sec на одной БД до того как FOR UPDATE станет hot path. Per-step roundtrips: 2-3 (claim + save), каждый — обычный pgx.
+**Наш**: bottleneck — `ClaimPendingStepIdsAsync` (raw SQL `FOR UPDATE SKIP LOCKED ... LIMIT N`). На batch_size=10, poll 3s, 4 worker'а — в idle ~3.3 batches/sec → 33 steps/sec. Под нагрузкой когда batch'и всегда полны — ограничено лочистикой Postgres + JSON сериализация. Estimate ~200-500 steps/sec на одной БД до того как FOR UPDATE станет hot path. Per-step roundtrips: 2-3 (claim + save), каждый — обычный pgx.
 
 **Elsa с Rebus + EF**: bookmark indexer пере-создаёт ВСЕ bookmarks каждый burst — это N+1 INSERT/DELETE. Плюс полный JSON-блоб re-serialize на каждый Save. На simple workflow (3-5 шагов) — ~50-150 instances/sec на одном consumer; больший workflow — медленнее линейно. Distributed lock на каждый dispatch добавляет миллисекунды. Estimate worse than ours для simple workflows; better при правильной горизонтальной разнаправленности (Orleans-режим лучше всех).
 
