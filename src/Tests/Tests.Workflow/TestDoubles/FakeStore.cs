@@ -54,6 +54,11 @@ internal class FakeStore : IWorkflowStore
 
     public bool FindDefinitionCalled { get; private set; }
 
+    /// <summary>What <see cref="GetDefinitionByIdAsync"/> returns (restarter's live-definition mode). Default: none.</summary>
+    public WorkflowDefinition? LiveDefinition { get; set; }
+
+    public bool GetDefinitionByIdCalled { get; private set; }
+
     /// <summary>What <see cref="CountChildRunsAsync"/> reports (sub-run cap tests). Default 0.</summary>
     public int ChildRunCount { get; set; }
 
@@ -153,7 +158,10 @@ internal class FakeStore : IWorkflowStore
     }
 
     public Task<WorkflowDefinition?> GetDefinitionByIdAsync(Guid definitionId, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
+    {
+        this.GetDefinitionByIdCalled = true;
+        return Task.FromResult(this.LiveDefinition);
+    }
 
     public Task UpsertDefinitionAsync(Guid tenantId, string ownerKind, Guid? ownerId, string triggerKind, WorkflowGraph graph, string? displayName, CancellationToken cancellationToken)
         => throw new NotSupportedException();
