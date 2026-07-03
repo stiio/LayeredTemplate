@@ -43,6 +43,12 @@ internal class FakeStore : IWorkflowStore
     /// <summary>Seed for <see cref="GetStepAsync"/> / <see cref="TryResumeWaitingStepAsync"/> lookups (resume-path tests).</summary>
     public List<WorkflowStepRecord> Steps { get; } = new();
 
+    /// <summary>Seed for <see cref="FindBookmarksAsync"/> (signal-path tests). Lookup is tenant-scoped like prod.</summary>
+    public List<WorkflowBookmarkRecord> Bookmarks { get; } = new();
+
+    /// <summary>Every id handed to <see cref="DeleteBookmarksAsync"/> — assert eager cleanup.</summary>
+    public List<Guid> DeletedBookmarkIds { get; } = new();
+
     /// <summary>
     /// When true, <see cref="BeginTransactionAsync"/> returns null — simulates an ambient
     /// transaction already open on the scope (the resumer's chain-unwind participation mode).
@@ -117,10 +123,15 @@ internal class FakeStore : IWorkflowStore
         => this.AddedBookmarks.Add((step, registrations));
 
     public Task<IReadOnlyList<WorkflowBookmarkRecord>> FindBookmarksAsync(Guid tenantId, string correlationKey, CancellationToken cancellationToken)
-        => Task.FromResult<IReadOnlyList<WorkflowBookmarkRecord>>(Array.Empty<WorkflowBookmarkRecord>());
+        => Task.FromResult<IReadOnlyList<WorkflowBookmarkRecord>>(
+            this.Bookmarks.Where(b => b.TenantId == tenantId && b.CorrelationKey == correlationKey).ToList());
 
     public Task<int> DeleteBookmarksAsync(IReadOnlyList<Guid> bookmarkIds, CancellationToken cancellationToken)
-        => Task.FromResult(0);
+    {
+        this.DeletedBookmarkIds.AddRange(bookmarkIds);
+        this.Bookmarks.RemoveAll(b => bookmarkIds.Contains(b.Id));
+        return Task.FromResult(bookmarkIds.Count);
+    }
 
     public Task<int> SweepResolvedBookmarksAsync(int limit, CancellationToken cancellationToken)
         => Task.FromResult(0);
