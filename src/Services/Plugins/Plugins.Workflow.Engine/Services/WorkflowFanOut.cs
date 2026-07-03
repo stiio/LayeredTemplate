@@ -315,18 +315,6 @@ internal class WorkflowFanOut : IWorkflowFanOut
                 childRun.Id, childRun.ParentStepId, result.Reason, result.Message);
         }
     }
-
-    private static object? SafeDeserialize(string json)
-    {
-        try
-        {
-            return JsonSerializer.Deserialize<object?>(json, WorkflowJsonOptions.Default);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
 }
 
 /// <summary>

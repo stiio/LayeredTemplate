@@ -5,7 +5,7 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Expressions.Engines;
 /// <summary>
 /// <see cref="TextWriter"/> that accumulates output in a <see cref="StringBuilder"/> and aborts
 /// with <see cref="InvalidOperationException"/> when the cumulative character count exceeds the
-/// configured cap. Used by <see cref="LiquidRenderer"/> to bound a single Liquid render — even
+/// configured cap. Used by <see cref="LiquidExpressionEngine"/> to bound a single Liquid render — even
 /// with <c>MaxSteps</c> set, an attacker can still tune a script to emit large output (each
 /// emit is a step or two, so 100k steps × 50-char append = ~5 MB output). The writer cap closes
 /// that gap.

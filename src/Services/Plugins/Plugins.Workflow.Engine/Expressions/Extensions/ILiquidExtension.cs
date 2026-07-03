@@ -41,8 +41,9 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Expressions.Extensions;
 /// </list>
 /// <para>
 /// Render limits (<see cref="TemplateOptions.MaxSteps"/>, <see cref="TemplateOptions.MaxRecursion"/>)
-/// are pre-set by <c>LiquidRenderer</c>. Don't override them upward in extensions — the engine's
-/// caps protect the worker thread from runaway templates and shouldn't be relaxed per-extension.
+/// are pre-set by <c>LiquidExpressionEngine</c>. Don't override them upward in extensions — the
+/// engine's caps protect the worker thread from runaway templates and shouldn't be relaxed
+/// per-extension.
 /// </para>
 /// </remarks>
 public interface ILiquidExtension

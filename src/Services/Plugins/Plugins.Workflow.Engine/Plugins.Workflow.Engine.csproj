@@ -16,9 +16,4 @@
     <ProjectReference Include="..\Plugins.Workflow.Abstractions\Plugins.Workflow.Abstractions.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Worker / step-processor logic is internal; tests opt-in to that surface. -->
-    <InternalsVisibleTo Include="Hipaa.Backend.Tests.App.Functional" />
-  </ItemGroup>
-
 </Project>

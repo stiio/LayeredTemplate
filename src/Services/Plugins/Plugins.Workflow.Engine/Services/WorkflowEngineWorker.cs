@@ -728,19 +728,6 @@ internal class WorkflowEngineWorker : BackgroundService
         return string.IsNullOrWhiteSpace(node?.Key) ? nodeId : node.Key;
     }
 
-    private static JsonElement SafeParseJson(string raw)
-    {
-        if (string.IsNullOrEmpty(raw)) return JsonDocument.Parse("{}").RootElement;
-        try
-        {
-            return JsonSerializer.Deserialize<JsonElement>(raw);
-        }
-        catch (JsonException)
-        {
-            return JsonDocument.Parse("{}").RootElement;
-        }
-    }
-
     /// <summary>
     /// Common landing for both <c>Execute</c> and <c>OnTimeout</c> results — branches on
     /// Suspend / Terminate / Error / success and updates the step accordingly.

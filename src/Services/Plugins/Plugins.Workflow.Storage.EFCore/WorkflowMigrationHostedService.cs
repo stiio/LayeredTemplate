@@ -33,10 +33,10 @@ internal class WorkflowMigrationHostedService : IHostedService
         }
         catch (Exception ex)
         {
-            // Surface the failure but don't crash the host — without retries the app can't recover
-            // automatically anyway, and the operator wants a chance to inspect logs / fix and
-            // restart. The hosted services after us will still try to run; the worker won't make
-            // progress until migrations are present, which is the desired loud-fail behaviour.
+            // Log with full context, then rethrow to fail host startup. Running without the
+            // workflow schema would leave the engine worker looping on "relation does not exist"
+            // errors; a crashed start is the loud, orchestrator-visible signal (restart policy /
+            // deploy rollback) that lets the operator inspect logs, fix, and redeploy.
             this.logger.LogError(ex, "Workflow migrations failed to apply on startup.");
             throw;
         }
