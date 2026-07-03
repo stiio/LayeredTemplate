@@ -15,9 +15,9 @@ namespace LayeredTemplate.Tests.Workflow.TestDoubles;
 /// </summary>
 internal class FakeStore : IWorkflowStore
 {
-    private readonly WorkflowRunRecord run;
+    private readonly WorkflowRunRecord? run;
 
-    public FakeStore(WorkflowRunRecord run)
+    public FakeStore(WorkflowRunRecord? run = null)
     {
         this.run = run;
     }
@@ -49,12 +49,22 @@ internal class FakeStore : IWorkflowStore
     /// </summary>
     public bool SimulateAmbientTransaction { get; set; }
 
+    /// <summary>What <see cref="FindDefinitionAsync"/> returns (dispatcher-path tests). Default: none.</summary>
+    public WorkflowDefinition? Definition { get; set; }
+
+    public bool FindDefinitionCalled { get; private set; }
+
+    /// <summary>What <see cref="CountChildRunsAsync"/> reports (sub-run cap tests). Default 0.</summary>
+    public int ChildRunCount { get; set; }
+
+    public bool CountChildRunsCalled { get; private set; }
+
     public int SaveCount { get; private set; }
 
     // ===== Runs =====
 
     public Task<WorkflowRunRecord?> GetRunAsync(Guid runId, CancellationToken cancellationToken)
-        => Task.FromResult<WorkflowRunRecord?>(runId == this.run.Id ? this.run : null);
+        => Task.FromResult(runId == this.run?.Id ? this.run : null);
 
     public void UpdateRun(WorkflowRunRecord r)
     {
@@ -134,10 +144,13 @@ internal class FakeStore : IWorkflowStore
     {
     }
 
-    // ===== Unused in these tests =====
+    // ===== Definitions / dispatch path =====
 
     public Task<WorkflowDefinition?> FindDefinitionAsync(Guid tenantId, string ownerKind, Guid? ownerId, string triggerKind, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
+    {
+        this.FindDefinitionCalled = true;
+        return Task.FromResult(this.Definition);
+    }
 
     public Task<WorkflowDefinition?> GetDefinitionByIdAsync(Guid definitionId, CancellationToken cancellationToken)
         => throw new NotSupportedException();
@@ -161,7 +174,10 @@ internal class FakeStore : IWorkflowStore
         => throw new NotSupportedException();
 
     public Task<int> CountChildRunsAsync(Guid parentRunId, CancellationToken cancellationToken)
-        => Task.FromResult(0);
+    {
+        this.CountChildRunsCalled = true;
+        return Task.FromResult(this.ChildRunCount);
+    }
 
     public Task<bool> AnyRunsForDefinitionAsync(Guid definitionId, CancellationToken cancellationToken)
         => Task.FromResult(false);
