@@ -136,7 +136,7 @@ App.Web/
 
 | Проект | Что покрывает |
 |--------|---------------|
-| **Tests.Workflow** | Функциональные тесты workflow-движка (xUnit, без БД): worker (порты/ретраи/suspend/FinishRun), timeout-sweep, экшены (ForEach, Delay). In-memory фейки `IWorkflowStore` и др. живут в `TestDoubles/`; internal-швы движка (`ExecuteOneAsync`, `SweepExpiredWaitingStepsOnceAsync`) открыты через `InternalsVisibleTo` в [Directory.Build.props](Directory.Build.props) |
+| **Tests.Workflow** | Функциональные тесты workflow-движка (xUnit, без БД): worker (порты/ретраи/suspend/FinishRun), timeout-sweep, resumer (lifecycle-хуки + транзакционная атомарность), dispatcher (капы, flush-семантика), canceller, restarter, сигнальный контур (signaler, WaitSignal/SendSignal, e2e), protected-конвертеры Storage.EFCore, CorrelationKeyLog. In-memory фейки `IWorkflowStore` и др. живут в `TestDoubles/`; internal-швы движка (`ExecuteOneAsync`, `SweepExpiredWaitingStepsOnceAsync`) открыты через `InternalsVisibleTo` в [Directory.Build.props](Directory.Build.props) |
 
 Тестовые проекты кладём в `Tests/` (naming: `Tests.<Область>[.<Вид>]`). Assembly-имена `Tests.App.Functional`, `Tests.App.Integration` и `Tests.Workflow` уже включены в repo-wide `InternalsVisibleTo`.
 

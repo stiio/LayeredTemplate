@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Services\Plugins\Plugins.Workflow.Abstractions\Plugins.Workflow.Abstractions.csproj" />
     <ProjectReference Include="..\..\Services\Plugins\Plugins.Workflow.Engine\Plugins.Workflow.Engine.csproj" />
+    <ProjectReference Include="..\..\Services\Plugins\Plugins.Workflow.Storage.EFCore\Plugins.Workflow.Storage.EFCore.csproj" />
   </ItemGroup>
 
 </Project>
