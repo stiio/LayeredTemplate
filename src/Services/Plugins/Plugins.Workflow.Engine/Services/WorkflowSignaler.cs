@@ -61,8 +61,8 @@ internal class WorkflowSignaler : IWorkflowSignaler
             // Resume the EXACT frozen step the bookmark recorded — never a re-derived one. TenantId
             // is ALWAYS the param tenant (never the bookmark's own value blindly): even though the
             // lookup was tenant-scoped, passing the trusted param keeps the resumer's run-tenant
-            // re-check honest and forecloses any cross-tenant resume. Per-resume flush:true so one
-            // poisoned run can't roll back the others — each resume is its own unit of work.
+            // re-check honest and forecloses any cross-tenant resume. Each resume commits as its
+            // own atomic transaction, so one poisoned run can't roll back the others.
             var resume = await this.resumer.ResumeAsync(
                 new WorkflowResumeCommand
                 {
@@ -72,8 +72,7 @@ internal class WorkflowSignaler : IWorkflowSignaler
                     Port = bookmark.ResumePort,
                     Payload = payload,
                 },
-                cancellationToken,
-                flush: true);
+                cancellationToken);
 
             if (resume.Succeeded)
             {

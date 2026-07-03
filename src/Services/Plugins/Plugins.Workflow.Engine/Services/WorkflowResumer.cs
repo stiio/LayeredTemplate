@@ -43,7 +43,7 @@ internal class WorkflowResumer : IWorkflowResumer
     }
 
     public async Task<WorkflowResumeResult> ResumeAsync(
-        WorkflowResumeCommand command, CancellationToken cancellationToken, bool flush = true)
+        WorkflowResumeCommand command, CancellationToken cancellationToken)
     {
         // Carry the full resume identity through the call. Engine-internal callers (FanOut auto-
         // resume) and external callers (HTTP resume API) both flow through here, so a single
@@ -111,6 +111,22 @@ internal class WorkflowResumer : IWorkflowResumer
                 $"Port '{command.Port}' is not declared by action '{step.Kind}'.");
         }
 
+        // One storage transaction for everything past this point: the atomic Waiting-guard, the
+        // action's wake-up hook, the successor fan-out, and the run-completion check commit
+        // together. Without it the guard auto-committed on its own, so a crash — or a post-guard
+        // failure such as the action throwing or returning an undeclared port — left the step
+        // Completed with no output port and no successor staged, wedging the run forever. Now
+        // every exit short of the commit below disposes the transaction uncommitted, the guard
+        // rolls back, and the step stays Waiting — retryable.
+        //
+        // Null = an ambient transaction is already open on this scope's store: the chain-unwind
+        // case (child run terminal → parent auto-resume → parent run terminal → grandparent
+        // auto-resume). We participate in the outer transaction — stage + flush — and the
+        // outermost resume commits the whole chain atomically. (Caveat: inside an ambient
+        // transaction a post-guard defensive failure can't be rolled back in isolation; that
+        // rare path keeps its pre-transaction wedge behaviour and is logged loud by the caller.)
+        await using var transaction = await this.store.BeginTransactionAsync(cancellationToken);
+
         // C2 — win the atomic Waiting-guard FIRST. The store flips Waiting → Completed only if it's
         // still Waiting, seeding the row with the caller's port + normalized payload. Winning this
         // UPDATE is what makes us the one true resumer; OnStepResumed runs strictly after.
@@ -148,7 +164,9 @@ internal class WorkflowResumer : IWorkflowResumer
 
         // Validate the action's chosen port (ADR-027 §3) — defense in depth. In slice A this equals
         // the already-validated caller port (pass-through) or a fixed declared port, so it always
-        // passes; kept so a future action that returns an undeclared port fails loud.
+        // passes; kept so a future action that returns an undeclared port fails loud. Failing here
+        // disposes the transaction uncommitted: the guard's flip rolls back and the step stays
+        // Waiting instead of wedging Completed-without-port.
         if (string.IsNullOrWhiteSpace(result.OutputPort)
             || this.registry.GetPort(step.Kind, result.OutputPort) is null)
         {
@@ -177,13 +195,14 @@ internal class WorkflowResumer : IWorkflowResumer
         await this.fanOut.CheckRunCompletionAsync(resumed, cancellationToken);
         activity?.SetTag(WorkflowTags.Outcome, "Success");
 
-        // Plugin's DbContext is independent from the consumer's. By default we flush so the
-        // resume call is a self-contained unit of work; engine-internal callers (fan-out
-        // auto-resume on sub-workflow completion) pass flush=false because the surrounding
-        // worker batch flushes once at the end.
-        if (flush)
+        // Flush inside the transaction (or the ambient one when nested). This also flushes
+        // whatever the caller staged on the shared scope before resuming — deliberate: in the
+        // worker path the child run's terminal transition and its parent's resume land in the
+        // SAME commit, so no observer can ever see a terminal child with an un-resumed parent.
+        await this.store.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
         {
-            await this.store.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
 
         return WorkflowResumeResult.Success();

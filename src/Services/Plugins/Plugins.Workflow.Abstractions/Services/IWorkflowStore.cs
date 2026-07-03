@@ -72,7 +72,10 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// </summary>
     /// <remarks>
     /// Implementation is expected to use a guarded <c>UPDATE … WHERE status = 'waiting'</c> so
-    /// concurrent resume calls can't double-fire downstream steps.
+    /// concurrent resume calls can't double-fire downstream steps. The guard executes
+    /// immediately (not staged) — callers that need it atomic with their staged follow-ups
+    /// (successor enqueue, run-status change) wrap the whole unit of work in
+    /// <see cref="BeginTransactionAsync"/>, as <c>IWorkflowResumer</c> does.
     /// </remarks>
     Task<WorkflowStepRecord?> TryResumeWaitingStepAsync(
         Guid stepId,
@@ -194,6 +197,17 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
 
     // ===== Atomic commit =====
 
+    /// <summary>
+    /// Opens an explicit storage transaction so a unit of work that mixes immediate SQL
+    /// (<see cref="TryResumeWaitingStepAsync"/>'s guard) with staged mutations and a final
+    /// <see cref="SaveChangesAsync"/> commits atomically. Returns <c>null</c> when a transaction
+    /// is already active on this scope's store — the caller is then a nested participant: its
+    /// statements and flush join the ambient transaction and the ambient owner commits.
+    /// Disposing the handle without <see cref="IWorkflowStoreTransaction.CommitAsync"/> rolls
+    /// the transaction back.
+    /// </summary>
+    Task<IWorkflowStoreTransaction?> BeginTransactionAsync(CancellationToken cancellationToken);
+
     /// <summary>Flush staged inserts/updates. Call once per logical unit-of-work.</summary>
     Task SaveChangesAsync(CancellationToken cancellationToken);
 
@@ -205,4 +219,13 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// stays in the tracker so subsequent reads benefit from the cache.
     /// </summary>
     void DiscardPendingChanges();
+}
+
+/// <summary>
+/// Handle for an explicit storage transaction from <see cref="IWorkflowStore.BeginTransactionAsync"/>.
+/// Commit explicitly; disposing an uncommitted handle rolls the transaction back.
+/// </summary>
+public interface IWorkflowStoreTransaction : IAsyncDisposable
+{
+    Task CommitAsync(CancellationToken cancellationToken);
 }

@@ -208,7 +208,7 @@ The window is single-digit milliseconds (between worker's fresh `GetRunAsync` an
 
 | Service | Use |
 |---|---|
-| `IWorkflowResumer.ResumeAsync(WorkflowResumeCommand, ct, flush=true)` | Finalises a `Waiting` step on a chosen port + `JsonElement?` payload. Atomic guarded UPDATE makes duplicate calls 409-style no-ops. |
+| `IWorkflowResumer.ResumeAsync(WorkflowResumeCommand, ct)` | Finalises a `Waiting` step on a chosen port + `JsonElement?` payload. Guard, action wake-up hook, fan-out, and flush commit as ONE storage transaction; the atomic guarded UPDATE makes duplicate calls 409-style no-ops, and any post-guard failure rolls back to `Waiting`. |
 | `IWorkflowCanceller.CancelAsync(WorkflowCancelCommand, ct)` | Operator termination. Atomic SQL flips active steps to `dead` + run to `failed`. Sub-workflow parents resume on `failed` port. |
 | `IWorkflowRestarter.RestartAsync(WorkflowRestartCommand, ct)` | Manual replay. Mode `UseSnapshot` replays against the frozen graph; `UseCurrentDefinition` re-fetches the live definition. Old run is never mutated. |
 

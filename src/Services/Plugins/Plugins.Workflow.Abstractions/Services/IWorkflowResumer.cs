@@ -7,24 +7,30 @@ namespace LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 /// signal (Approve action, manual webhook, …). Inputs identify what to resume, the chosen
 /// outcome port, and an optional payload to stamp on the step's outputs. The implementation
 /// is responsible for: tenant-match check, status guard, port validation, atomic Waiting →
-/// Completed transition, fan-out via <see cref="IWorkflowFanOut"/>, and run-completion check.
-/// All persistence is staged — the caller is responsible for the final
-/// <c>IWorkflowStore.SaveChangesAsync</c> so the resume travels with any other domain changes
-/// in the same unit of work.
+/// Completed transition, fan-out via <see cref="IWorkflowFanOut"/>, and run-completion check —
+/// all committed as ONE storage transaction, so a resume either lands completely or leaves the
+/// step <c>Waiting</c>.
 /// </summary>
 public interface IWorkflowResumer
 {
     /// <summary>
-    /// Resumes a waiting step. <paramref name="flush"/> controls the final
-    /// <c>store.SaveChangesAsync</c>: external callers (HTTP handlers, integration tests) keep
-    /// the default <c>true</c> so resume is a self-contained unit of work; engine-internal
-    /// callers (e.g. fan-out auto-resuming a parent step on child run completion) pass
-    /// <c>false</c> so the surrounding worker batch's flush handles persistence.
+    /// Resumes a waiting step as a self-contained atomic unit of work: the Waiting-guard, the
+    /// action's wake-up hook, the successor fan-out, and the run-completion check commit in a
+    /// single storage transaction. A crash — or a post-guard failure such as the action's
+    /// resume hook throwing — rolls the whole resume back: the step stays <c>Waiting</c> and
+    /// the call is retryable, never wedged half-resumed.
+    /// <para>
+    /// When called inside an ambient store transaction (chain unwind: a child run's terminal
+    /// transition auto-resumes its parent, whose run may terminate and resume ITS parent, …),
+    /// the resume joins that transaction and the outermost owner commits the chain at once.
+    /// The commit also flushes whatever the caller already staged on the plugin's scoped
+    /// store — deliberate: the worker path relies on the child's terminal state and the
+    /// parent's resume landing in the same commit.
+    /// </para>
     /// </summary>
     Task<WorkflowResumeResult> ResumeAsync(
         WorkflowResumeCommand command,
-        CancellationToken cancellationToken,
-        bool flush = true);
+        CancellationToken cancellationToken);
 }
 
 /// <summary>

@@ -6,6 +6,7 @@ using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 using LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using PluginWorkflowDefinition = LayeredTemplate.Plugins.Workflow.Abstractions.Models.WorkflowDefinition;
 
 namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore;
@@ -339,6 +340,13 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         //    outputs, completed_at, last_error) so the converters fire. EF will issue a follow-up
         //    UPDATE on SaveChanges that overlaps with the guard's status flip — that's fine, the
         //    flip is the same value either way.
+        //
+        // Atomicity: the guard enlists in the scope's ambient transaction when one is open — the
+        // resumer wraps the whole resume in BeginTransactionAsync, so the flip, the field writes,
+        // and the caller-staged fan-out commit (and roll back) together. The guard's row lock is
+        // then held until that commit: a competing resume's guard blocks briefly and loses with
+        // 0 rows; the timeout sweeper's FOR UPDATE SKIP LOCKED claim skips the locked row.
+        // Without an ambient transaction (bare store usage) the flip auto-commits as before.
         const string guardSql = """
             UPDATE workflow.workflow_step_executions
             SET status = {0}, updated_at = now()
@@ -806,6 +814,17 @@ internal class EfCoreWorkflowStore : IWorkflowStore
 
     // ===== Atomic flush =====
 
+    public async Task<IWorkflowStoreTransaction?> BeginTransactionAsync(CancellationToken cancellationToken)
+    {
+        // Ambient-transaction detection: a nested caller (the resumer's chain-unwind case)
+        // participates in the outer transaction instead of opening its own — Npgsql forbids
+        // real nesting on one connection anyway.
+        if (this.dbContext.Database.CurrentTransaction is not null) return null;
+
+        var transaction = await this.dbContext.Database.BeginTransactionAsync(cancellationToken);
+        return new EfWorkflowStoreTransaction(transaction);
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken) =>
         this.dbContext.SaveChangesAsync(cancellationToken);
 
@@ -822,6 +841,21 @@ internal class EfCoreWorkflowStore : IWorkflowStore
                 entry.State = EntityState.Detached;
             }
         }
+    }
+
+    /// <summary>
+    /// Thin adapter from EF's <see cref="IDbContextTransaction"/> to the storage-agnostic
+    /// handle. Disposing without commit rolls back (EF semantics).
+    /// </summary>
+    private sealed class EfWorkflowStoreTransaction : IWorkflowStoreTransaction
+    {
+        private readonly IDbContextTransaction transaction;
+
+        public EfWorkflowStoreTransaction(IDbContextTransaction transaction) => this.transaction = transaction;
+
+        public Task CommitAsync(CancellationToken cancellationToken) => this.transaction.CommitAsync(cancellationToken);
+
+        public ValueTask DisposeAsync() => this.transaction.DisposeAsync();
     }
 
     // ===== Mapping =====

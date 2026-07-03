@@ -247,8 +247,11 @@ internal class WorkflowFanOut : IWorkflowFanOut
     /// parents unwinds within the same batch (same recursion as the prior direct path — the only
     /// addition is the action's pass-through OnStepResumed + port re-validation in between).
     /// <para>
-    /// <c>flush:false</c> — the calling worker iteration's batch SaveChanges does the persistence.
-    /// Resolved lazily from the scope to avoid the resumer↔fanout constructor cycle.
+    /// The resumer commits the resume as its own atomic storage transaction, and that flush
+    /// deliberately carries this scope's already-staged changes with it — the child's terminal
+    /// transition and the parent's resume land in one commit. In grandparent chains the nested
+    /// resume participates in the outermost resume's transaction instead. Resolved lazily from
+    /// the scope to avoid the resumer↔fanout constructor cycle.
     /// </para>
     /// </summary>
     private async Task ResumeParentStepAsync(WorkflowRunRecord childRun, CancellationToken cancellationToken)
@@ -300,8 +303,7 @@ internal class WorkflowFanOut : IWorkflowFanOut
                 Port = port,
                 Payload = payload,
             },
-            cancellationToken,
-            flush: false);
+            cancellationToken);
 
         if (!result.Succeeded)
         {
