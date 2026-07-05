@@ -5,9 +5,9 @@ namespace LayeredTemplate.Plugins.Workflow.Abstractions.Expressions;
 
 /// <summary>
 /// Dynamic-value wrapper for action config properties. Wire format in stored config:
-/// <c>{ "engine": "static"|"liquid"|"js", "value": "..." }</c>. After the resolver runs the
-/// instance carries the concrete <see cref="Resolved"/> value, which is what the action reads via
-/// the implicit conversion to <typeparamref name="T"/>.
+/// <c>{ "engine": "static"|"liquid"|"js", "value": "...", "transient": true? }</c>. After the
+/// resolver runs the instance carries the concrete <see cref="Resolved"/> value, which is what
+/// the action reads via the implicit conversion to <typeparamref name="T"/>.
 /// </summary>
 /// <remarks>
 /// Type rule: <typeparamref name="T"/> is a pure data type — it MUST NOT contain nested
@@ -25,6 +25,24 @@ public sealed class Expr<T>
 
     /// <summary>The resolved value. Populated by the resolver; null until then.</summary>
     public T? Resolved { get; set; }
+
+    /// <summary>
+    /// When true, the resolved value is never persisted: the field is skipped at step-build time
+    /// (the stored <c>resolved_config</c> keeps the raw expression) and resolved just-in-time in
+    /// the worker before the action runs, living only in that step's memory. For secrets and
+    /// heavy payloads (base64 file content, …). Each attempt / lifecycle hook re-resolves, so
+    /// external lookups yield fresh values per attempt. Resolution failures behave like action
+    /// errors (retry / dead-letter), not like build-time authoring errors.
+    /// <para>
+    /// Scope caveat: this hides the RESOLVED value only. A <c>static</c> literal is its own
+    /// value and stays visible in the stored expression / graph definition — real secrets must
+    /// be sourced via a liquid/js expression (vars reference, secret-store filter), not typed in
+    /// as literals. Run in the run-scoped context, transient expressions see exactly the data a
+    /// build-time resolve would have seen (runs are linear), differing only for wall-clock /
+    /// external-lookup functions — which is the point.
+    /// </para>
+    /// </summary>
+    public bool Transient { get; set; }
 
     /// <summary>Shortcut accessor for <see cref="Resolved"/>. Returns default(T) when not yet resolved.</summary>
     public T? ReadResolved() => this.Resolved;
@@ -79,6 +97,9 @@ internal class ExprJsonConverter<T> : JsonConverter<Expr<T>>
                 case "value":
                     expr.Value = reader.GetString() ?? string.Empty;
                     break;
+                case "transient":
+                    expr.Transient = reader.TokenType == JsonTokenType.True;
+                    break;
                 case "resolved":
                     // Defensive bake: ignore caller options for the nested payload so the inner
                     // shape is always camelCase + enum-as-string. Outer options are still used
@@ -98,7 +119,14 @@ internal class ExprJsonConverter<T> : JsonConverter<Expr<T>>
         writer.WriteStartObject();
         writer.WriteString("engine", value.Engine);
         writer.WriteString("value", value.Value);
-        if (value.Resolved is not null)
+        if (value.Transient)
+        {
+            writer.WriteBoolean("transient", true);
+        }
+        // Transient guard is belt-and-braces: build-time resolution skips transient fields so
+        // Resolved is null here anyway, but a late-resolved instance that somehow reaches a
+        // serializer must still never leak its value to storage.
+        if (value.Resolved is not null && !value.Transient)
         {
             writer.WritePropertyName("resolved");
             // Same defensive bake as Read — see remarks on the converter class.

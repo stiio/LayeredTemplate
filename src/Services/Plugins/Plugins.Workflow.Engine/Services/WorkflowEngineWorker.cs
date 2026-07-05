@@ -2,9 +2,11 @@ using System.Diagnostics;
 using System.Text.Json;
 using LayeredTemplate.Plugins.Workflow.Abstractions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
+using LayeredTemplate.Plugins.Workflow.Abstractions.Expressions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
+using LayeredTemplate.Plugins.Workflow.Engine.Expressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -278,6 +280,7 @@ internal class WorkflowEngineWorker : BackgroundService
             var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
             var registry = scope.ServiceProvider.GetRequiredService<IActionTypeRegistry>();
             var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
+            var resolver = scope.ServiceProvider.GetRequiredService<IExpressionResolver>();
 
             var step = await store.GetStepAsync(stepId, ct);
             if (step is null)
@@ -287,7 +290,7 @@ internal class WorkflowEngineWorker : BackgroundService
                 return true;
             }
 
-            await this.ExecuteOneAsync(step, store, registry, fanOut, lane, ct);
+            await this.ExecuteOneAsync(step, store, registry, fanOut, lane, ct, resolver);
             // CT.None on purpose: the action has already run (side effects possibly issued);
             // this flush persists its computed outcome. Cancelling here — lane deadline landing
             // between action completion and save, or shutdown drain — would discard the outcome
@@ -466,8 +469,9 @@ internal class WorkflowEngineWorker : BackgroundService
             var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
             var registry = scope.ServiceProvider.GetRequiredService<IActionTypeRegistry>();
             var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
+            var resolver = scope.ServiceProvider.GetRequiredService<IExpressionResolver>();
 
-            await this.HandleExpiredStepAsync(stepId, store, registry, fanOut, ct);
+            await this.HandleExpiredStepAsync(stepId, store, registry, fanOut, ct, resolver);
             // Commit the timeout outcome as its own unit. (A parent auto-resume triggered inside
             // the handler has already committed via the resumer's own transaction.)
             await store.SaveChangesAsync(ct);
@@ -496,12 +500,13 @@ internal class WorkflowEngineWorker : BackgroundService
         IWorkflowStore store,
         IActionTypeRegistry registry,
         IWorkflowFanOut fanOut,
-        CancellationToken ct)
+        CancellationToken ct,
+        IExpressionResolver? resolver = null)
     {
         var expiredIds = await store.ClaimExpiredWaitingStepIdsAsync(this.settings.BatchSize, ct);
         foreach (var stepId in expiredIds)
         {
-            await this.HandleExpiredStepAsync(stepId, store, registry, fanOut, ct);
+            await this.HandleExpiredStepAsync(stepId, store, registry, fanOut, ct, resolver);
         }
     }
 
@@ -515,7 +520,8 @@ internal class WorkflowEngineWorker : BackgroundService
         IWorkflowStore store,
         IActionTypeRegistry registry,
         IWorkflowFanOut fanOut,
-        CancellationToken ct)
+        CancellationToken ct,
+        IExpressionResolver? resolver = null)
     {
         var step = await store.GetStepAsync(stepId, ct);
         if (step is null) return;
@@ -535,7 +541,7 @@ internal class WorkflowEngineWorker : BackgroundService
             return;
         }
 
-        await this.HandleTimeoutGracefullyAsync(step, store, fanOut, actionType, ct);
+        await this.HandleTimeoutGracefullyAsync(step, store, fanOut, actionType, ct, resolver);
     }
 
     /// <summary>
@@ -569,7 +575,8 @@ internal class WorkflowEngineWorker : BackgroundService
         IWorkflowStore store,
         IWorkflowFanOut fanOut,
         IActionType actionType,
-        CancellationToken ct)
+        CancellationToken ct,
+        IExpressionResolver? resolver = null)
     {
         using var sweepScope = this.logger.BeginScope(new Dictionary<string, object?>
         {
@@ -639,6 +646,18 @@ internal class WorkflowEngineWorker : BackgroundService
         ActionExecutionResult result;
         try
         {
+            if (resolver is not null)
+            {
+                // Same late transient resolution as the execute path — a timeout hook may read
+                // config. The timeout fire is one-shot (no retry bookkeeping), so a resolution
+                // failure lands in the catch below: Dead with the reason recorded.
+                await resolver.ResolveTransientAsync(
+                    configObj,
+                    () => ExpressionModelBuilder.Build(run.StaticContext, run.StepsOutputs),
+                    ExpressionModelBuilder.EvaluationContextForRun(run),
+                    ct);
+            }
+
             result = await actionType.OnStepTimedOutAsync(context, ct);
         }
         catch (Exception ex)
@@ -670,13 +689,20 @@ internal class WorkflowEngineWorker : BackgroundService
         await this.ExecuteOneAsync(step, store, registry, fanOut, WorkflowStepLane.Any, ct);
     }
 
+    /// <param name="resolver">
+    /// Execute-time half of the two-phase expression resolution — materialises transient config
+    /// fields just before the action runs. Optional (trailing) so test-harness callers that
+    /// exercise configs without transient fields don't have to wire an engine stack; the
+    /// production path always passes the scope's resolver.
+    /// </param>
     internal async Task ExecuteOneAsync(
         WorkflowStepRecord step,
         IWorkflowStore store,
         IActionTypeRegistry registry,
         IWorkflowFanOut fanOut,
         WorkflowStepLane lane,
-        CancellationToken ct)
+        CancellationToken ct,
+        IExpressionResolver? resolver = null)
     {
         // Outer scope covers everything we know up-front (step + tenant). Inner scope (after the
         // run loads) adds run-level fields. Serilog enrichers / Seq pick these up automatically;
@@ -802,6 +828,21 @@ internal class WorkflowEngineWorker : BackgroundService
             actionActivity?.SetTag(WorkflowTags.StepLane, FormatLane(lane));
             try
             {
+                if (resolver is not null)
+                {
+                    // Late resolution of transient config fields (secrets / heavy payloads) —
+                    // deliberately left unresolved at enqueue and never persisted. Inside this
+                    // try on purpose: a resolution failure (secret-store blip, bad expression)
+                    // flows through the same catch as an action exception — transient error,
+                    // retry / dead-letter path. Model factory is only invoked when the config
+                    // actually has a transient leaf.
+                    await resolver.ResolveTransientAsync(
+                        configObj,
+                        () => ExpressionModelBuilder.Build(run.StaticContext, run.StepsOutputs),
+                        ExpressionModelBuilder.EvaluationContextForRun(run),
+                        ct);
+                }
+
                 result = await actionType.ExecuteAsync(context, ct);
                 actionActivity?.SetTag(WorkflowTags.ActionResultType, ClassifyResult(result));
                 if (result.OutputPort is not null)

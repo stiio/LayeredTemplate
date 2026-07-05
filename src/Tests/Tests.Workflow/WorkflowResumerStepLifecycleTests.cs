@@ -1,11 +1,13 @@
 using System.Text.Json;
 using LayeredTemplate.Plugins.Workflow.Abstractions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
+using LayeredTemplate.Plugins.Workflow.Abstractions.Expressions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 using LayeredTemplate.Plugins.Workflow.Engine;
 using LayeredTemplate.Plugins.Workflow.Engine.Actions;
+using LayeredTemplate.Plugins.Workflow.Engine.Expressions;
 using LayeredTemplate.Plugins.Workflow.Engine.Services;
 using LayeredTemplate.Tests.Workflow.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
@@ -319,7 +321,12 @@ public class WorkflowResumerStepLifecycleTests
         var fanOut = new WorkflowFanOut(
             store, new FakeBuilder(), Options.Create(Settings),
             new ServiceCollection().BuildServiceProvider(), NullLogger<WorkflowFanOut>.Instance);
-        var resumer = new WorkflowResumer(store, fanOut, registry, NullLogger<WorkflowResumer>.Instance);
+        // Engine-less resolver: lifecycle configs here carry no transient fields, so the
+        // execute-time transient pass is a pure reflection walk that never hits an engine.
+        var resumer = new WorkflowResumer(
+            store, fanOut, registry,
+            new ExpressionResolver(Enumerable.Empty<IExpressionEngine>()),
+            NullLogger<WorkflowResumer>.Instance);
         return (resumer, store, step);
     }
 

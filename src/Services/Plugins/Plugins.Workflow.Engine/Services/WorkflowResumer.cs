@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using LayeredTemplate.Plugins.Workflow.Abstractions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
+using LayeredTemplate.Plugins.Workflow.Abstractions.Expressions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 using LayeredTemplate.Plugins.Workflow.Engine.Expressions;
@@ -28,17 +29,20 @@ internal class WorkflowResumer : IWorkflowResumer
     private readonly IWorkflowStore store;
     private readonly IWorkflowFanOut fanOut;
     private readonly IActionTypeRegistry registry;
+    private readonly IExpressionResolver resolver;
     private readonly ILogger<WorkflowResumer> logger;
 
     public WorkflowResumer(
         IWorkflowStore store,
         IWorkflowFanOut fanOut,
         IActionTypeRegistry registry,
+        IExpressionResolver resolver,
         ILogger<WorkflowResumer> logger)
     {
         this.store = store;
         this.fanOut = fanOut;
         this.registry = registry;
+        this.resolver = resolver;
         this.logger = logger;
     }
 
@@ -232,6 +236,16 @@ internal class WorkflowResumer : IWorkflowResumer
         {
             configObj = Activator.CreateInstance(actionType.ConfigType)!;
         }
+
+        // Late-resolve transient fields — the resume hook may read config (timeout port, wait
+        // keys, secrets). A resolution failure throws out of ResumeAsync exactly like a throwing
+        // OnStepResumed hook: the resume transaction disposes uncommitted, the Waiting-guard
+        // rolls back, and the step stays Waiting — retryable by the next signal / sweep.
+        await this.resolver.ResolveTransientAsync(
+            configObj,
+            () => ExpressionModelBuilder.Build(run.StaticContext, run.StepsOutputs),
+            ExpressionModelBuilder.EvaluationContextForRun(run),
+            cancellationToken);
 
         var graph = await this.fanOut.GetGraphAsync(run, cancellationToken);
         var node = graph?.Nodes.FirstOrDefault(n => n.Id == step.NodeId);

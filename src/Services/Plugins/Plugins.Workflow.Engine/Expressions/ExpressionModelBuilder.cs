@@ -1,4 +1,6 @@
 using System.Text.Json;
+using LayeredTemplate.Plugins.Workflow.Abstractions.Expressions;
+using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 
 namespace LayeredTemplate.Plugins.Workflow.Engine.Expressions;
 
@@ -32,6 +34,22 @@ internal static class ExpressionModelBuilder
         model["steps"] = JsonElementToClr(stepsOutputs);
         return model;
     }
+
+    /// <summary>
+    /// The per-evaluation tenant/run context, built uniformly from the run record. Shared by
+    /// the build-time resolve (StepExecutionBuilder) and the execute-time transient resolve
+    /// (worker / resumer) so both phases evaluate under an identical identity.
+    /// </summary>
+    public static ExpressionEvaluationContext EvaluationContextForRun(WorkflowRunRecord run) => new()
+    {
+        TenantId = run.TenantId,
+        RunId = run.Id,
+        DefinitionId = run.DefinitionId,
+        ActorUserId = run.ActorUserId,
+        TriggerSourceKind = run.TriggerSourceKind,
+        TriggerSourceId = run.TriggerSourceId,
+        IsDryRun = run.IsDryRun,
+    };
 
     /// <summary>
     /// Converts a <see cref="JsonElement"/> tree into nested CLR primitives / List / Dictionary so

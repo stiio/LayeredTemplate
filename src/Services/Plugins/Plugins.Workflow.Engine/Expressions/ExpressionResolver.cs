@@ -8,22 +8,30 @@ using LayeredTemplate.Plugins.Workflow.Abstractions.Expressions;
 namespace LayeredTemplate.Plugins.Workflow.Engine.Expressions;
 
 /// <summary>
-/// Resolves all <see cref="Expr{T}"/> leaves inside a deserialized config object.
+/// Resolves <see cref="Expr{T}"/> leaves inside a deserialized config object.
 /// Walk rule: for any visited node — if it's an <c>Expr&lt;T&gt;</c>, evaluate via its engine
 /// and populate <c>Resolved</c>. Otherwise, descend into public fields/properties / list items /
 /// dictionary values. Primitives and strings terminate the walk.
+/// <para>
+/// Two-phase: <see cref="ResolveConfigAsync"/> (step build) evaluates non-transient leaves;
+/// <see cref="ResolveTransientAsync"/> (worker, just before the action runs) evaluates only
+/// transient ones. A leaf is transient when its instance flag is set
+/// (<see cref="Expr{T}.Transient"/>) or when it's reached through a property decorated with
+/// <see cref="TransientExprAttribute"/> — the attribute covers the property's whole subtree.
+/// </para>
 /// </summary>
 internal class ExpressionResolver : IExpressionResolver
 {
     /// <summary>
     /// Per-type reflection cache: public readable instance properties (indexers excluded —
-    /// they need arguments) paired with the camelCase path segment used in error paths.
-    /// Process-wide: config POCOs are a small closed set of shapes, and this walk runs on
-    /// every step build — re-running GetProperties + camelCase per visit was pure waste.
+    /// they need arguments) paired with the camelCase path segment used in error paths and the
+    /// <see cref="TransientExprAttribute"/> marker. Process-wide: config POCOs are a small
+    /// closed set of shapes, and this walk runs on every step build — re-running
+    /// GetProperties + camelCase + attribute lookup per visit was pure waste.
     /// </summary>
-    private static readonly ConcurrentDictionary<Type, (PropertyInfo Prop, string PathSegment)[]> PropertiesByType = new();
+    private static readonly ConcurrentDictionary<Type, (PropertyInfo Prop, string PathSegment, bool ForcedTransient)[]> PropertiesByType = new();
 
-    /// <summary>Cached Engine / Value getters + Resolved setter per closed <c>Expr&lt;T&gt;</c> type.</summary>
+    /// <summary>Cached Engine / Value / Transient getters + Resolved setter per closed <c>Expr&lt;T&gt;</c> type.</summary>
     private static readonly ConcurrentDictionary<Type, ExprAccessors> ExprAccessorsByType = new();
 
     private readonly Dictionary<string, IExpressionEngine> engines;
@@ -43,11 +51,34 @@ internal class ExpressionResolver : IExpressionResolver
         var config = storedConfig.Deserialize(configType, WorkflowJsonOptions.Default)
             ?? throw new InvalidOperationException($"Failed to deserialize config as {configType.Name}.");
 
-        await this.ResolveNodeAsync(config, model, context, path: "config", cancellationToken);
+        await this.ResolveNodeAsync(
+            config, new Lazy<IDictionary<string, object?>>(model), context,
+            path: "config", transientOnly: false, forcedTransient: false, cancellationToken);
         return config;
     }
 
-    private async ValueTask ResolveNodeAsync(object? node, IDictionary<string, object?> model, ExpressionEvaluationContext context, string path, CancellationToken cancellationToken)
+    public async ValueTask ResolveTransientAsync(
+        object config,
+        Func<IDictionary<string, object?>> modelFactory,
+        ExpressionEvaluationContext context,
+        CancellationToken cancellationToken)
+    {
+        // Lazy: the model build deserializes the run's static context + steps outputs — skip it
+        // entirely for the common case of a config with no transient leaf (the walk itself is
+        // cached reflection, cheap).
+        await this.ResolveNodeAsync(
+            config, new Lazy<IDictionary<string, object?>>(modelFactory), context,
+            path: "config", transientOnly: true, forcedTransient: false, cancellationToken);
+    }
+
+    private async ValueTask ResolveNodeAsync(
+        object? node,
+        Lazy<IDictionary<string, object?>> model,
+        ExpressionEvaluationContext context,
+        string path,
+        bool transientOnly,
+        bool forcedTransient,
+        CancellationToken cancellationToken)
     {
         if (node is null) return;
 
@@ -56,7 +87,7 @@ internal class ExpressionResolver : IExpressionResolver
         // Leaf: Expr<T>.
         if (IsExprType(type, out var innerType))
         {
-            await this.ResolveExprAsync(node, innerType!, model, context, path, cancellationToken);
+            await this.ResolveExprAsync(node, innerType!, model, context, path, transientOnly, forcedTransient, cancellationToken);
             return;
         }
 
@@ -73,7 +104,7 @@ internal class ExpressionResolver : IExpressionResolver
         {
             foreach (var key in dict.Keys)
             {
-                await this.ResolveNodeAsync(dict[key!], model, context, $"{path}.{key}", cancellationToken);
+                await this.ResolveNodeAsync(dict[key!], model, context, $"{path}.{key}", transientOnly, forcedTransient, cancellationToken);
             }
             return;
         }
@@ -84,7 +115,7 @@ internal class ExpressionResolver : IExpressionResolver
             var i = 0;
             foreach (var item in enumerable)
             {
-                await this.ResolveNodeAsync(item, model, context, $"{path}[{i}]", cancellationToken);
+                await this.ResolveNodeAsync(item, model, context, $"{path}[{i}]", transientOnly, forcedTransient, cancellationToken);
                 i++;
             }
             return;
@@ -94,24 +125,44 @@ internal class ExpressionResolver : IExpressionResolver
         var members = PropertiesByType.GetOrAdd(type, static t => t
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.CanRead && p.GetIndexParameters().Length == 0)
-            .Select(p => (p, ToCamelCase(p.Name)))
+            .Select(p => (p, ToCamelCase(p.Name), p.GetCustomAttribute<TransientExprAttribute>() is not null))
             .ToArray());
-        foreach (var (prop, pathSegment) in members)
+        foreach (var (prop, pathSegment, propForcesTransient) in members)
         {
             object? value;
             try { value = prop.GetValue(node); }
             catch { continue; }
-            await this.ResolveNodeAsync(value, model, context, $"{path}.{pathSegment}", cancellationToken);
+            await this.ResolveNodeAsync(
+                value, model, context, $"{path}.{pathSegment}", transientOnly,
+                forcedTransient || propForcesTransient, cancellationToken);
         }
     }
 
-    private async ValueTask ResolveExprAsync(object exprInstance, Type innerType, IDictionary<string, object?> model, ExpressionEvaluationContext context, string path, CancellationToken cancellationToken)
+    private async ValueTask ResolveExprAsync(
+        object exprInstance,
+        Type innerType,
+        Lazy<IDictionary<string, object?>> model,
+        ExpressionEvaluationContext context,
+        string path,
+        bool transientOnly,
+        bool forcedTransient,
+        CancellationToken cancellationToken)
     {
         var type = exprInstance.GetType();
         var accessors = ExprAccessorsByType.GetOrAdd(type, static t => new ExprAccessors(
             t.GetProperty(nameof(Expr<object>.Engine))!,
             t.GetProperty(nameof(Expr<object>.Value))!,
+            t.GetProperty(nameof(Expr<object>.Transient))!,
             t.GetProperty(nameof(Expr<object>.Resolved))!));
+
+        // Phase gate: build-time resolves non-transient leaves, execute-time resolves transient
+        // ones. The mismatch case simply leaves the leaf for the other phase.
+        var isTransient = forcedTransient || (bool)accessors.Transient.GetValue(exprInstance)!;
+        if (isTransient != transientOnly)
+        {
+            return;
+        }
+
         var engineName = (string)accessors.Engine.GetValue(exprInstance)!;
         var rawValue = (string)accessors.Value.GetValue(exprInstance)!;
 
@@ -123,7 +174,7 @@ internal class ExpressionResolver : IExpressionResolver
         JsonElement evaluated;
         try
         {
-            evaluated = await engine.EvaluateAsync(rawValue, model, innerType, context, cancellationToken);
+            evaluated = await engine.EvaluateAsync(rawValue, model.Value, innerType, context, cancellationToken);
         }
         catch (ExpressionResolutionException ex)
         {
@@ -167,5 +218,5 @@ internal class ExpressionResolver : IExpressionResolver
     private static string ToCamelCase(string s) =>
         string.IsNullOrEmpty(s) || char.IsLower(s[0]) ? s : char.ToLowerInvariant(s[0]) + s[1..];
 
-    private sealed record ExprAccessors(PropertyInfo Engine, PropertyInfo Value, PropertyInfo Resolved);
+    private sealed record ExprAccessors(PropertyInfo Engine, PropertyInfo Value, PropertyInfo Transient, PropertyInfo Resolved);
 }

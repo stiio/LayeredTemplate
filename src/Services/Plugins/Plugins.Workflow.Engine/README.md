@@ -42,7 +42,9 @@ Expressions/                      — Expression evaluation pipeline.
 ├── Extensions/                    — ILiquidFilter, ILiquidExtension, IJsFunction, IJsExtension
 │                                    (extension contracts) + DefaultContext{Liquid,Js}Extension
 │                                    (camelCase globals: tenantId, runId, etc.).
-├── ExpressionResolver.cs          — Walks deserialized config, evaluates every Expr<T> leaf.
+├── ExpressionResolver.cs          — Walks deserialized config, evaluates Expr<T> leaves.
+│                                    Two-phase: non-transient at step build (persisted),
+│                                    transient just-in-time in the worker (never persisted).
 └── ExpressionModelBuilder.cs      — Internal helper assembling the model dictionary
                                     (static context + steps outputs) handed to engines for
                                     each evaluation.
@@ -129,6 +131,7 @@ Bound from configuration section `WorkflowEngineSettings` (override via the opti
 | `MaxSubRunsPerRun` | 3 | Direct sub-run quota per parent run. |
 | `MaxNodesPerGraph` | 200 | Validator rejects graphs above this. |
 | `MaxLiquidOutputChars` | 256 KB | Hard cap on a single Liquid render's output. |
+| `MaxResolvedConfigChars` | 256 KB | Hard cap on a step's persisted resolved config; exceeding it fails the step at build time with advice to mark heavy fields transient or pass references instead of content. |
 | `WorkerCount` | 1 | Concurrent fast-pool worker loops in-process (FOR UPDATE SKIP LOCKED on the storage side prevents double-claims). |
 | `LongRunningWorkerCount` | 0 | Optional separate pool for `IsLongRunning=true` actions. When > 0, fast pool runs `FastOnly` lane, this pool runs `LongOnly` lane. Default 0 = single pool, no lane filter. |
 | `ShutdownDrainSeconds` | 30 | Per-action grace after SIGTERM. The in-flight action gets this long to finish naturally before its CT fires; after shutdown signal, claimed-but-untouched steps are released back to `pending`. |

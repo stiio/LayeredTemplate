@@ -93,9 +93,24 @@ public class SendEmailConfig
 }
 ```
 
-Wire format on disk: `{ "engine": "static" | "liquid" | "js", "value": "<template>" }`. At
-dispatch time the engine's `IExpressionResolver` walks the deserialized config and populates
-each `Expr<T>.Resolved`. Actions read via the implicit `Expr<T> → T` conversion.
+Wire format on disk: `{ "engine": "static" | "liquid" | "js", "value": "<template>", "transient": true? }`.
+At step-build time the engine's `IExpressionResolver` walks the deserialized config and
+populates each `Expr<T>.Resolved`; the resolved values are persisted on the step row
+(`resolved_config`) as the audit record of what the action actually received. Actions read via
+the implicit `Expr<T> → T` conversion.
+
+**Transient fields** are the exception: a field flagged `"transient": true` (author-side) or
+declared with `[TransientExpr]` on the config property (action-side, forces the whole property
+subtree) is skipped at build time and resolved just-in-time in the worker, right before the
+action runs — the resolved value lives only in that step's memory and is never persisted (the
+`Expr` JSON converter refuses to write a transient `resolved` even if handed one). Use it for
+secrets and heavy payloads (base64 file content). Semantics that follow from late resolution:
+each attempt / lifecycle hook re-resolves (fresh secrets per retry), and a resolution failure
+is a retryable step error rather than an instant authoring failure. Runs are linear, so a
+transient expression sees exactly the same context a build-time resolve would have — only
+wall-clock / external-lookup functions can differ, which is the point. Caveat: a `static`
+literal is its own value and stays visible in the stored expression — source real secrets via
+liquid/js (vars reference, secret-store function), not literals.
 
 ### `WorkflowStartIntent` + `IWorkflowDispatcher`
 

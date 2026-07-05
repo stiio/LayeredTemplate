@@ -112,6 +112,17 @@ public class WorkflowEngineSettings
     public int MaxLiquidOutputChars { get; set; } = 256 * 1024;
 
     /// <summary>
+    /// Hard cap (JSON characters) on a step's persisted resolved config. Exceeding it fails the
+    /// step at build time with advice to mark the heavy field transient (resolved at execution,
+    /// never persisted — see <c>Expr&lt;T&gt;.Transient</c>) or to pass a reference instead of
+    /// content. Catches the classic base64-file-in-the-body mistake before it lands in the
+    /// database: <c>resolved_config</c> is written per step and, with a data protector
+    /// registered, encrypted — unbounded materialised payloads amplify storage and every
+    /// rewrite. Default matches <see cref="MaxLiquidOutputChars"/>.
+    /// </summary>
+    public int MaxResolvedConfigChars { get; set; } = 256 * 1024;
+
+    /// <summary>
     /// Number of concurrent worker loops the engine runs inside a single host process. Each
     /// loop independently calls <c>ClaimPendingStepIdsAsync</c> with its own DI scope, so they
     /// scale linearly without coordinating: Postgres' <c>FOR UPDATE SKIP LOCKED</c> prevents
