@@ -4,6 +4,7 @@ using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Expressions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
+using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 using LayeredTemplate.Plugins.Workflow.Engine;
 using LayeredTemplate.Plugins.Workflow.Engine.Expressions;
 using LayeredTemplate.Plugins.Workflow.Engine.Expressions.Engines;
@@ -212,6 +213,42 @@ public class TransientExprTests
         Assert.True(step.NextAttemptAt > DateTime.UtcNow, "retry must be scheduled with backoff");
     }
 
+    // ----- resumer: pre-guard transient resolution -----
+
+    [Fact]
+    public async Task Resume_with_failing_transient_resolution_fails_cleanly_and_keeps_step_waiting()
+    {
+        // Engine-less resolver: the transient leaf's engine lookup fails deterministically —
+        // stands in for "secret store is down right now".
+        var (resumer, step, probe) = ResumerHarness(new ExpressionResolver(Enumerable.Empty<IExpressionEngine>()));
+
+        var result = await resumer.ResumeAsync(
+            new WorkflowResumeCommand { RunId = step.RunId, StepId = step.Id, TenantId = step.TenantId, Port = "done" },
+            CancellationToken.None);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(WorkflowResumeFailureReason.ConfigResolutionFailed, result.Reason);
+        // The failure happened BEFORE the guard: the step is untouched and retryable, the hook
+        // never ran — no exception escaped to poison a signaler / parent-resume chain.
+        Assert.Equal(StepExecutionStatus.Waiting, step.Status);
+        Assert.Null(probe.SeenOnResume);
+    }
+
+    [Fact]
+    public async Task Resume_materialises_transient_fields_for_the_resume_hook()
+    {
+        var (resumer, step, probe) = ResumerHarness(NewResolver());
+
+        var result = await resumer.ResumeAsync(
+            new WorkflowResumeCommand { RunId = step.RunId, StepId = step.Id, TenantId = step.TenantId, Port = "done" },
+            CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(probe.SeenOnResume);
+        Assert.Equal("s3cr3t", probe.SeenOnResume!.Secret.Resolved);
+        Assert.Equal(StepExecutionStatus.Completed, step.Status);
+    }
+
     // ----- harness -----
 
     private static readonly JsonElement EmptyJsonObject = JsonDocument.Parse("{}").RootElement;
@@ -312,6 +349,37 @@ public class TransientExprTests
         return (worker, store, registry, fanOut, step, capture);
     }
 
+    private static (WorkflowResumer Resumer, WorkflowStepRecord Step, ResumeProbeAction Probe) ResumerHarness(
+        ExpressionResolver resolver)
+    {
+        var probe = new ResumeProbeAction();
+        var run = NewRun();
+        var step = new WorkflowStepRecord
+        {
+            RunId = run.Id,
+            TenantId = run.TenantId,
+            NodeId = "n1",
+            Kind = ResumeProbeAction.KindName,
+            ResolvedConfig = JsonSerializer.Deserialize<JsonElement>("""
+                {"secret":{"engine":"static","value":"s3cr3t","transient":true}}
+                """),
+            Status = StepExecutionStatus.Waiting,
+            NextAttemptAt = DateTime.MaxValue,
+        };
+
+        var store = new FakeStore(run);
+        store.Steps.Add(step);
+
+        var settings = new WorkflowEngineSettings();
+        var fanOut = new WorkflowFanOut(
+            store, new FakeBuilder(), Options.Create(settings),
+            new ServiceCollection().BuildServiceProvider(), NullLogger<WorkflowFanOut>.Instance);
+        var resumer = new WorkflowResumer(
+            store, fanOut, new FakeRegistry(probe), resolver, NullLogger<WorkflowResumer>.Instance);
+
+        return (resumer, step, probe);
+    }
+
     // ----- test doubles -----
 
     public class TransientTestConfig
@@ -329,6 +397,34 @@ public class TransientExprTests
         public class Item
         {
             public Expr<string> Value { get; set; } = new();
+        }
+    }
+
+    /// <summary>Suspends on execute; captures the (transient-resolved) config on resume.</summary>
+    private sealed class ResumeProbeAction : ActionType<TransientTestConfig>
+    {
+        public const string KindName = "TransientResumeProbe";
+
+        public TransientTestConfig? SeenOnResume { get; private set; }
+
+        public override string Kind => KindName;
+
+        public override string DisplayName => KindName;
+
+        public override IReadOnlyList<ActionPortDescriptor> OutputPorts { get; } = new[]
+        {
+            new ActionPortDescriptor("done", "Done", ActionPortKind.Normal),
+        };
+
+        public override Task<ActionExecutionResult> ExecuteAsync(
+            ActionContext<TransientTestConfig> context, CancellationToken cancellationToken)
+            => Task.FromResult(this.Suspend());
+
+        public override Task<ActionExecutionResult> OnStepResumedAsync(
+            ActionContext context, JsonElement? payload, string? port, CancellationToken cancellationToken)
+        {
+            this.SeenOnResume = (TransientTestConfig)context.Config;
+            return Task.FromResult(ActionExecutionResult.OnPort(port ?? "done", null));
         }
     }
 

@@ -115,6 +115,45 @@ internal class WorkflowResumer : IWorkflowResumer
                 $"Port '{command.Port}' is not declared by action '{step.Kind}'.");
         }
 
+        // Resolve the action + materialise transient config fields BEFORE the guard. Placement
+        // is the point: a failing transient expression must surface as a clean retryable
+        // Failure with the step still Waiting and NOTHING staged. Doing this after the guard
+        // couldn't fail safely in the ambient-transaction chain (child terminal → parent
+        // auto-resume): throwing would roll back the child's committed outcome and re-run its
+        // action (side effects included), while returning a failure would commit a half-resumed
+        // step. By the time a step waits its transient fields have already resolved once (at
+        // execute), so a failure here is almost always environmental — the caller retries; the
+        // wait timeout remains the dead-letter backstop for the persistent case.
+        var actionType = this.registry.TryGet(step.Kind);
+        if (actionType is null)
+        {
+            activity?.SetTag(WorkflowTags.Outcome, nameof(WorkflowResumeFailureReason.InvalidPort));
+            return WorkflowResumeResult.Failure(
+                WorkflowResumeFailureReason.InvalidPort,
+                $"Action '{step.Kind}' is not registered.");
+        }
+
+        var configObj = DeserializeConfig(step, actionType);
+        try
+        {
+            await this.resolver.ResolveTransientAsync(
+                configObj,
+                () => ExpressionModelBuilder.Build(run.StaticContext, run.StepsOutputs),
+                ExpressionModelBuilder.EvaluationContextForRun(run),
+                cancellationToken);
+        }
+        catch (ExpressionResolutionException ex)
+        {
+            this.logger.LogWarning(
+                ex,
+                "Transient config resolution failed while resuming step {StepId} ({Kind}); step stays Waiting.",
+                step.Id, step.Kind);
+            activity?.SetTag(WorkflowTags.Outcome, nameof(WorkflowResumeFailureReason.ConfigResolutionFailed));
+            return WorkflowResumeResult.Failure(
+                WorkflowResumeFailureReason.ConfigResolutionFailed,
+                $"Transient config resolution failed: {ex.Message}");
+        }
+
         // One storage transaction for everything past this point: the atomic Waiting-guard, the
         // action's wake-up hook, the successor fan-out, and the run-completion check commit
         // together. Without it the guard auto-committed on its own, so a crash — or a post-guard
@@ -150,19 +189,9 @@ internal class WorkflowResumer : IWorkflowResumer
                 "Step is no longer waiting — it was resumed or expired by another process.");
         }
 
-        // Guard won → resolve the action and let it own the wake-up decision (which port fires).
-        // Unknown kind can't happen for a suspended step (it was built from a registered action),
-        // but guard anyway: treat as the generic InvalidPort failure rather than NRE.
-        var actionType = this.registry.TryGet(step.Kind);
-        if (actionType is null)
-        {
-            activity?.SetTag(WorkflowTags.Outcome, nameof(WorkflowResumeFailureReason.InvalidPort));
-            return WorkflowResumeResult.Failure(
-                WorkflowResumeFailureReason.InvalidPort,
-                $"Action '{step.Kind}' is not registered.");
-        }
-
-        var actionContext = await this.BuildContextAsync(run, step, actionType, cancellationToken);
+        // Guard won → let the action own the wake-up decision (which port fires). The action
+        // type and its config (transient fields included) were prepared before the guard.
+        var actionContext = await this.BuildContextAsync(run, step, configObj, cancellationToken);
         var result = await actionType.OnStepResumedAsync(
             actionContext, command.Payload, command.Port, cancellationToken);
 
@@ -213,40 +242,37 @@ internal class WorkflowResumer : IWorkflowResumer
     }
 
     /// <summary>
-    /// Build the <see cref="ActionContext"/> the resume hook sees — the same shape the worker hands
-    /// <c>ExecuteAsync</c> / the timeout sweep hands <c>OnStepTimedOutAsync</c>. Config is the
-    /// step's already-resolved JSON deserialized to the action's typed POCO (falling back to a
-    /// default instance if the row has no/bad config — the resume body of slice-A actions doesn't
-    /// read config, but a future override might). Node-key + steps-outputs are populated so a
-    /// state-aware resume can read prior outputs, mirroring the execute path.
+    /// Deserialize the step's persisted resolved config to the action's typed POCO, falling
+    /// back to a default instance on missing/bad JSON — the resume body of slice-A actions
+    /// doesn't read config, but a future override might. Transient fields inside come back
+    /// unresolved by construction; the caller materialises them (pre-guard) before use.
     /// </summary>
-    private async Task<ActionContext> BuildContextAsync(
-        WorkflowRunRecord run,
-        WorkflowStepRecord step,
-        IActionType actionType,
-        CancellationToken cancellationToken)
+    private static object DeserializeConfig(WorkflowStepRecord step, IActionType actionType)
     {
-        object configObj;
         try
         {
-            configObj = step.ResolvedConfig.Deserialize(actionType.ConfigType, WorkflowJsonOptions.Default)
+            return step.ResolvedConfig.Deserialize(actionType.ConfigType, WorkflowJsonOptions.Default)
                 ?? Activator.CreateInstance(actionType.ConfigType)!;
         }
         catch (JsonException)
         {
-            configObj = Activator.CreateInstance(actionType.ConfigType)!;
+            return Activator.CreateInstance(actionType.ConfigType)!;
         }
+    }
 
-        // Late-resolve transient fields — the resume hook may read config (timeout port, wait
-        // keys, secrets). A resolution failure throws out of ResumeAsync exactly like a throwing
-        // OnStepResumed hook: the resume transaction disposes uncommitted, the Waiting-guard
-        // rolls back, and the step stays Waiting — retryable by the next signal / sweep.
-        await this.resolver.ResolveTransientAsync(
-            configObj,
-            () => ExpressionModelBuilder.Build(run.StaticContext, run.StepsOutputs),
-            ExpressionModelBuilder.EvaluationContextForRun(run),
-            cancellationToken);
-
+    /// <summary>
+    /// Build the <see cref="ActionContext"/> the resume hook sees — the same shape the worker hands
+    /// <c>ExecuteAsync</c> / the timeout sweep hands <c>OnStepTimedOutAsync</c>. Config arrives
+    /// pre-deserialized (and transient-resolved) from the pre-guard phase of
+    /// <see cref="ResumeAsync"/>. Node-key + steps-outputs are populated so a state-aware resume
+    /// can read prior outputs, mirroring the execute path.
+    /// </summary>
+    private async Task<ActionContext> BuildContextAsync(
+        WorkflowRunRecord run,
+        WorkflowStepRecord step,
+        object configObj,
+        CancellationToken cancellationToken)
+    {
         var graph = await this.fanOut.GetGraphAsync(run, cancellationToken);
         var node = graph?.Nodes.FirstOrDefault(n => n.Id == step.NodeId);
         var nodeKey = string.IsNullOrWhiteSpace(node?.Key) ? step.NodeId : node.Key;

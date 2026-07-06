@@ -98,6 +98,15 @@ public enum WorkflowResumeFailureReason
     /// another caller (resume / sweeper) won the race — caller treats this as 409.
     /// </summary>
     ConcurrencyConflict,
+
+    /// <summary>
+    /// A transient config field failed to resolve while preparing the resume. The step stays
+    /// <c>Waiting</c> and nothing was staged — retryable. By the time a step waits, its
+    /// transient fields have already resolved once (at execute), so this is almost always an
+    /// environmental failure (secret store down, lookup target gone); the wait timeout remains
+    /// the dead-letter backstop for the persistent case.
+    /// </summary>
+    ConfigResolutionFailed,
 }
 
 /// <summary>

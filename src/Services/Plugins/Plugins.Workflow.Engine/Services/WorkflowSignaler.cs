@@ -90,10 +90,13 @@ internal class WorkflowSignaler : IWorkflowSignaler
             else
             {
                 // RunNotFound / StepNotFound / InvalidPort — a genuinely broken bookmark (run purged
-                // mid-signal, port no longer declared, …). Leave it for the reconciliation sweep /
-                // FK cascade to reap rather than masking the anomaly. Log loud.
+                // mid-signal, port no longer declared, …); the reconciliation sweep / FK cascade
+                // reaps it. ConfigResolutionFailed — an environmental transient-resolution failure:
+                // the step is still Waiting and the bookmark stays LIVE, so a future signal on the
+                // same key retries the delivery (the wait timeout is the backstop if none comes).
+                // Either way: don't consume, log loud.
                 this.logger.LogWarning(
-                    "Bookmark {BookmarkId} on run {RunId} step {StepId} could not be resumed ({Reason}); leaving for sweep.",
+                    "Bookmark {BookmarkId} on run {RunId} step {StepId} could not be resumed ({Reason}); bookmark left in place.",
                     bookmark.Id, bookmark.RunId, bookmark.StepId, resume.Reason);
             }
         }
