@@ -85,8 +85,9 @@ public class WaitSignalActionType : ActionType<WaitSignalConfig>
             requestedAt = DateTime.UtcNow.ToString("O"),
         };
 
-        // TimeoutSeconds: null / non-positive = wait indefinitely (the author opts into a deadline).
-        var timeout = context.Config.TimeoutSeconds is { } configured && configured > 0
+        // TimeoutSeconds: unset / null / non-positive resolution = wait indefinitely (the
+        // author opts into a deadline).
+        var timeout = context.Config.TimeoutSeconds?.Resolved is { } configured && configured > 0
             ? configured
             : (int?)null;
 
@@ -130,11 +131,12 @@ public class WaitSignalConfig
     public List<WaitSignalKey> Keys { get; set; } = new();
 
     /// <summary>
-    /// Optional auto-timeout in seconds. <b>Unset / non-positive = wait indefinitely</b> — this is
+    /// Optional auto-timeout in seconds — an expression, so authors can compute the deadline
+    /// from run data. <b>Unset / null / non-positive resolution = wait indefinitely</b> — this is
     /// the low-level primitive, so a deadline is an explicit opt-in (mirrors <c>Approve</c>, unlike
     /// WaitForm's finite default). When set, the sweeper fires the <c>timedOut</c> port on elapse.
     /// </summary>
-    public int? TimeoutSeconds { get; set; }
+    public Expr<int?>? TimeoutSeconds { get; set; }
 }
 
 public class WaitSignalKey

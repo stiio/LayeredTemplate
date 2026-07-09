@@ -90,6 +90,20 @@ public class WaitSignalActionTypeTests
     }
 
     [Fact]
+    public async Task Timeout_expression_resolving_to_null_waits_indefinitely()
+    {
+        // The Expr is present but its expression produced null (e.g. a vars key that isn't set)
+        // — same semantics as an absent field: no deadline.
+        var action = new WaitSignalActionType();
+        var context = Context(timeoutSeconds: null, "K");
+        context.Config.TimeoutSeconds = new Expr<int?> { Engine = "static", Resolved = null };
+
+        var result = await action.ExecuteAsync(context, CancellationToken.None);
+
+        Assert.Null(result.SuspendTimeoutSeconds);
+    }
+
+    [Fact]
     public async Task No_keys_fails_non_transient_instead_of_waiting_forever()
     {
         var action = new WaitSignalActionType();
@@ -224,7 +238,9 @@ public class WaitSignalActionTypeTests
                     Key = k is null ? null : new Expr<string> { Engine = "static", Resolved = k },
                 })
                 .ToList(),
-            TimeoutSeconds = timeoutSeconds,
+            TimeoutSeconds = timeoutSeconds is null
+                ? null
+                : new Expr<int?> { Engine = "static", Resolved = timeoutSeconds },
         },
         RunId = Guid.NewGuid(),
         StepExecutionId = Guid.NewGuid(),

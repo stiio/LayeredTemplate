@@ -394,7 +394,7 @@ public class WorkflowEngineWorkerTests
         var action = new DelayActionType();
         var ctx = new ActionContext<DelayConfig>
         {
-            Config = new DelayConfig { Seconds = 90 },
+            Config = new DelayConfig { Seconds = new Expr<int?> { Engine = "static", Resolved = 90 } },
             RunId = Guid.NewGuid(),
             StepExecutionId = Guid.NewGuid(),
             TenantId = Guid.NewGuid(),
@@ -421,7 +421,7 @@ public class WorkflowEngineWorkerTests
         var action = new DelayActionType();
         var ctx = new ActionContext
         {
-            Config = new DelayConfig { Seconds = 5 },
+            Config = new DelayConfig { Seconds = new Expr<int?> { Engine = "static", Resolved = 5 } },
             RunId = Guid.NewGuid(),
             StepExecutionId = Guid.NewGuid(),
             TenantId = Guid.NewGuid(),
@@ -440,6 +440,30 @@ public class WorkflowEngineWorkerTests
         Assert.True(outputs.TryGetProperty("firedAt", out _));
     }
 
+    [Fact]
+    public async Task Delay_action_with_unresolved_seconds_fails_non_transient()
+    {
+        // Expression resolved to null (or the field is absent) — there is no meaningful delay
+        // to wait; fail loud instead of suspending forever / firing immediately.
+        var action = new DelayActionType();
+        var ctx = new ActionContext<DelayConfig>
+        {
+            Config = new DelayConfig { Seconds = new Expr<int?> { Engine = "static", Resolved = null } },
+            RunId = Guid.NewGuid(),
+            StepExecutionId = Guid.NewGuid(),
+            TenantId = Guid.NewGuid(),
+            DefinitionId = Guid.NewGuid(),
+            NodeKey = "delay_1",
+            StepsOutputs = JsonDocument.Parse("{}").RootElement,
+        };
+
+        var result = await action.ExecuteAsync(ctx, CancellationToken.None);
+
+        Assert.NotNull(result.Error);
+        Assert.False(result.IsTransient);
+        Assert.False(result.IsSuspended);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-30)]
@@ -448,7 +472,7 @@ public class WorkflowEngineWorkerTests
         var action = new DelayActionType();
         var ctx = new ActionContext<DelayConfig>
         {
-            Config = new DelayConfig { Seconds = seconds },
+            Config = new DelayConfig { Seconds = new Expr<int?> { Engine = "static", Resolved = seconds } },
             RunId = Guid.NewGuid(),
             StepExecutionId = Guid.NewGuid(),
             TenantId = Guid.NewGuid(),

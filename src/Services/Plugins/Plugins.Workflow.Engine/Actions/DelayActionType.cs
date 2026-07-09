@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
+using LayeredTemplate.Plugins.Workflow.Abstractions.Expressions;
 
 namespace LayeredTemplate.Plugins.Workflow.Engine.Actions;
 
@@ -42,11 +43,11 @@ public class DelayActionType : ActionType<DelayConfig>
     public override Task<ActionExecutionResult> ExecuteAsync(
         ActionContext<DelayConfig> context, CancellationToken cancellationToken)
     {
-        var seconds = context.Config.Seconds;
-        if (seconds <= 0)
+        var seconds = context.Config.Seconds?.Resolved;
+        if (seconds is not > 0)
         {
             return Task.FromResult(this.Error(
-                "Delay 'seconds' must be a positive integer.",
+                "Delay 'seconds' must resolve to a positive integer.",
                 transient: false));
         }
 
@@ -86,8 +87,10 @@ public class DelayActionType : ActionType<DelayConfig>
 public class DelayConfig
 {
     /// <summary>
-    /// Wait duration in seconds. Must be positive — non-positive values surface as a
-    /// non-transient error so the run dead-letters with a clear message instead of looping.
+    /// Wait duration in seconds — an expression, so authors can compute it from run data
+    /// (<c>{{ vars.reminderDelaySeconds }}</c>). Must resolve to a positive integer;
+    /// null / non-positive surfaces as a non-transient error so the run dead-letters with a
+    /// clear message instead of looping.
     /// </summary>
-    public int Seconds { get; set; }
+    public Expr<int?>? Seconds { get; set; }
 }

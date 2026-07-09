@@ -208,13 +208,19 @@ internal class WorkflowEngineWorker : BackgroundService
             // Per-step cancellation token: lane-specific deadline.
             //   Fast / Any lane: hard upfront budget = FastLaneActionTimeoutSeconds. A stuck
             //     fast action (HTTP without timeout, infinite loop) can't camp on the worker.
-            //   Long lane: no upfront budget — slow operations are why this lane exists.
+            //   Long lane: generous optional budget = LongLaneActionTimeoutSeconds (0 = none) —
+            //     slow operations are why this lane exists, but "slow" must not mean "hung
+            //     forever on a dead socket".
             // Both lanes additionally honour shutdown: when stoppingToken fires, ShutdownDrainSeconds
             // is scheduled on the same CTS so the action gets that grace before being force-cancelled.
             using var stepCts = new CancellationTokenSource();
             if (lane != WorkflowStepLane.LongOnly)
             {
                 stepCts.CancelAfter(TimeSpan.FromSeconds(this.settings.FastLaneActionTimeoutSeconds));
+            }
+            else if (this.settings.LongLaneActionTimeoutSeconds > 0)
+            {
+                stepCts.CancelAfter(TimeSpan.FromSeconds(this.settings.LongLaneActionTimeoutSeconds));
             }
             using var stopReg = stoppingToken.Register(() =>
                 stepCts.CancelAfter(TimeSpan.FromSeconds(this.settings.ShutdownDrainSeconds)));
@@ -301,7 +307,7 @@ internal class WorkflowEngineWorker : BackgroundService
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
         {
-            // Fast-lane action timeout (shutdown not involved). The step's scope has been
+            // Lane action timeout (shutdown not involved). The step's scope has been
             // disposed with whatever it staged — but do NOT just release the claim: release
             // refunds the attempt_count bump while next_attempt_at stays in the past, so a
             // deterministically-slow action would be re-claimed immediately (claim orders by
@@ -309,7 +315,7 @@ internal class WorkflowEngineWorker : BackgroundService
             // forever, one timeout budget per revolution. Count the attempt instead, in a
             // fresh scope: the standard transient-error outcome retries with backoff and
             // dead-letters once MaxAttempts is exhausted.
-            return await this.TryApplyLaneTimeoutOutcomeAsync(stepId);
+            return await this.TryApplyLaneTimeoutOutcomeAsync(stepId, lane);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -337,14 +343,17 @@ internal class WorkflowEngineWorker : BackgroundService
     }
 
     /// <summary>
-    /// Persists the fast-lane timeout outcome for <paramref name="stepId"/> in a fresh scope
+    /// Persists the lane-timeout outcome for <paramref name="stepId"/> in a fresh scope
     /// (the step's own scope died with the cancellation): standard transient-error semantics —
     /// backoff retry, dead-letter at the attempts cap. Returns true when the outcome committed;
     /// false falls back to the release path so the invariant "claimed but not consumed ⇒
     /// released" survives even a DB blip here.
     /// </summary>
-    private async Task<bool> TryApplyLaneTimeoutOutcomeAsync(Guid stepId)
+    private async Task<bool> TryApplyLaneTimeoutOutcomeAsync(Guid stepId, WorkflowStepLane lane)
     {
+        var timeoutSeconds = lane == WorkflowStepLane.LongOnly
+            ? this.settings.LongLaneActionTimeoutSeconds
+            : this.settings.FastLaneActionTimeoutSeconds;
         try
         {
             await using var scope = this.scopeFactory.CreateAsyncScope();
@@ -355,20 +364,23 @@ internal class WorkflowEngineWorker : BackgroundService
             if (step is null) return true;
 
             var timeoutResult = ActionExecutionResult.OnError(
-                $"Step did not complete within the fast-lane action timeout ({this.settings.FastLaneActionTimeoutSeconds}s). "
-                + "Actions that legitimately run this long should declare IsLongRunning = true.",
+                lane == WorkflowStepLane.LongOnly
+                    ? $"Step did not complete within the long-lane action timeout ({timeoutSeconds}s). "
+                        + "Raise LongLaneActionTimeoutSeconds (or set it to 0) if the action legitimately runs longer."
+                    : $"Step did not complete within the fast-lane action timeout ({timeoutSeconds}s). "
+                        + "Actions that legitimately run this long should declare IsLongRunning = true.",
                 transient: true);
             await this.ApplyResultAsync(step, timeoutResult, store, fanOut, CancellationToken.None);
             await store.SaveChangesAsync(CancellationToken.None);
             this.logger.LogWarning(
-                "Step {StepId} hit the fast-lane action timeout ({Timeout}s) on attempt {Attempt}/{Max}; timeout outcome applied.",
-                stepId, this.settings.FastLaneActionTimeoutSeconds, step.AttemptCount, this.settings.MaxAttempts);
+                "Step {StepId} hit the {Lane}-lane action timeout ({Timeout}s) on attempt {Attempt}/{Max}; timeout outcome applied.",
+                stepId, FormatLane(lane), timeoutSeconds, step.AttemptCount, this.settings.MaxAttempts);
             return true;
         }
         catch (Exception ex)
         {
             this.logger.LogError(ex,
-                "Failed to persist fast-lane timeout outcome for step {StepId}; releasing claim instead.",
+                "Failed to persist lane-timeout outcome for step {StepId}; releasing claim instead.",
                 stepId);
             return false;
         }

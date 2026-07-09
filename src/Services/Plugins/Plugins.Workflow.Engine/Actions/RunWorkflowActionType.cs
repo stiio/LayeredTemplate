@@ -210,9 +210,13 @@ public class RunWorkflowActionType : ActionType<RunWorkflowConfig>
 
                 // Normal wait mode: park the step. FanOut.CheckRunCompletionAsync resumes us via the
                 // success / failed port when the child terminates, stamping its steps_outputs
-                // on this step's outputs.
+                // on this step's outputs. Timeout normalized like WaitSignal: null / non-positive
+                // resolution = wait indefinitely.
+                var timeoutSeconds = context.Config.TimeoutSeconds?.Resolved is { } configured && configured > 0
+                    ? configured
+                    : (int?)null;
                 return this.Suspend(
-                    timeoutSeconds: context.Config.TimeoutSeconds,
+                    timeoutSeconds: timeoutSeconds,
                     initialOutputs: new
                     {
                         childRunId = result.RunId,
@@ -283,10 +287,12 @@ public class RunWorkflowConfig
     public bool WaitForCompletion { get; set; }
 
     /// <summary>
-    /// Optional timeout (seconds) for wait mode. Null = wait indefinitely. When the timer
-    /// elapses without a child terminal state, the engine sweeper fires the <c>timedOut</c> port.
+    /// Optional timeout (seconds) for wait mode — an expression, so authors can compute the
+    /// deadline from run data. Unset / null / non-positive resolution = wait indefinitely.
+    /// When the timer elapses without a child terminal state, the engine sweeper fires the
+    /// <c>timedOut</c> port.
     /// </summary>
-    public int? TimeoutSeconds { get; set; }
+    public Expr<int?>? TimeoutSeconds { get; set; }
 
     /// <summary>
     /// Named expressions resolved per step and merged into the child run's variables (alongside

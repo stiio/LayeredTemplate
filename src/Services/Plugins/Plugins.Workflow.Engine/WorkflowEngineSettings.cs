@@ -187,12 +187,22 @@ public class WorkflowEngineSettings
     /// every reasonable Transform/Condition/Switch/Delay-tick — actions whose body legitimately
     /// runs longer should be tagged <c>IsLongRunning = true</c> instead of bumping this.
     /// <para>
-    /// Long lane has no per-action timeout — its whole purpose is to host slow operations
-    /// (HTTP with multi-second response times, S3 transfers). The only deadline a long-lane
-    /// action sees is <see cref="ShutdownDrainSeconds"/> when shutdown begins.
+    /// The long lane has its own, far more generous budget —
+    /// <see cref="LongLaneActionTimeoutSeconds"/>.
     /// </para>
     /// </summary>
     public int FastLaneActionTimeoutSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// Optional hard per-action timeout (seconds) for the <i>long lane</i>. Slow operations are
+    /// why the lane exists, but "slow" must still not mean "hung forever": an action stuck on
+    /// external I/O with no timeout of its own would otherwise camp a long-pool worker until
+    /// shutdown. On expiry the attempt is counted like any transient failure (backoff retry,
+    /// dead-letter at <see cref="MaxAttempts"/>). Default 300s — generous headroom over
+    /// legitimate slow calls; set 0 to disable and restore the pre-cap behaviour where the only
+    /// deadline a long-lane action sees is <see cref="ShutdownDrainSeconds"/>.
+    /// </summary>
+    public int LongLaneActionTimeoutSeconds { get; set; } = 300;
 
     /// <summary>
     /// Optional automatic retention of finished and stale runs. Disabled by default (both

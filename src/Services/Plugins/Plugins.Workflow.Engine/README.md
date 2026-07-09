@@ -135,7 +135,8 @@ Bound from configuration section `WorkflowEngineSettings` (override via the opti
 | `WorkerCount` | 1 | Concurrent fast-pool worker loops in-process (FOR UPDATE SKIP LOCKED on the storage side prevents double-claims). |
 | `LongRunningWorkerCount` | 0 | Optional separate pool for `IsLongRunning=true` actions. When > 0, fast pool runs `FastOnly` lane, this pool runs `LongOnly` lane. Default 0 = single pool, no lane filter. |
 | `ShutdownDrainSeconds` | 30 | Per-action grace after SIGTERM. The in-flight action gets this long to finish naturally before its CT fires; after shutdown signal, claimed-but-untouched steps are released back to `pending`. |
-| `FastLaneActionTimeoutSeconds` | 30 | Hard per-action timeout for the fast lane. Long lane has no upfront timeout — only the shutdown drain. |
+| `FastLaneActionTimeoutSeconds` | 30 | Hard per-action timeout for the fast lane. |
+| `LongLaneActionTimeoutSeconds` | 300 | Optional hard per-action timeout for the long lane — a safety net against actions hung forever on external I/O. Counts the attempt like a transient failure. Set 0 to disable (shutdown drain stays the only deadline). |
 | `Retention.EnableFinishedPurge` | `false` | Periodically purge `Completed`/`Failed` runs older than `FinishedRunRetentionDays`. |
 | `Retention.EnableStaleFail` | `false` | Periodically mark `Running` runs idle longer than `StaleRunningRetentionDays` as `Failed` with `abort_reason = "stale: …"` (trace preserved); the finished purge deletes them later like any failed run. |
 | `Retention.SweepIntervalSeconds` | 12 h | How often the retention worker sweeps. |
@@ -153,8 +154,8 @@ Bound from configuration section `WorkflowEngineSettings` (override via the opti
 | `FailRun` | Terminator: sets the run to `failed` with a reason; doesn't fire any port. |
 | `FinishRun` | Terminator: sets the run to `completed` with an optional `return_value` (consumed by sub-workflow auto-resume). |
 | `ForEach` | Loop body — iterates a resolved array, evaluating one step per item. |
-| `Delay` | Suspends the step for a specified duration; sweeper resumes it via the `done` port when the deadline elapses. |
-| `RunWorkflow` | Spawns a sub-workflow run — `fire-and-forget` (returns `started` immediately) or `waitForCompletion` (suspends and resumes on the child's terminal state). |
+| `Delay` | Suspends the step for a specified duration (`seconds` is an `Expr<int?>` — computable from run data); sweeper resumes it via the `done` port when the deadline elapses. |
+| `RunWorkflow` | Spawns a sub-workflow run — `fire-and-forget` (returns `started` immediately) or `waitForCompletion` (suspends and resumes on the child's terminal state; optional `timeoutSeconds` expression fires `timedOut`). |
 
 App-specific actions (`SendEmail`, `HttpRequest`, custom domain ops) live on the consumer
 side. `HttpRequestActionType` should override `IsLongRunning => true` so it runs on the
