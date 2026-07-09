@@ -123,6 +123,7 @@ internal class LiquidExpressionEngine : IExpressionEngine
         {
             MaxSteps = MaxStepsLimit,
             MaxRecursion = MaxRecursionLimit,
+            TimeZone = TimeZoneInfo.Utc,
         };
         var normalizedModel = NormalizeModel(model);
         var ctx = new TemplateContext(normalizedModel, options);
