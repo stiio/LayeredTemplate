@@ -82,12 +82,18 @@ internal class WorkflowValidator : IWorkflowValidator
             {
                 errors.Add(new WorkflowValidationError("node_missing_kind", $"Node '{node.Id}' has no 'kind'.", node.Id));
             }
-            else if (this.registry.TryGet(node.Kind) is null)
+            else if (this.registry.TryGet(node.Kind) is not { } actionType)
             {
                 errors.Add(new WorkflowValidationError(
                     "node_unknown_kind",
                     $"Node '{node.Id}' uses unknown kind '{node.Kind}'.",
                     node.Id));
+            }
+            else
+            {
+                // Config shape/type check — mirror the dispatch-time deserialize so a bad config is
+                // rejected at save time, not on the first run.
+                ValidateNodeConfig(node, actionType, errors);
             }
         }
 
@@ -163,5 +169,37 @@ internal class WorkflowValidator : IWorkflowValidator
         // before the database fills up.
 
         return errors;
+    }
+
+    /// <summary>
+    /// Structural type-check of a node's stored <c>config</c> against its action's
+    /// <see cref="IActionType.ConfigType"/>: deserializes with the SAME options the resolver uses at
+    /// dispatch (<see cref="WorkflowJsonOptions.Default"/>), so a shape / type mismatch — an
+    /// <c>Expr&lt;T&gt;</c> field sent as a bare literal instead of the <c>{ engine, value }</c> wrapper,
+    /// a bad enum, a wrong primitive — is caught at save time instead of blowing up the first run. Only
+    /// the STRUCTURE is checked: expressions are NOT evaluated (no model / engines here), so this never
+    /// rejects a config the runtime would accept, and never runs author-supplied Liquid / JS.
+    /// </summary>
+    private static void ValidateNodeConfig(
+        WorkflowNode node, IActionType actionType, List<WorkflowValidationError> errors)
+    {
+        // No config object → nothing structural to check (a required-but-missing field is a runtime
+        // concern, not a shape error). An absent config is Undefined; an explicit JSON null is Null.
+        if (node.Config.ValueKind is not JsonValueKind.Object)
+        {
+            return;
+        }
+
+        try
+        {
+            _ = node.Config.Deserialize(actionType.ConfigType, WorkflowJsonOptions.Default);
+        }
+        catch (JsonException ex)
+        {
+            errors.Add(new WorkflowValidationError(
+                "node_config_invalid",
+                $"Node '{node.Id}' ({node.Kind}) has an invalid config: {ex.Message}",
+                node.Id));
+        }
     }
 }
