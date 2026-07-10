@@ -25,10 +25,10 @@ public class WorkflowEngineSettings
     public int PollIntervalSeconds { get; set; } = 30;
 
     /// <summary>
-    /// Cadence of the engine's single per-process maintenance loop: the expired-waiting sweep
-    /// (fires suspend deadlines — Delay, WaitSignal / RunWorkflow timeouts) and the bookmark
-    /// reconciliation sweep. One loop regardless of <see cref="WorkerCount"/> — running these
-    /// on every worker pass duplicated identical queries WorkerCount× for no benefit.
+    /// Cadence of the engine's single per-process maintenance loop — the expired-waiting sweep
+    /// (fires suspend deadlines — Delay, WaitSignal / RunWorkflow timeouts). One loop
+    /// regardless of <see cref="WorkerCount"/> — running it on every worker pass duplicated
+    /// identical queries WorkerCount× for no benefit.
     /// <para>
     /// This bounds suspend-deadline granularity: a Delay of N seconds fires between N and
     /// N + this many seconds (a backlog burst drains fully within one pass). Default 5s stays
@@ -37,6 +37,17 @@ public class WorkflowEngineSettings
     /// </para>
     /// </summary>
     public int MaintenanceIntervalSeconds { get; set; } = 5;
+
+    /// <summary>
+    /// Cadence of the signal-bookmark reconciliation sweep (runs inside the maintenance loop,
+    /// but only on passes where it's due). Pure hygiene, deliberately rare: a stale bookmark
+    /// cannot cause a wrong resume — the atomic Waiting-guard is the correctness gate, and the
+    /// signaler eagerly deletes the bookmarks it consumes on delivery. This sweep only reaps
+    /// rows orphaned by non-signal exits (timeout, cancel, manual resume, dead-letter), which
+    /// cost nothing but table bytes until reaped. First sweep fires on startup (drains backlog
+    /// from downtime), then every this many seconds. Default 1h; set 0 to disable entirely.
+    /// </summary>
+    public int BookmarkSweepIntervalSeconds { get; set; } = 3600;
 
     public int BatchSize { get; set; } = 10;
 

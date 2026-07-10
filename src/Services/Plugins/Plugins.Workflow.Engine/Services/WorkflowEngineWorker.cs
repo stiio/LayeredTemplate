@@ -44,10 +44,11 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Services;
 /// being yanked out mid-flight.
 /// </para>
 /// <para>
-/// A single per-process maintenance loop owns the expired-waiting timeout sweep and the
-/// bookmark reconciliation sweep on <see cref="WorkflowEngineSettings.MaintenanceIntervalSeconds"/>;
-/// worker loops only claim and execute. Running the sweeps on every worker pass duplicated
-/// identical queries WorkerCount× for no benefit.
+/// A single per-process maintenance loop owns the expired-waiting timeout sweep
+/// (<see cref="WorkflowEngineSettings.MaintenanceIntervalSeconds"/>) and the bookmark
+/// reconciliation sweep (<see cref="WorkflowEngineSettings.BookmarkSweepIntervalSeconds"/>,
+/// deliberately much rarer — pure hygiene); worker loops only claim and execute. Running the
+/// sweeps on every worker pass duplicated identical queries WorkerCount× for no benefit.
 /// </para>
 /// </summary>
 internal class WorkflowEngineWorker : BackgroundService
@@ -401,11 +402,30 @@ internal class WorkflowEngineWorker : BackgroundService
             ["WorkerId"] = "maintenance",
         });
 
+        // Bookmark reconciliation runs on its own, much rarer cadence than the timeout sweep:
+        // it's pure hygiene (the Waiting-guard, not bookmark existence, is what prevents wrong
+        // resumes; the signaler eagerly deletes what it consumes), so there is no reason to pay
+        // a set-based DELETE every pass. First due immediately — catches backlog from downtime.
+        var nextBookmarkSweep = DateTime.UtcNow;
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 await this.RunMaintenancePassAsync(stoppingToken);
+
+                if (this.settings.BookmarkSweepIntervalSeconds > 0 && DateTime.UtcNow >= nextBookmarkSweep)
+                {
+                    // Own lightweight scope — set-based DELETE, no action code involved. Deletes
+                    // bookmarks whose target step is no longer Waiting (resumed elsewhere,
+                    // timed-out, dead-lettered, cancelled). This is what makes bookmark cleanup
+                    // CORRECT regardless of path; the eager delete-on-resume in the signaler is
+                    // just an optimization. No-ops when nothing's stale.
+                    await using var bookmarkScope = this.scopeFactory.CreateAsyncScope();
+                    var bookmarkStore = bookmarkScope.ServiceProvider.GetRequiredService<IWorkflowStore>();
+                    await this.SweepResolvedBookmarksAsync(bookmarkStore, stoppingToken);
+                    nextBookmarkSweep = DateTime.UtcNow.AddSeconds(this.settings.BookmarkSweepIntervalSeconds);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -430,10 +450,11 @@ internal class WorkflowEngineWorker : BackgroundService
     /// <summary>
     /// One maintenance pass: drain expired-waiting steps in BatchSize chunks until dry (a burst
     /// of simultaneously-expiring Delays clears within one pass instead of one chunk per
-    /// interval), then reconcile bookmarks. Ids are claimed in a short-lived scope (the claim
-    /// SQL commits immediately); each timeout handler then runs in its OWN scope —
-    /// <c>OnStepTimedOutAsync</c> is consumer-extensible code and gets the same scoped-service
-    /// isolation as a regular action dispatch.
+    /// interval). Ids are claimed in a short-lived scope (the claim SQL commits immediately);
+    /// each timeout handler then runs in its OWN scope — <c>OnStepTimedOutAsync</c> is
+    /// consumer-extensible code and gets the same scoped-service isolation as a regular action
+    /// dispatch. Bookmark reconciliation is NOT part of the pass — the loop runs it on its own
+    /// rarer cadence (<see cref="WorkflowEngineSettings.BookmarkSweepIntervalSeconds"/>).
     /// </summary>
     private async Task RunMaintenancePassAsync(CancellationToken stoppingToken)
     {
@@ -457,15 +478,6 @@ internal class WorkflowEngineWorker : BackgroundService
 
             if (expiredIds.Count < this.settings.BatchSize) break;
         }
-
-        // Reconciliation backstop for signal-wait bookmarks (own lightweight scope — set-based
-        // DELETE, no action code involved). Deletes bookmarks whose target step is no longer
-        // Waiting (resumed elsewhere, timed-out, dead-lettered, cancelled). This is what makes
-        // bookmark cleanup CORRECT regardless of path; the eager delete-on-resume in the
-        // signaler is just an optimization. No-ops when nothing's stale.
-        await using var bookmarkScope = this.scopeFactory.CreateAsyncScope();
-        var bookmarkStore = bookmarkScope.ServiceProvider.GetRequiredService<IWorkflowStore>();
-        await this.SweepResolvedBookmarksAsync(bookmarkStore, stoppingToken);
     }
 
     /// <summary>

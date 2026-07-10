@@ -121,7 +121,8 @@ Bound from configuration section `WorkflowEngineSettings` (override via the opti
 |---|---|---|
 | `MaxAttempts` | 1 | Total attempts per step before dead-lettering. |
 | `PollIntervalSeconds` | 30 | Fallback poll cadence of an idle worker loop. With the EF Core storage's LISTEN/NOTIFY push (on by default) workers wake in milliseconds and this only bounds lost-notification recovery + retry-backoff pickup; lower it to a few seconds when running a storage without a push primitive. |
-| `MaintenanceIntervalSeconds` | 5 | Cadence of the single per-process maintenance loop (expired-waiting timeout sweep + bookmark reconciliation). Bounds suspend-deadline granularity — a Delay fires within this many seconds past its deadline. |
+| `MaintenanceIntervalSeconds` | 5 | Cadence of the single per-process maintenance loop (expired-waiting timeout sweep). Bounds suspend-deadline granularity — a Delay fires within this many seconds past its deadline. |
+| `BookmarkSweepIntervalSeconds` | 1 h | Cadence of the signal-bookmark reconciliation sweep — pure hygiene (the Waiting-guard prevents wrong resumes; the signaler eagerly deletes what it consumes), hence rare. 0 disables. |
 | `BatchSize` | 10 | Steps claimed per polling iteration. |
 | `BackoffSeconds` | `[30, 120, 600, 3600, 21600]` | Sequential backoff per retry attempt; last value repeats past the tail. Ignored when `MaxAttempts = 1`. |
 | `MaxStepsPerRun` | 200 | Hard cap on total step records per run; trips `abort_reason="step_cap"`. |
