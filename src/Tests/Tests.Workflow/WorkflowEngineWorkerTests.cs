@@ -114,6 +114,95 @@ public class WorkflowEngineWorkerTests
     }
 
     // -----------------------------------------------------------------------
+    // RetryExhaustedPort — fallback branch instead of dead-letter
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Transient_failure_with_fallback_port_still_retries_below_max_attempts()
+    {
+        // The fallback port only matters at exhaustion — while attempts remain, the step
+        // retries exactly like a plain transient error, no edges fire.
+        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+            sourceKind: TestKind,
+            ports: new[]
+            {
+                new ActionPortDescriptor("success", "Success", ActionPortKind.Normal),
+                new ActionPortDescriptor("error", "Error", ActionPortKind.Error),
+            },
+            actionResult: ActionExecutionResult.OnError(
+                "transient blip", transient: true, retryExhaustedPort: "error"));
+
+        step.AttemptCount = 1; // first of MaxAttempts=5
+
+        var fanOut = MakeFanOut(store, builder, registry);
+        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+
+        Assert.Equal(StepExecutionStatus.Pending, step.Status);
+        Assert.Null(step.OutputPort);
+        Assert.Empty(store.AddedSteps);
+    }
+
+    [Fact]
+    public async Task Exhausted_transient_failure_with_fallback_port_takes_the_branch()
+    {
+        // Attempts spent → instead of Dead, the step completes on the declared fallback port:
+        // the run continues down that edge, the last attempt's outputs are stamped, and
+        // LastError keeps the failure visible in the trace.
+        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+            sourceKind: TestKind,
+            ports: new[]
+            {
+                new ActionPortDescriptor("success", "Success", ActionPortKind.Normal),
+                new ActionPortDescriptor("error", "Error", ActionPortKind.Error),
+            },
+            actionResult: ActionExecutionResult.OnError(
+                "still failing",
+                outputs: new { reason = "upstream_down" },
+                transient: true,
+                retryExhaustedPort: "error"));
+
+        step.AttemptCount = 5; // == MaxAttempts → exhausted
+
+        var fanOut = MakeFanOut(store, builder, registry);
+        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+
+        Assert.Equal(StepExecutionStatus.Completed, step.Status);
+        Assert.Equal("error", step.OutputPort);
+        Assert.Equal("still failing", step.LastError);
+        Assert.Equal("upstream_down", step.Outputs!.Value.GetProperty("reason").GetString());
+
+        var successor = Assert.Single(store.AddedSteps);
+        Assert.Equal("error", successor.TriggerPort);
+        Assert.Equal(step.Id, successor.PredecessorExecutionId);
+    }
+
+    [Fact]
+    public async Task Non_transient_failure_with_fallback_port_takes_the_branch_immediately()
+    {
+        // Deterministic failure = exhausted at once: no retries are burned, the fallback
+        // branch fires on the first attempt.
+        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+            sourceKind: TestKind,
+            ports: new[]
+            {
+                new ActionPortDescriptor("success", "Success", ActionPortKind.Normal),
+                new ActionPortDescriptor("error", "Error", ActionPortKind.Error),
+            },
+            actionResult: ActionExecutionResult.OnError(
+                "deterministic failure", transient: false, retryExhaustedPort: "error"));
+
+        step.AttemptCount = 1;
+
+        var fanOut = MakeFanOut(store, builder, registry);
+        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+
+        Assert.Equal(StepExecutionStatus.Completed, step.Status);
+        Assert.Equal("error", step.OutputPort);
+        var successor = Assert.Single(store.AddedSteps);
+        Assert.Equal("error", successor.TriggerPort);
+    }
+
+    // -----------------------------------------------------------------------
     // ForEach
     // -----------------------------------------------------------------------
 

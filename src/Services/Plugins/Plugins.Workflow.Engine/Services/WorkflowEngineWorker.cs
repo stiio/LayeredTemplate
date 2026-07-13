@@ -1032,8 +1032,34 @@ internal class WorkflowEngineWorker : BackgroundService
         if (!string.IsNullOrEmpty(result.Error))
         {
             step.LastError = result.Error;
-            // Non-transient errors (e.g. FailRun) skip retries — straight to Dead.
-            if (!result.IsTransient || step.AttemptCount >= this.settings.MaxAttempts)
+            // Non-transient errors (e.g. FailRun) skip retries — exhausted immediately.
+            var exhausted = !result.IsTransient || step.AttemptCount >= this.settings.MaxAttempts;
+
+            if (exhausted && !string.IsNullOrEmpty(result.RetryExhaustedPort))
+            {
+                // Author-declared fallback branch: attempts are spent (or the failure was
+                // deterministic), but the action told the engine where the run should go in
+                // that case — complete the step on the fallback port instead of dead-lettering
+                // the whole run. LastError stays on the row, so the trace shows the failed
+                // attempts AND the branch taken; Outputs carry the LAST attempt's error
+                // payload, merged into steps_outputs like any completion so the fallback
+                // branch can read them via steps.<key>.*.
+                step.Status = StepExecutionStatus.Completed;
+                step.OutputPort = result.RetryExhaustedPort;
+                step.Outputs = ToJsonElement(result.Outputs);
+                step.CompletedAt = DateTime.UtcNow;
+                store.UpdateStep(step);
+                this.logger.LogWarning(
+                    "Step failed {AttemptCount}/{MaxAttempts} attempt(s) (transient={Transient}); taking fallback port '{Port}': {Error}",
+                    step.AttemptCount,
+                    this.settings.MaxAttempts,
+                    result.IsTransient,
+                    result.RetryExhaustedPort,
+                    result.Error);
+                await fanOut.EnqueueNextStepAsync(step, result.RetryExhaustedPort, ct);
+                await fanOut.CheckRunCompletionAsync(step, ct);
+            }
+            else if (exhausted)
             {
                 step.Status = StepExecutionStatus.Dead;
                 step.OutputPort = null;
@@ -1047,7 +1073,8 @@ internal class WorkflowEngineWorker : BackgroundService
                     result.IsTransient,
                     result.Error);
                 // Dead steps don't fire any successor edges — branches that should run on
-                // failure must wire to an Error-kind port the action returns explicitly.
+                // failure must wire to an Error-kind port the action returns explicitly (or
+                // use RetryExhaustedPort, which takes the branch above instead of Dead).
                 await fanOut.CheckRunCompletionAsync(step, ct);
             }
             else

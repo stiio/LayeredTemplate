@@ -168,9 +168,14 @@ public abstract class ActionType<TConfig> : IActionType where TConfig : class
     protected ActionExecutionResult Port(string port, object? outputs = null)
         => ActionExecutionResult.OnPort(port, outputs);
 
-    /// <summary>Surface an unexpected failure for the engine's retry / dead-letter path.</summary>
-    protected ActionExecutionResult Error(string error, object? outputs = null, bool transient = true)
-        => ActionExecutionResult.OnError(error, outputs, transient);
+    /// <summary>
+    /// Surface an unexpected failure for the engine's retry / dead-letter path. Pass
+    /// <paramref name="retryExhaustedPort"/> to route the run down a declared fallback branch
+    /// when retries are exhausted instead of dead-lettering it.
+    /// </summary>
+    protected ActionExecutionResult Error(
+        string error, object? outputs = null, bool transient = true, string? retryExhaustedPort = null)
+        => ActionExecutionResult.OnError(error, outputs, transient, retryExhaustedPort);
 
     /// <summary>
     /// Suspend the step until an external resume (<c>IWorkflowResumer.ResumeAsync</c>) or the

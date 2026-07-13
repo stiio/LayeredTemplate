@@ -36,6 +36,20 @@ public class ActionExecutionResult
     public bool IsTransient { get; init; } = true;
 
     /// <summary>
+    /// Optional fallback port for error results. When retries are exhausted (or immediately for
+    /// a non-transient error), the engine completes the step on THIS port instead of
+    /// dead-lettering it: the run continues down the wired branch, <see cref="Outputs"/> of the
+    /// last attempt are stamped (readable via <c>steps.&lt;key&gt;.*</c>), and
+    /// <see cref="Error"/> stays on the row's <c>LastError</c> so the trace shows both the
+    /// failed attempts and the branch taken. Null (default) keeps the classic behaviour:
+    /// exhausted retries dead-letter the step and fail the run. Must be one of the action's
+    /// declared <c>OutputPorts</c>; a declared-but-unwired port simply ends the branch, like
+    /// any other port without an edge. While attempts remain on a transient error, this port
+    /// is NOT fired — the step retries as usual.
+    /// </summary>
+    public string? RetryExhaustedPort { get; init; }
+
+    /// <summary>
     /// When true, the engine parks the step in <see cref="Models.StepExecutionStatus.Waiting"/>
     /// instead of completing it — used by actions that hand control to an external trigger
     /// (Approval, manual webhook, scheduled hold, …). The step is resumed via
@@ -89,19 +103,24 @@ public class ActionExecutionResult
     /// <summary>
     /// Action failed unexpectedly. Step records <paramref name="error"/> as <c>LastError</c>; engine
     /// retries up to <c>MaxAttempts</c> (when <paramref name="transient"/>) and ultimately transitions
-    /// the step to <c>Dead</c>. Dead steps don't fire any successor edges — branches that should
-    /// run after a failure must be wired explicitly via Error-kind ports the action returns.
+    /// the step to <c>Dead</c> — unless <paramref name="retryExhaustedPort"/> is set, in which case
+    /// exhaustion completes the step on that port and the run continues down the wired fallback
+    /// branch (see <see cref="RetryExhaustedPort"/>). Dead steps don't fire any successor edges —
+    /// branches that should run after a failure must be wired explicitly, either via Error-kind
+    /// ports the action returns or via <paramref name="retryExhaustedPort"/>.
     /// </summary>
     public static ActionExecutionResult OnError(
         string error,
         object? outputs = null,
-        bool transient = true) =>
+        bool transient = true,
+        string? retryExhaustedPort = null) =>
         new()
         {
             OutputPort = null,
             Error = error,
             Outputs = outputs,
             IsTransient = transient,
+            RetryExhaustedPort = retryExhaustedPort,
         };
 
     /// <summary>
