@@ -98,6 +98,10 @@ public static class WorkflowCoreServiceCollectionExtensions
         // Engine-built-in: writes a Liquid/JS-computed label onto run.Name. Operator-facing
         // QoL — distinguish runs in the dashboard without inspecting their static_context.
         services.AddScoped<IActionType, SetRunNameActionType>();
+        // Renders a dynamically-supplied Liquid template (text from vars / prior steps, not
+        // authored in the graph) against the run context — same engine, cache, filters, limits
+        // as config expressions.
+        services.AddScoped<IActionType, RunLiquidActionType>();
 
         // Wake-up latch between "new steps committed" and idle worker loops. Deliberately a
         // singleton: worker loops wait on it, a push-capable storage plugin (EF Core's

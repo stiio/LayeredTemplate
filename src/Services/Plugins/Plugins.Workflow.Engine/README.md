@@ -157,6 +157,7 @@ Bound from configuration section `WorkflowEngineSettings` (override via the opti
 | `ForEach` | Loop body — iterates a resolved array, evaluating one step per item. |
 | `Delay` | Suspends the step for a specified duration (`seconds` is an `Expr<int?>` — computable from run data); sweeper resumes it via the `done` port when the deadline elapses. |
 | `RunWorkflow` | Spawns a sub-workflow run — `fire-and-forget` (returns `started` immediately) or `waitForCompletion` (suspends and resumes on the child's terminal state; optional `timeoutSeconds` expression fires `timedOut`). |
+| `RunLiquid` | Renders a dynamically-supplied Liquid template (text from vars / prior steps, not authored in the graph) against the run context; `result` is the rendered string, or parsed JSON with `isJson: true`. Same engine, cache, filters, and limits as config expressions. |
 
 App-specific actions (`SendEmail`, `HttpRequest`, custom domain ops) live on the consumer
 side. `HttpRequestActionType` should override `IsLongRunning => true` so it runs on the
