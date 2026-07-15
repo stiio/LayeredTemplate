@@ -56,6 +56,13 @@ public class WorkflowStepExecution
 
     public DateTime NextAttemptAt { get; set; }
 
+    /// <summary>
+    /// Start of the LAST attempt — stamped by the claim SQL (pending → running), overwritten on
+    /// retry claims, nulled by the release path. Null = never claimed. The timeout sweep does
+    /// NOT re-stamp it (a Waiting step's wait belongs to its duration).
+    /// </summary>
+    public DateTime? StartedAt { get; set; }
+
     public string? LastError { get; set; }
 
     public DateTime? CompletedAt { get; set; }

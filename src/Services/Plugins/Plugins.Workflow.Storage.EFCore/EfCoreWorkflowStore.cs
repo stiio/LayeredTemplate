@@ -487,9 +487,12 @@ internal class EfCoreWorkflowStore : IWorkflowStore
 
     private Task<List<Guid>> ClaimPendingAnyAsync(int batchSize, CancellationToken cancellationToken)
     {
+        // started_at stamps the moment THIS attempt began running (overwritten per retry claim)
+        // — CompletedAt - StartedAt is the honest execution duration even under worker backlog,
+        // where next_attempt_at-based math would count queue wait as work.
         const string sql = """
             UPDATE workflow.workflow_step_executions
-            SET status = {0}, attempt_count = attempt_count + 1, updated_at = now()
+            SET status = {0}, attempt_count = attempt_count + 1, started_at = now(), updated_at = now()
             WHERE id IN (
                 SELECT id FROM workflow.workflow_step_executions
                 WHERE status = {1} AND next_attempt_at <= now()
@@ -508,7 +511,7 @@ internal class EfCoreWorkflowStore : IWorkflowStore
     {
         const string sql = """
             UPDATE workflow.workflow_step_executions
-            SET status = {0}, attempt_count = attempt_count + 1, updated_at = now()
+            SET status = {0}, attempt_count = attempt_count + 1, started_at = now(), updated_at = now()
             WHERE id IN (
                 SELECT id FROM workflow.workflow_step_executions
                 WHERE status = {1} AND is_long_running = {2} AND next_attempt_at <= now()
@@ -652,10 +655,12 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         // didn't finish executing). Rows already moved on by a concurrent cancel / external
         // mutation stay where they are — `status='running'` filter excludes them naturally.
         // attempt_count -= 1 reverses the bump that ClaimPendingStepIdsAsync applied "on credit"
-        // when it claimed; the upcoming retry isn't penalised for a non-attempt.
+        // when it claimed; the upcoming retry isn't penalised for a non-attempt. started_at is
+        // refunded with it — the attempt never ran, a stale start stamp on a pending row would
+        // only confuse duration math.
         const string sql = """
             UPDATE workflow.workflow_step_executions
-            SET status = {0}, attempt_count = attempt_count - 1, updated_at = now()
+            SET status = {0}, attempt_count = attempt_count - 1, started_at = NULL, updated_at = now()
             WHERE id = ANY({1})
               AND status = {2};
         """;
@@ -933,6 +938,7 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         OutputPort = r.OutputPort,
         AttemptCount = r.AttemptCount,
         NextAttemptAt = r.NextAttemptAt,
+        StartedAt = r.StartedAt,
         CompletedAt = r.CompletedAt,
         LastError = r.LastError,
         Outputs = r.Outputs,
@@ -944,6 +950,7 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         e.OutputPort = r.OutputPort;
         e.AttemptCount = r.AttemptCount;
         e.NextAttemptAt = r.NextAttemptAt;
+        e.StartedAt = r.StartedAt;
         e.CompletedAt = r.CompletedAt;
         e.LastError = r.LastError;
         e.Outputs = r.Outputs;
@@ -965,6 +972,7 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         OutputPort = e.OutputPort,
         AttemptCount = e.AttemptCount,
         NextAttemptAt = e.NextAttemptAt,
+        StartedAt = e.StartedAt,
         CompletedAt = e.CompletedAt,
         LastError = e.LastError,
         Outputs = e.Outputs,

@@ -23,6 +23,7 @@ internal class WorkflowStepExecutionConfiguration : IEntityTypeConfiguration<Wor
         builder.Property(x => x.Status).HasColumnName("status").HasMaxLength(16).IsRequired();
         builder.Property(x => x.AttemptCount).HasColumnName("attempt_count");
         builder.Property(x => x.NextAttemptAt).HasColumnName("next_attempt_at");
+        builder.Property(x => x.StartedAt).HasColumnName("started_at");
         builder.Property(x => x.CompletedAt).HasColumnName("completed_at");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at");
         builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");

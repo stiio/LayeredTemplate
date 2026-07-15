@@ -51,6 +51,17 @@ public class WorkflowStepRecord
 
     public DateTime NextAttemptAt { get; set; }
 
+    /// <summary>
+    /// When the step's LAST attempt actually started running — stamped by the worker claim
+    /// (pending → running), overwritten on every retry claim, cleared when a claim is released
+    /// unconsumed (shutdown). Null = never claimed (still pending, or dead-on-arrival).
+    /// <c>CompletedAt - StartedAt</c> is the honest execution duration; under worker backlog it
+    /// excludes the queue wait that <c>NextAttemptAt</c>-based math would wrongly include. The
+    /// timeout sweep deliberately does NOT re-stamp it: a Waiting step's wait time belongs to
+    /// its duration.
+    /// </summary>
+    public DateTime? StartedAt { get; set; }
+
     public DateTime? CompletedAt { get; set; }
 
     public string? LastError { get; set; }

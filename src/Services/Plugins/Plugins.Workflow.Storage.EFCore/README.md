@@ -132,7 +132,7 @@ The channel name (`workflow_work` by default) is global per database; override
 |---|---|
 | `workflow.workflow_definitions` | Authored graphs. Unique on `(tenant_id, owner_kind, owner_id, trigger_kind)`. Optional `display_name`. |
 | `workflow.workflow_runs` | One row per run. Carries `workflow_snapshot` (frozen graph), `static_context` + `steps_outputs` + `return_value` (JSON-typed protected columns), `parent_run_id` / `parent_step_id` for sub-workflow chains, `xmin` system column for concurrency. |
-| `workflow.workflow_step_executions` | One row per step instance. Cascade-deleted with the run. `resolved_config` + `outputs` + `last_error` are protected columns. `is_long_running` drives lane filter. |
+| `workflow.workflow_step_executions` | One row per step instance. Cascade-deleted with the run. `resolved_config` + `outputs` + `last_error` are protected columns. `is_long_running` drives lane filter. `started_at` stamps the last attempt's claim moment — `completed_at - started_at` is the honest execution duration (queue wait excluded). |
 | `workflow.workflow_bookmark` | Generic external-event wait registry (ADR-025). One row per `OnSuspend` bookmark: an opaque `(tenant_id, correlation_key)` → the frozen waiting `(run_id, step_id, resume_port)`. `IWorkflowSignaler.SignalAsync(tenant, key, payload)` fan-out-resumes all matches. Cascade-deleted with the run; reconciliation-swept once its step leaves `waiting`. No PHI (opaque key). |
 | `workflow.__EFMigrationsHistory` | Plugin-private history table. Lowercase column names (`migration_id`, `product_version`) per the snake_case convention. |
 
@@ -294,10 +294,10 @@ on its `IActionType` — currently it's hogging fast-pool slots for half their b
 
 ```sql
 SELECT id, run_id, kind, is_long_running, attempt_count,
-       EXTRACT(EPOCH FROM (now() - updated_at))::int AS running_seconds
+       EXTRACT(EPOCH FROM (now() - started_at))::int AS running_seconds
 FROM workflow.workflow_step_executions
 WHERE status = 'running'
-ORDER BY updated_at;
+ORDER BY started_at;
 ```
 
 - Fast-lane rows with `running_seconds > FastLaneActionTimeoutSeconds` are about to be
@@ -311,13 +311,13 @@ ORDER BY updated_at;
 
 ```sql
 SELECT s.id, s.run_id, s.kind, s.is_long_running,
-       EXTRACT(EPOCH FROM (now() - s.updated_at))::int AS stuck_seconds,
+       EXTRACT(EPOCH FROM (now() - s.started_at))::int AS stuck_seconds,
        r.status AS run_status
 FROM workflow.workflow_step_executions s
 JOIN workflow.workflow_runs r ON r.id = s.run_id
 WHERE s.status = 'running'
-  AND s.updated_at < now() - INTERVAL '5 minutes'
-ORDER BY s.updated_at;
+  AND s.started_at < now() - INTERVAL '5 minutes'
+ORDER BY s.started_at;
 ```
 
 Two normal sources of these rows:
