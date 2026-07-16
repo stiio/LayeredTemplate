@@ -176,7 +176,8 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// an old stamp on a 'running' row means nobody is executing it (the caller guarantees the
     /// threshold exceeds the longest legitimate execution). <c>attempt_count</c> is NOT
     /// refunded — the attempt may have executed side effects before the crash (at-least-once
-    /// contract), and keeping it bounds crash-retry loops at <c>MaxAttempts</c>.
+    /// contract), and the kept count dead-letters the step on its first post-recovery SOFT
+    /// failure (pure hard-crash loops are terminated by the run-level stale fail instead).
     /// <c>started_at</c> is cleared; the next claim re-stamps it. Same
     /// <c>FOR UPDATE SKIP LOCKED</c> claim shape as the other sweeps, so concurrent maintenance
     /// loops never double-recover a row. Returns the recovered ids for loud logging.

@@ -62,7 +62,11 @@ public class WorkflowEngineSettings
     /// plus <see cref="ShutdownDrainSeconds"/> — otherwise a live worker's step could be
     /// double-executed. The default 3600 gives 10× headroom over the default budgets; if you
     /// DISABLE the long-lane timeout (0 = unbounded actions), raise or disable this too.
-    /// The crashed attempt stays counted, so <see cref="MaxAttempts"/> bounds crash loops.
+    /// The crashed attempt stays counted, so the first SOFT failure after recovery dead-letters
+    /// promptly via <see cref="MaxAttempts"/>. A step that hard-kills the process every time
+    /// never reaches that check — its cycle is rate-limited by this threshold and ultimately
+    /// terminated by <c>Retention.EnableStaleFail</c> at the RUN level (recovery bumps only the
+    /// step's <c>updated_at</c>; the run's stays frozen at its last real progress).
     /// A recovered waiting-origin step (crash during timeout handling) re-executes its action —
     /// a Delay restarts its countdown; accepted distortion for a crash×crash corner.
     /// Set 0 to disable. Recovery latency is this threshold plus up to 5 minutes (the sweep's

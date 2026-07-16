@@ -588,8 +588,10 @@ internal class WorkflowEngineWorker : BackgroundService
     /// One stuck-running recovery pass — internal seam for the test harness. Returns steps
     /// abandoned in 'running' by crashed workers (updated_at older than
     /// <see cref="WorkflowEngineSettings.StuckStepRecoverySeconds"/>) to 'pending', draining in
-    /// BatchSize chunks until dry. The crashed attempt stays counted, so MaxAttempts bounds a
-    /// crash-looping (poison) step the same way it bounds any other repeated failure.
+    /// BatchSize chunks until dry. The crashed attempt stays counted: the first SOFT failure
+    /// after recovery dead-letters via MaxAttempts. A pure hard-crash loop (the step kills the
+    /// process every time, so ApplyResult's cap check never runs) is rate-limited by the
+    /// threshold and ultimately terminated by Retention.EnableStaleFail at the run level.
     /// </summary>
     internal async Task RecoverStuckRunningStepsOnceAsync(IWorkflowStore store, CancellationToken ct)
     {

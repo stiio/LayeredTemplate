@@ -306,8 +306,10 @@ ORDER BY started_at;
 - Anything with `running_seconds > 5 × FastLaneActionTimeoutSeconds` indicates a worker died
   mid-action. The maintenance loop's crash-recovery sweep returns such rows to `pending` once
   they age past `StuckStepRecoverySeconds` (default 1 h; the crashed attempt stays counted, so
-  `MaxAttempts` bounds crash loops). Rows younger than that are either genuinely executing or
-  waiting out the recovery threshold.
+  the first soft failure after recovery dead-letters via `MaxAttempts`, while a step that
+  hard-kills its worker every time is terminated by `Retention.EnableStaleFail` at the run
+  level). Rows younger than that are either genuinely executing or waiting out the recovery
+  threshold.
 
 **Stuck running rows (dead workers, or in-flight at cancel time):**
 
