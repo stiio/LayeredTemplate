@@ -468,7 +468,7 @@ internal class WorkflowEngineWorker : BackgroundService
             }
 
             if (expiredIds.Count == 0) break;
-            this.logger.LogWarning("Sweeping {Count} expired waiting step(s)", expiredIds.Count);
+            this.logger.LogInformation("Sweeping {Count} expired waiting step(s)", expiredIds.Count);
 
             foreach (var stepId in expiredIds)
             {
