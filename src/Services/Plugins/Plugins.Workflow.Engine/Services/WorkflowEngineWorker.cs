@@ -259,7 +259,7 @@ internal class WorkflowEngineWorker : BackgroundService
                 // 'running' and the stale-running purge sweeper picks them up later. Better
                 // than letting the exception kill the whole worker loop on shutdown.
                 this.logger.LogError(ex,
-                    "Failed to release {Total} claimed-but-unprocessed steps back to pending; rows stay in 'running' until stale-purge.",
+                    "Failed to release {Total} claimed-but-unprocessed steps back to pending; rows stay in 'running' — reaped only when Retention.EnableStaleFail (opt-in) fails their runs, or by operator intervention.",
                     toRelease.Count);
             }
         }
@@ -476,6 +476,21 @@ internal class WorkflowEngineWorker : BackgroundService
                 await this.ProcessExpiredStepAsync(stepId, stoppingToken);
             }
 
+            // Shutdown mid-batch: the claim already committed Waiting → Running for EVERY id in
+            // this chunk — anything the loop didn't finish must be parked back, mirroring the
+            // worker's claimed-but-unprocessed release. Replaying the FULL id list is safe and
+            // needs no bookkeeping: the revert only touches rows still in 'running', so steps
+            // that completed, failed-and-reverted, or were interrupted mid-handling (their own
+            // swallow path leaves them 'running' too) all end up in exactly one state.
+            if (stoppingToken.IsCancellationRequested)
+            {
+                foreach (var stepId in expiredIds)
+                {
+                    await this.TryRevertExpiredStepAsync(stepId, failure: null);
+                }
+                return;
+            }
+
             if (expiredIds.Count < this.settings.BatchSize) break;
         }
     }
@@ -502,15 +517,97 @@ internal class WorkflowEngineWorker : BackgroundService
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            // Shutdown mid-sweep — unwind to the maintenance loop, which exits cleanly.
-            throw;
+            // Shutdown mid-handling — swallow. RunMaintenancePassAsync reverts the WHOLE
+            // claimed batch (this in-flight step included) right after its loop breaks, so a
+            // single revert path covers both "never started" and "interrupted midway".
         }
         catch (Exception ex)
         {
             this.logger.LogError(ex,
-                "Failed to process expired waiting step {StepId}; row stays 'running' until stale-purge.",
+                "Failed to process expired waiting step {StepId}; parking it back to waiting for a retry.",
+                stepId);
+            await this.TryRevertExpiredStepAsync(stepId, failure: ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Compensating write after timeout handling didn't complete. The sweep's claim flipped the
+    /// step Waiting → Running via committed raw SQL; without this revert the row would be stuck
+    /// in 'running' FOREVER — its run sits in Suspended (which the stale-running fail
+    /// deliberately skips) and no claim path ever touches non-pending rows. Best-effort in a
+    /// fresh scope; if the revert itself fails (DB fully down), the wedge is logged loud for an
+    /// operator.
+    /// </summary>
+    /// <param name="failure">
+    /// The handler failure message, or null for a shutdown interruption. A failure consumes an
+    /// attempt (so a deterministically-broken timeout hook dead-letters at MaxAttempts instead
+    /// of retrying forever) and re-parks with backoff; a shutdown re-parks immediately with no
+    /// attempt consumed.
+    /// </param>
+    private async Task TryRevertExpiredStepAsync(Guid stepId, string? failure)
+    {
+        try
+        {
+            await using var scope = this.scopeFactory.CreateAsyncScope();
+            var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
+            var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
+            await this.RevertExpiredStepCoreAsync(stepId, failure, store, fanOut);
+        }
+        catch (Exception revertEx)
+        {
+            this.logger.LogError(revertEx,
+                "Failed to park expired step {StepId} back to waiting — row stays 'running' until an operator intervenes (no automatic reaper covers a running step under a suspended run).",
                 stepId);
         }
+    }
+
+    /// <summary>Core of the expired-step revert — internal seam for the test harness.</summary>
+    internal async Task RevertExpiredStepCoreAsync(
+        Guid stepId, string? failure, IWorkflowStore store, IWorkflowFanOut fanOut)
+    {
+        var step = await store.GetStepAsync(stepId, CancellationToken.None);
+        if (step is null || step.Status != StepExecutionStatus.Running)
+        {
+            // Vanished, or some other path already progressed it — nothing to revert.
+            return;
+        }
+
+        if (failure is null)
+        {
+            // Shutdown flavour: immediate re-park, the next startup's sweep re-claims it.
+            step.Status = StepExecutionStatus.Waiting;
+            step.NextAttemptAt = DateTime.UtcNow;
+            store.UpdateStep(step);
+            await store.SaveChangesAsync(CancellationToken.None);
+            this.logger.LogInformation(
+                "Expired step {StepId} parked back to waiting after shutdown interrupted its timeout handling.",
+                stepId);
+            return;
+        }
+
+        step.AttemptCount += 1;
+        step.LastError = $"Timeout handling failed: {failure}";
+
+        if (step.AttemptCount >= this.settings.MaxAttempts)
+        {
+            step.Status = StepExecutionStatus.Dead;
+            step.CompletedAt = DateTime.UtcNow;
+            store.UpdateStep(step);
+            await fanOut.CheckRunCompletionAsync(step, CancellationToken.None);
+            await store.SaveChangesAsync(CancellationToken.None);
+            this.logger.LogError(
+                "Expired step {StepId} dead-lettered after {Attempts}/{Max} failed timeout-handling attempt(s): {Failure}",
+                stepId, step.AttemptCount, this.settings.MaxAttempts, failure);
+            return;
+        }
+
+        step.Status = StepExecutionStatus.Waiting;
+        step.NextAttemptAt = DateTime.UtcNow.Add(this.BackoffFor(step.AttemptCount));
+        store.UpdateStep(step);
+        await store.SaveChangesAsync(CancellationToken.None);
+        this.logger.LogWarning(
+            "Expired step {StepId} parked back to waiting (attempt {Attempt}/{Max}); timeout handling retries at {NextAttemptAt:o}.",
+            stepId, step.AttemptCount, this.settings.MaxAttempts, step.NextAttemptAt);
     }
 
     /// <summary>
@@ -530,7 +627,17 @@ internal class WorkflowEngineWorker : BackgroundService
         var expiredIds = await store.ClaimExpiredWaitingStepIdsAsync(this.settings.BatchSize, ct);
         foreach (var stepId in expiredIds)
         {
+            if (ct.IsCancellationRequested) break;
             await this.HandleExpiredStepAsync(stepId, store, registry, fanOut, ct, resolver);
+        }
+
+        // Same shutdown remainder-revert as the production pass (see RunMaintenancePassAsync).
+        if (ct.IsCancellationRequested)
+        {
+            foreach (var stepId in expiredIds)
+            {
+                await this.RevertExpiredStepCoreAsync(stepId, failure: null, store, fanOut);
+            }
         }
     }
 

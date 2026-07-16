@@ -134,6 +134,137 @@ public sealed class WorkflowTimeoutSweepTests
         new ServiceCollection().BuildServiceProvider(),
         NullLogger<WorkflowFanOut>.Instance);
 
+    // -----------------------------------------------------------------------
+    // Expired-step revert — compensating write when timeout handling fails
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Failed_timeout_handling_parks_step_back_to_waiting_with_backoff()
+    {
+        // The sweep's claim flipped the step to Running; the handler then failed. Without the
+        // revert the row would be stuck forever (run is Suspended → stale-fail skips it, no
+        // claim path touches 'running'). The revert re-parks it Waiting with an attempt counted
+        // so the next maintenance pass retries the timeout.
+        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        step.Status = StepExecutionStatus.Running; // as the claim left it
+        step.AttemptCount = 0;
+        store.Steps.Add(step);
+
+        await worker.RevertExpiredStepCoreAsync(step.Id, "db blip", store, MakeFanOut(store, new FakeRegistry()));
+
+        Assert.Equal(StepExecutionStatus.Waiting, step.Status);
+        Assert.Equal(1, step.AttemptCount);
+        Assert.True(step.NextAttemptAt > DateTime.UtcNow, "retry must be scheduled with backoff");
+        Assert.Contains("db blip", step.LastError);
+    }
+
+    [Fact]
+    public async Task Failed_timeout_handling_dead_letters_at_max_attempts()
+    {
+        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        step.Status = StepExecutionStatus.Running;
+        step.AttemptCount = Settings.MaxAttempts - 1; // this failure is the last allowed
+        store.Steps.Add(step);
+
+        await worker.RevertExpiredStepCoreAsync(step.Id, "still broken", store, MakeFanOut(store, new FakeRegistry()));
+
+        Assert.Equal(StepExecutionStatus.Dead, step.Status);
+        Assert.NotNull(step.CompletedAt);
+        Assert.Contains("still broken", step.LastError);
+    }
+
+    [Fact]
+    public async Task Shutdown_interruption_reparks_immediately_without_consuming_an_attempt()
+    {
+        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        step.Status = StepExecutionStatus.Running;
+        step.AttemptCount = 2;
+        store.Steps.Add(step);
+
+        await worker.RevertExpiredStepCoreAsync(step.Id, failure: null, store, MakeFanOut(store, new FakeRegistry()));
+
+        Assert.Equal(StepExecutionStatus.Waiting, step.Status);
+        Assert.Equal(2, step.AttemptCount); // a deploy is not a handler failure
+        Assert.True(step.NextAttemptAt <= DateTime.UtcNow, "shutdown re-park retries immediately");
+    }
+
+    [Fact]
+    public async Task Cancellation_mid_batch_reverts_unprocessed_claimed_steps()
+    {
+        // Two expired steps claimed in one pass; handling the first triggers shutdown. The
+        // second was already flipped to Running by the claim — without the batch revert it
+        // would be stuck forever (run Suspended → stale-fail skips it). The remainder pass
+        // must park it back to Waiting untouched, while the first keeps its real outcome.
+        var cts = new CancellationTokenSource();
+        var action = new CancelOnTimeoutAction(cts);
+        var (worker, store, registry, step1) = BuildSweep(action);
+        var step2 = new WorkflowStepRecord
+        {
+            RunId = step1.RunId,
+            TenantId = step1.TenantId,
+            NodeId = "n1",
+            Kind = action.Kind,
+            ResolvedConfig = EmptyObject,
+            Status = StepExecutionStatus.Waiting,
+            NextAttemptAt = DateTime.UtcNow.AddMinutes(-1),
+        };
+        store.ExpiredWaitingSteps.Enqueue(step2);
+
+        await worker.SweepExpiredWaitingStepsOnceAsync(store, registry, MakeFanOut(store, registry), cts.Token);
+
+        Assert.Equal(StepExecutionStatus.Completed, step1.Status); // finished before the signal
+        Assert.Equal(StepExecutionStatus.Waiting, step2.Status);   // reverted, not wedged in Running
+        Assert.Equal(0, step2.AttemptCount);                       // shutdown consumes no attempt
+        Assert.True(step2.NextAttemptAt <= DateTime.UtcNow, "reverted step retries on the next sweep");
+    }
+
+    [Fact]
+    public async Task Revert_leaves_steps_that_already_progressed_untouched()
+    {
+        // Another path (operator resume, concurrent finalize) moved the step on between the
+        // failure and the revert — the guard must not clobber the newer state.
+        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        step.Status = StepExecutionStatus.Completed;
+        step.AttemptCount = 1;
+        store.Steps.Add(step);
+
+        await worker.RevertExpiredStepCoreAsync(step.Id, "late failure", store, MakeFanOut(store, new FakeRegistry()));
+
+        Assert.Equal(StepExecutionStatus.Completed, step.Status);
+        Assert.Equal(1, step.AttemptCount);
+    }
+
+    /// <summary>
+    /// Fires its <c>done</c> port on timeout but ALSO signals shutdown — simulates the stop
+    /// token firing while a sweep batch is mid-flight.
+    /// </summary>
+    private sealed class CancelOnTimeoutAction : ActionType<object>
+    {
+        private readonly CancellationTokenSource cts;
+
+        public CancelOnTimeoutAction(CancellationTokenSource cts) => this.cts = cts;
+
+        public override string Kind => "CancelOnTimeout";
+
+        public override string DisplayName => this.Kind;
+
+        public override IReadOnlyList<ActionPortDescriptor> OutputPorts { get; } = new[]
+        {
+            new ActionPortDescriptor("done", "Done", ActionPortKind.Normal),
+        };
+
+        public override Task<ActionExecutionResult> ExecuteAsync(
+            ActionContext<object> context, CancellationToken cancellationToken)
+            => Task.FromResult(this.Suspend());
+
+        public override Task<ActionExecutionResult> OnStepTimedOutAsync(
+            ActionContext context, CancellationToken cancellationToken)
+        {
+            this.cts.Cancel();
+            return Task.FromResult(this.Port("done"));
+        }
+    }
+
     /// <summary>A suspending action that never overrides the timeout hook — exercises the base default.</summary>
     private sealed class NoTimeoutAction : ActionType<object>
     {

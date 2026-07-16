@@ -303,9 +303,11 @@ ORDER BY started_at;
 - Fast-lane rows with `running_seconds > FastLaneActionTimeoutSeconds` are about to be
   force-cancelled by the per-step CTS (normal protection, not a problem).
 - Anything with `running_seconds > 5 × FastLaneActionTimeoutSeconds` indicates a worker died
-  mid-action — the step won't recover until the next worker startup releases it (or until
-  `Retention.EnableStaleFail` marks the run `Failed` as stale after `StaleRunningRetentionDays`;
-  the finished purge deletes it later).
+  mid-action. There is no automatic per-step reaper: the row recovers only when
+  `Retention.EnableStaleFail` (opt-in) marks its run `Failed` as stale after
+  `StaleRunningRetentionDays` (the finished purge deletes it later) — until then it needs
+  operator attention. Steps whose RUN is `suspended` (a timeout-sweep claim that never
+  finalized) are re-parked to `waiting` by the sweep's compensating revert automatically.
 
 **Stuck running rows (dead workers, or in-flight at cancel time):**
 
