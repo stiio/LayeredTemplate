@@ -60,6 +60,12 @@ internal class WorkflowStepExecutionConfiguration : IEntityTypeConfiguration<Wor
                 x => new { x.IsLongRunning, x.NextAttemptAt },
                 "ix_workflow_step_executions_waiting_lane_next_attempt")
             .HasFilter("status = 'waiting'");
+        // Third live-subset partial: the stuck-running crash-recovery sweep
+        // (WHERE status='running' AND updated_at < threshold) and the README's operational
+        // "currently running" queries. In-flight rows are at most workers × batch, so this
+        // index stays tiny while sparing a full-table scan.
+        builder.HasIndex(x => x.UpdatedAt, "ix_workflow_step_executions_running_updated_at")
+            .HasFilter("status = 'running'");
         // GetStepsForRunAsync: WHERE run_id = ? ORDER BY created_at. Composite avoids an
         // in-memory sort once a run accumulates dozens of steps (legitimate for ForEach loops).
         // Subsumes the prior standalone run_id index for FK lookups (postgres uses the prefix).

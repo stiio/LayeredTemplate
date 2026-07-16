@@ -53,6 +53,15 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Services;
 /// </summary>
 internal class WorkflowEngineWorker : BackgroundService
 {
+    /// <summary>
+    /// How often the maintenance loop probes for stuck-running rows. Deliberately a constant,
+    /// not a knob: the RECOVERY latency is governed by
+    /// <see cref="WorkflowEngineSettings.StuckStepRecoverySeconds"/> (hour-scale) — a 5-minute
+    /// detection granularity on top adds nothing worth configuring, and the probe is a single
+    /// query against the tiny running-partial index.
+    /// </summary>
+    private const int StuckRecoveryCheckIntervalSeconds = 300;
+
     private readonly IServiceScopeFactory scopeFactory;
     private readonly IHostApplicationLifetime lifetime;
     private readonly IWorkflowWorkSignal workSignal;
@@ -408,6 +417,12 @@ internal class WorkflowEngineWorker : BackgroundService
         // a set-based DELETE every pass. First due immediately — catches backlog from downtime.
         var nextBookmarkSweep = DateTime.UtcNow;
 
+        // Stuck-running crash recovery: also its own cadence — the threshold is measured in an
+        // hour, a 5-minute detection granularity on top of it costs nothing, and the check is a
+        // single probe of the tiny running-partial index. First due immediately: a restart
+        // right after a crash is exactly when abandoned rows are most likely.
+        var nextStuckRecovery = DateTime.UtcNow;
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -425,6 +440,14 @@ internal class WorkflowEngineWorker : BackgroundService
                     var bookmarkStore = bookmarkScope.ServiceProvider.GetRequiredService<IWorkflowStore>();
                     await this.SweepResolvedBookmarksAsync(bookmarkStore, stoppingToken);
                     nextBookmarkSweep = DateTime.UtcNow.AddSeconds(this.settings.BookmarkSweepIntervalSeconds);
+                }
+
+                if (this.settings.StuckStepRecoverySeconds > 0 && DateTime.UtcNow >= nextStuckRecovery)
+                {
+                    await using var recoveryScope = this.scopeFactory.CreateAsyncScope();
+                    var recoveryStore = recoveryScope.ServiceProvider.GetRequiredService<IWorkflowStore>();
+                    await this.RecoverStuckRunningStepsOnceAsync(recoveryStore, stoppingToken);
+                    nextStuckRecovery = DateTime.UtcNow.AddSeconds(StuckRecoveryCheckIntervalSeconds);
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -558,6 +581,29 @@ internal class WorkflowEngineWorker : BackgroundService
             this.logger.LogError(revertEx,
                 "Failed to park expired step {StepId} back to waiting — row stays 'running' until an operator intervenes (no automatic reaper covers a running step under a suspended run).",
                 stepId);
+        }
+    }
+
+    /// <summary>
+    /// One stuck-running recovery pass — internal seam for the test harness. Returns steps
+    /// abandoned in 'running' by crashed workers (updated_at older than
+    /// <see cref="WorkflowEngineSettings.StuckStepRecoverySeconds"/>) to 'pending', draining in
+    /// BatchSize chunks until dry. The crashed attempt stays counted, so MaxAttempts bounds a
+    /// crash-looping (poison) step the same way it bounds any other repeated failure.
+    /// </summary>
+    internal async Task RecoverStuckRunningStepsOnceAsync(IWorkflowStore store, CancellationToken ct)
+    {
+        var threshold = DateTime.UtcNow.AddSeconds(-this.settings.StuckStepRecoverySeconds);
+        while (!ct.IsCancellationRequested)
+        {
+            var recovered = await store.ReclaimStuckRunningStepIdsAsync(threshold, this.settings.BatchSize, ct);
+            if (recovered.Count == 0) break;
+
+            this.logger.LogWarning(
+                "Recovered {Count} step(s) stuck in 'running' for over {Threshold}s (worker crash suspected); returned to pending: {StepIds}",
+                recovered.Count, this.settings.StuckStepRecoverySeconds, recovered);
+
+            if (recovered.Count < this.settings.BatchSize) break;
         }
     }
 

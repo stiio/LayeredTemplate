@@ -123,6 +123,24 @@ internal class FakeStore : IWorkflowStore
     public Task<int> ReleaseClaimedStepsAsync(IReadOnlyList<Guid> stepIds, CancellationToken cancellationToken)
         => Task.FromResult(0);
 
+    public Task<IReadOnlyList<Guid>> ReclaimStuckRunningStepIdsAsync(DateTime olderThan, int limit, CancellationToken cancellationToken)
+    {
+        // Mirror the real store's guarded UPDATE: only 'running' rows with an old updated_at
+        // flip back to pending; attempt_count stays counted (crash may have run side effects).
+        var reclaimed = new List<Guid>();
+        foreach (var step in this.Steps.Where(s => s.Status == StepExecutionStatus.Running && s.UpdatedAt < olderThan))
+        {
+            if (reclaimed.Count >= limit) break;
+            step.Status = StepExecutionStatus.Pending;
+            step.NextAttemptAt = DateTime.UtcNow;
+            step.StartedAt = null;
+            step.UpdatedAt = DateTime.UtcNow;
+            reclaimed.Add(step.Id);
+        }
+
+        return Task.FromResult<IReadOnlyList<Guid>>(reclaimed);
+    }
+
     // ===== Bookmarks =====
 
     public void AddBookmarks(WorkflowStepRecord step, IReadOnlyList<WorkflowBookmarkRegistration> registrations)

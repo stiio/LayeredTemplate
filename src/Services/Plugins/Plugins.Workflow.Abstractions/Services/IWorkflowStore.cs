@@ -168,6 +168,24 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
         IReadOnlyList<Guid> stepIds,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Crash recovery: returns steps abandoned in <c>running</c> (their worker died without
+    /// persisting an outcome — no catch block ever ran) back to <c>pending</c> with
+    /// <c>next_attempt_at = now</c>. Selects rows whose <c>updated_at</c> is older than
+    /// <paramref name="olderThan"/> — every legitimate transition stamps <c>updated_at</c>, so
+    /// an old stamp on a 'running' row means nobody is executing it (the caller guarantees the
+    /// threshold exceeds the longest legitimate execution). <c>attempt_count</c> is NOT
+    /// refunded — the attempt may have executed side effects before the crash (at-least-once
+    /// contract), and keeping it bounds crash-retry loops at <c>MaxAttempts</c>.
+    /// <c>started_at</c> is cleared; the next claim re-stamps it. Same
+    /// <c>FOR UPDATE SKIP LOCKED</c> claim shape as the other sweeps, so concurrent maintenance
+    /// loops never double-recover a row. Returns the recovered ids for loud logging.
+    /// </summary>
+    Task<IReadOnlyList<Guid>> ReclaimStuckRunningStepIdsAsync(
+        DateTime olderThan,
+        int limit,
+        CancellationToken cancellationToken);
+
     // ===== Bookmarks (generic signal-wait) =====
 
     /// <summary>

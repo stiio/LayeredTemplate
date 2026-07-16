@@ -234,6 +234,45 @@ public sealed class WorkflowTimeoutSweepTests
         Assert.Equal(1, step.AttemptCount);
     }
 
+    // -----------------------------------------------------------------------
+    // Stuck-running crash recovery
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Stuck_running_step_older_than_threshold_returns_to_pending()
+    {
+        // A worker died between "claim committed" and "outcome committed" — no catch block ever
+        // ran. The recovery sweep is the only thing that can un-wedge the row.
+        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        step.Status = StepExecutionStatus.Running;
+        step.AttemptCount = 1; // counted by the claim; the crash must NOT refund it
+        step.StartedAt = DateTime.UtcNow.AddHours(-2);
+        step.UpdatedAt = DateTime.UtcNow.AddHours(-2); // long past StuckStepRecoverySeconds
+        store.Steps.Add(step);
+
+        await worker.RecoverStuckRunningStepsOnceAsync(store, CancellationToken.None);
+
+        Assert.Equal(StepExecutionStatus.Pending, step.Status);
+        Assert.Equal(1, step.AttemptCount);
+        Assert.Null(step.StartedAt);
+        Assert.True(step.NextAttemptAt <= DateTime.UtcNow, "recovered step must be claimable immediately");
+    }
+
+    [Fact]
+    public async Task Recently_started_running_step_is_left_alone()
+    {
+        // A live worker is still inside its lane budget — the threshold must never steal a step
+        // from a healthy executor.
+        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        step.Status = StepExecutionStatus.Running;
+        step.UpdatedAt = DateTime.UtcNow.AddSeconds(-30);
+        store.Steps.Add(step);
+
+        await worker.RecoverStuckRunningStepsOnceAsync(store, CancellationToken.None);
+
+        Assert.Equal(StepExecutionStatus.Running, step.Status);
+    }
+
     /// <summary>
     /// Fires its <c>done</c> port on timeout but ALSO signals shutdown — simulates the stop
     /// token firing while a sweep batch is mid-flight.

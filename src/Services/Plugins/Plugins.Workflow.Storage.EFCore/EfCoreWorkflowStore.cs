@@ -676,6 +676,34 @@ internal class EfCoreWorkflowStore : IWorkflowStore
             cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Guid>> ReclaimStuckRunningStepIdsAsync(
+        DateTime olderThan,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        // Crash recovery — the only path that touches 'running' rows by age. updated_at is the
+        // liveness marker: every legitimate transition (claim, timeout flip, outcome write)
+        // stamps it, so an old stamp means the executing worker died without a catch block ever
+        // running. Back to 'pending' with next_attempt_at = now: the regular claim machinery
+        // (and MaxAttempts, since the crashed attempt stays counted) takes it from there.
+        // Hits the partial ix_workflow_step_executions_running_updated_at index.
+        const string sql = """
+            UPDATE workflow.workflow_step_executions
+            SET status = {0}, next_attempt_at = now(), started_at = NULL, updated_at = now()
+            WHERE id IN (
+                SELECT id FROM workflow.workflow_step_executions
+                WHERE status = {1} AND updated_at < {2}
+                ORDER BY updated_at
+                LIMIT {3}
+                FOR UPDATE SKIP LOCKED
+            )
+            RETURNING id;
+        """;
+        return await this.dbContext.Database
+            .SqlQueryRaw<Guid>(sql, StepExecutionStatus.Pending, StepExecutionStatus.Running, olderThan, limit)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Guid>> ClaimExpiredWaitingStepIdsAsync(
         int limit,
         CancellationToken cancellationToken)

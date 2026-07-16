@@ -150,6 +150,7 @@ The channel name (`workflow_work` by default) is global per database; override
 | `ix_workflow_runs_parent_step_id` | `(parent_step_id)` | Auto-resume parent step on child completion. |
 | `ix_workflow_step_executions_pending_lane_next_attempt` | `(is_long_running, next_attempt_at) WHERE status='pending'` | **Partial index** — worker claim hot path. Collapses to ~1% of total rows at scale. |
 | `ix_workflow_step_executions_waiting_lane_next_attempt` | `(is_long_running, next_attempt_at) WHERE status='waiting'` | **Partial index** — timeout sweeper. |
+| `ix_workflow_step_executions_running_updated_at` | `(updated_at) WHERE status='running'` | **Partial index** — stuck-running crash-recovery sweep + operational "currently running" queries. |
 | `ix_workflow_step_executions_run_id_created_at` | `(run_id, created_at)` | GetStepsForRun queries with implicit chronological order. |
 | `ix_workflow_step_executions_tenant_id` | `(tenant_id)` | Tenant-scoped purge / "delete all PHI for tenant X". |
 | `ix_workflow_bookmark_tenant_id_correlation_key` | `(tenant_id, correlation_key)` | Signal-lookup hot path (`SignalAsync`). |
@@ -303,11 +304,10 @@ ORDER BY started_at;
 - Fast-lane rows with `running_seconds > FastLaneActionTimeoutSeconds` are about to be
   force-cancelled by the per-step CTS (normal protection, not a problem).
 - Anything with `running_seconds > 5 × FastLaneActionTimeoutSeconds` indicates a worker died
-  mid-action. There is no automatic per-step reaper: the row recovers only when
-  `Retention.EnableStaleFail` (opt-in) marks its run `Failed` as stale after
-  `StaleRunningRetentionDays` (the finished purge deletes it later) — until then it needs
-  operator attention. Steps whose RUN is `suspended` (a timeout-sweep claim that never
-  finalized) are re-parked to `waiting` by the sweep's compensating revert automatically.
+  mid-action. The maintenance loop's crash-recovery sweep returns such rows to `pending` once
+  they age past `StuckStepRecoverySeconds` (default 1 h; the crashed attempt stays counted, so
+  `MaxAttempts` bounds crash loops). Rows younger than that are either genuinely executing or
+  waiting out the recovery threshold.
 
 **Stuck running rows (dead workers, or in-flight at cancel time):**
 

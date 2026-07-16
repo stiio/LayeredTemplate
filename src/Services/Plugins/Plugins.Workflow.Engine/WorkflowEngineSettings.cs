@@ -49,6 +49,27 @@ public class WorkflowEngineSettings
     /// </summary>
     public int BookmarkSweepIntervalSeconds { get; set; } = 3600;
 
+    /// <summary>
+    /// Age threshold (seconds) past which a <c>running</c> step is considered abandoned by a
+    /// crashed worker and returned to <c>pending</c> by the maintenance loop's recovery sweep.
+    /// This is the crash backstop the in-process handlers can't provide: release paths and
+    /// timeout-revert only run when the process survives; a kill / OOM between "claim
+    /// committed" and "outcome committed" previously left the row stuck forever (a step under
+    /// a Suspended run isn't even covered by <c>Retention.EnableStaleFail</c>).
+    /// <para>
+    /// SAFETY: must exceed the longest legitimate execution — lane budgets
+    /// (<see cref="FastLaneActionTimeoutSeconds"/> / <see cref="LongLaneActionTimeoutSeconds"/>)
+    /// plus <see cref="ShutdownDrainSeconds"/> — otherwise a live worker's step could be
+    /// double-executed. The default 3600 gives 10× headroom over the default budgets; if you
+    /// DISABLE the long-lane timeout (0 = unbounded actions), raise or disable this too.
+    /// The crashed attempt stays counted, so <see cref="MaxAttempts"/> bounds crash loops.
+    /// A recovered waiting-origin step (crash during timeout handling) re-executes its action —
+    /// a Delay restarts its countdown; accepted distortion for a crash×crash corner.
+    /// Set 0 to disable. Recovery latency is this threshold plus up to 5 minutes (the sweep's
+    /// check cadence).
+    /// </summary>
+    public int StuckStepRecoverySeconds { get; set; } = 3600;
+
     public int BatchSize { get; set; } = 10;
 
     /// <summary>
