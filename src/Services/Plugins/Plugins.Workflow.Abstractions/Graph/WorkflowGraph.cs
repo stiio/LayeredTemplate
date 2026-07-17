@@ -22,6 +22,14 @@ public class WorkflowGraph
     /// at the very start use a single start node + Switch / Condition.
     /// </summary>
     public string? StartNodeId { get; set; }
+
+    /// <summary>
+    /// Author's free-text notes about the workflow as a whole. Purely informational, like
+    /// <see cref="WorkflowNode.Description"/>. Lives in the graph document rather than on the
+    /// definition row so it versions and snapshots together with the graph it describes (the
+    /// definition-level <c>DisplayName</c> remains the queryable picker label).
+    /// </summary>
+    public string? Description { get; set; }
 }
 
 public class WorkflowNode
@@ -35,6 +43,14 @@ public class WorkflowNode
     public string Kind { get; set; } = string.Empty;
 
     public string? Name { get; set; }
+
+    /// <summary>
+    /// Author's free-text notes ("what this node does and why"). Purely informational — engine,
+    /// validator and expressions never read it. Must be declared on the POCO (not just in the
+    /// editor): the store re-serializes <see cref="WorkflowGraph"/> on save, so any field the
+    /// editor sends but the model doesn't declare is silently dropped.
+    /// </summary>
+    public string? Description { get; set; }
 
     /// <summary>Action-specific config (heterogeneous by <see cref="Kind"/>; resolved against the run model).</summary>
     public JsonElement Config { get; set; }
