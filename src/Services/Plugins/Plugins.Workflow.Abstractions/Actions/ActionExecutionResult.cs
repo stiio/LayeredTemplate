@@ -108,6 +108,13 @@ public class ActionExecutionResult
     /// branch (see <see cref="RetryExhaustedPort"/>). Dead steps don't fire any successor edges —
     /// branches that should run after a failure must be wired explicitly, either via Error-kind
     /// ports the action returns or via <paramref name="retryExhaustedPort"/>.
+    /// <para>
+    /// <paramref name="outputs"/> on a transient error double as the RETRY CHECKPOINT: the
+    /// engine persists them on the step row and hands them back to the next attempt via
+    /// <c>ActionContext.PriorAttemptOutputs</c>, so a multi-side-effect action can record which
+    /// parts already succeeded ("row inserted, email still owed") and skip them on retry. Null
+    /// outputs leave the previously persisted checkpoint intact.
+    /// </para>
     /// </summary>
     public static ActionExecutionResult OnError(
         string error,

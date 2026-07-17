@@ -820,6 +820,9 @@ internal class WorkflowEngineWorker : BackgroundService
             IsDryRun = run.IsDryRun,
             NodeKey = nodeKey,
             StepsOutputs = run.StepsOutputs,
+            // For a timeout hook these are the suspend-time initial outputs — same channel.
+            PriorAttemptOutputs = step.Outputs,
+            AttemptCount = step.AttemptCount,
         };
 
         ActionExecutionResult result;
@@ -995,6 +998,10 @@ internal class WorkflowEngineWorker : BackgroundService
             IsDryRun = run.IsDryRun,
             NodeKey = nodeKey,
             StepsOutputs = stepsOutputsJson,
+            // Retry-checkpoint channel: whatever a previous attempt persisted (via OnError with
+            // outputs) comes back to the action so it can skip already-completed side effects.
+            PriorAttemptOutputs = step.Outputs,
+            AttemptCount = step.AttemptCount,
         };
 
         ActionExecutionResult result;
@@ -1197,11 +1204,15 @@ internal class WorkflowEngineWorker : BackgroundService
                 // that case — complete the step on the fallback port instead of dead-lettering
                 // the whole run. LastError stays on the row, so the trace shows the failed
                 // attempts AND the branch taken; Outputs carry the LAST attempt's error
-                // payload, merged into steps_outputs like any completion so the fallback
-                // branch can read them via steps.<key>.*.
+                // payload (or the surviving retry checkpoint when the last attempt returned
+                // none), merged into steps_outputs like any completion so the fallback branch
+                // can read them via steps.<key>.*.
                 step.Status = StepExecutionStatus.Completed;
                 step.OutputPort = result.RetryExhaustedPort;
-                step.Outputs = ToJsonElement(result.Outputs);
+                if (result.Outputs is not null)
+                {
+                    step.Outputs = ToJsonElement(result.Outputs);
+                }
                 step.CompletedAt = DateTime.UtcNow;
                 store.UpdateStep(step);
                 this.logger.LogWarning(
@@ -1218,7 +1229,12 @@ internal class WorkflowEngineWorker : BackgroundService
             {
                 step.Status = StepExecutionStatus.Dead;
                 step.OutputPort = null;
-                step.Outputs = ToJsonElement(result.Outputs);
+                // Preserve-if-null: a final attempt that returned no outputs must not wipe an
+                // earlier retry checkpoint — it's postmortem evidence of what DID happen.
+                if (result.Outputs is not null)
+                {
+                    step.Outputs = ToJsonElement(result.Outputs);
+                }
                 step.CompletedAt = DateTime.UtcNow;
                 store.UpdateStep(step);
                 this.logger.LogError(
@@ -1234,9 +1250,18 @@ internal class WorkflowEngineWorker : BackgroundService
             }
             else
             {
-                // Retry.
+                // Retry. Outputs returned WITH the transient error are the retry checkpoint:
+                // persisted on the row and handed back to the next attempt via
+                // ActionContext.PriorAttemptOutputs, so a multi-side-effect action can skip
+                // work it already completed (row inserted, email still owed). Null outputs
+                // leave the previous checkpoint intact — an attempt that crashed before
+                // producing one must not erase earlier progress.
                 step.Status = StepExecutionStatus.Pending;
                 step.NextAttemptAt = DateTime.UtcNow.Add(this.BackoffFor(step.AttemptCount));
+                if (result.Outputs is not null)
+                {
+                    step.Outputs = ToJsonElement(result.Outputs);
+                }
                 store.UpdateStep(step);
                 this.logger.LogWarning(
                     "Step transient error on attempt {AttemptCount}/{MaxAttempts}, retrying at {NextAttemptAt:o}: {Error}",

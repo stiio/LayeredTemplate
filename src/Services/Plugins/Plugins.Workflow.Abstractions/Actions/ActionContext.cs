@@ -59,6 +59,30 @@ public class ActionContext
     /// <c>StepsOutputs.TryGetProperty(NodeKey, out var prev)</c>.
     /// </summary>
     public JsonElement StepsOutputs { get; init; }
+
+    /// <summary>
+    /// Outputs THIS step execution persisted on a previous attempt (or at suspend time, for the
+    /// resume / timeout hooks) — the retry-checkpoint channel. When a multi-side-effect action
+    /// fails partway (row inserted, email not sent), it returns
+    /// <c>OnError(..., outputs: checkpoint, transient: true)</c>; the engine persists the
+    /// checkpoint on the step row and hands it back here on the next attempt, so the action can
+    /// skip work it already did. Null on the first attempt or when no prior attempt returned
+    /// outputs. Scoped to this exact step execution — distinct from <see cref="StepsOutputs"/>,
+    /// which carries other (completed) steps' outputs.
+    /// <para>
+    /// Limits: a checkpoint exists only if the failing attempt RETURNED it — a hard crash
+    /// mid-action loses that attempt's progress (the previous checkpoint, if any, survives).
+    /// For side effects that must never double-fire, idempotency keys remain the robust answer;
+    /// this channel makes the common retry cheap, not transactional.
+    /// </para>
+    /// </summary>
+    public JsonElement? PriorAttemptOutputs { get; init; }
+
+    /// <summary>
+    /// Which attempt this dispatch is (1-based; the claim increments it). Useful together with
+    /// <see cref="PriorAttemptOutputs"/> for retry-aware actions and for logging.
+    /// </summary>
+    public int AttemptCount { get; init; }
 }
 
 /// <summary>Strongly-typed context seen by action implementations.</summary>
@@ -85,4 +109,10 @@ public class ActionContext<TConfig> where TConfig : class
     public string NodeKey { get; init; } = string.Empty;
 
     public JsonElement StepsOutputs { get; init; }
+
+    /// <inheritdoc cref="ActionContext.PriorAttemptOutputs"/>
+    public JsonElement? PriorAttemptOutputs { get; init; }
+
+    /// <inheritdoc cref="ActionContext.AttemptCount"/>
+    public int AttemptCount { get; init; }
 }

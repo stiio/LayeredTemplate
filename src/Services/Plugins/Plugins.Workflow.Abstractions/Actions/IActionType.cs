@@ -121,6 +121,8 @@ public abstract class ActionType<TConfig> : IActionType where TConfig : class
             IsDryRun = context.IsDryRun,
             NodeKey = context.NodeKey,
             StepsOutputs = context.StepsOutputs,
+            PriorAttemptOutputs = context.PriorAttemptOutputs,
+            AttemptCount = context.AttemptCount,
         };
         return this.ExecuteAsync(typed, cancellationToken);
     }

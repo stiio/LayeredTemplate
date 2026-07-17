@@ -290,6 +290,10 @@ internal class WorkflowResumer : IWorkflowResumer
             IsDryRun = run.IsDryRun,
             NodeKey = nodeKey,
             StepsOutputs = run.StepsOutputs,
+            // For a resume hook these are the suspend-time initial outputs — same channel as
+            // the worker's retry checkpoint.
+            PriorAttemptOutputs = step.Outputs,
+            AttemptCount = step.AttemptCount,
         };
     }
 

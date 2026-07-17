@@ -114,6 +114,93 @@ public class WorkflowEngineWorkerTests
     }
 
     // -----------------------------------------------------------------------
+    // Retry checkpoint — outputs persisted across attempts of one step execution
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Transient_error_outputs_are_persisted_as_the_retry_checkpoint()
+    {
+        // A multi-side-effect action failed partway and reported what it already did — the
+        // checkpoint must land on the step row so the next attempt can read it.
+        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+            sourceKind: TestKind,
+            ports: new[]
+            {
+                new ActionPortDescriptor("success", "Success", ActionPortKind.Normal),
+                new ActionPortDescriptor("error", "Error", ActionPortKind.Error),
+            },
+            actionResult: ActionExecutionResult.OnError(
+                "email send failed", outputs: new { dbRowId = 42, emailSent = false }, transient: true));
+
+        step.AttemptCount = 1;
+
+        var fanOut = MakeFanOut(store, builder, registry);
+        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+
+        Assert.Equal(StepExecutionStatus.Pending, step.Status);
+        Assert.NotNull(step.Outputs);
+        Assert.Equal(42, step.Outputs!.Value.GetProperty("dbRowId").GetInt32());
+    }
+
+    [Fact]
+    public async Task Transient_error_without_outputs_keeps_the_previous_checkpoint()
+    {
+        // Attempt 2 crashed before producing a checkpoint — erasing attempt 1's progress record
+        // would make attempt 3 redo completed side effects.
+        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+            sourceKind: TestKind,
+            ports: new[]
+            {
+                new ActionPortDescriptor("success", "Success", ActionPortKind.Normal),
+                new ActionPortDescriptor("error", "Error", ActionPortKind.Error),
+            },
+            actionResult: ActionExecutionResult.OnError("crashed early", transient: true));
+
+        step.AttemptCount = 2;
+        step.Outputs = JsonSerializer.SerializeToElement(new { dbRowId = 42 }, WorkflowJsonOptions.Default);
+
+        var fanOut = MakeFanOut(store, builder, registry);
+        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+
+        Assert.Equal(StepExecutionStatus.Pending, step.Status);
+        Assert.Equal(42, step.Outputs!.Value.GetProperty("dbRowId").GetInt32());
+    }
+
+    [Fact]
+    public async Task Next_attempt_receives_the_checkpoint_via_context()
+    {
+        // The replay half of the channel: whatever the row carries arrives in
+        // ActionContext.PriorAttemptOutputs together with the attempt number.
+        var capture = new ContextCaptureAction();
+        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdgesWithAction(capture);
+
+        step.AttemptCount = 2;
+        step.Outputs = JsonSerializer.SerializeToElement(new { dbRowId = 42 }, WorkflowJsonOptions.Default);
+
+        var fanOut = MakeFanOut(store, builder, registry);
+        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+
+        Assert.NotNull(capture.SeenPriorOutputs);
+        Assert.Equal(42, capture.SeenPriorOutputs!.Value.GetProperty("dbRowId").GetInt32());
+        Assert.Equal(2, capture.SeenAttemptCount);
+    }
+
+    [Fact]
+    public async Task First_attempt_sees_no_checkpoint()
+    {
+        var capture = new ContextCaptureAction();
+        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdgesWithAction(capture);
+
+        step.AttemptCount = 1;
+
+        var fanOut = MakeFanOut(store, builder, registry);
+        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+
+        Assert.Null(capture.SeenPriorOutputs);
+        Assert.Equal(1, capture.SeenAttemptCount);
+    }
+
+    // -----------------------------------------------------------------------
     // RetryExhaustedPort — fallback branch instead of dead-letter
     // -----------------------------------------------------------------------
 
@@ -674,6 +761,88 @@ public class WorkflowEngineWorkerTests
             settings: Options.Create(WorkerSettings));
 
         return (worker, store, registry, builder, run, step);
+    }
+
+    /// <summary>Same single-source harness, but the registry wraps a REAL action instance.</summary>
+    private static (WorkflowEngineWorker Worker, FakeStore Store, FakeRegistry Registry, FakeBuilder Builder,
+        WorkflowRunRecord Run, WorkflowStepRecord Step) SetupSingleSourceTwoEdgesWithAction(IActionType action)
+    {
+        var sourceNode = new WorkflowNode { Id = "src", Kind = action.Kind, Key = "src", Config = EmptyJsonObject };
+        var graph = new WorkflowGraph
+        {
+            Nodes =
+            {
+                sourceNode,
+                new WorkflowNode { Id = "succ", Kind = action.Kind, Key = "succ", Config = EmptyJsonObject },
+            },
+            Edges =
+            {
+                new WorkflowEdge { From = new() { NodeId = "src", Port = action.OutputPorts[0].Id }, To = "succ" },
+            },
+            StartNodeId = "src",
+        };
+
+        var run = new WorkflowRunRecord
+        {
+            TenantId = Guid.NewGuid(),
+            DefinitionId = Guid.NewGuid(),
+            TriggerKind = "Test",
+            WorkflowSnapshot = JsonSerializer.Serialize(graph, WorkflowJsonOptions.Default),
+            StaticContext = EmptyJsonObject,
+            StepsOutputs = EmptyJsonObject,
+            Status = WorkflowRunStatus.Running,
+            StartedAt = DateTime.UtcNow,
+        };
+
+        var step = new WorkflowStepRecord
+        {
+            RunId = run.Id,
+            TenantId = run.TenantId,
+            NodeId = sourceNode.Id,
+            Kind = action.Kind,
+            ResolvedConfig = EmptyJsonObject,
+            Status = StepExecutionStatus.Running,
+            NextAttemptAt = DateTime.UtcNow,
+        };
+
+        var registry = new FakeRegistry(action);
+        var store = new FakeStore(run);
+        var builder = new FakeBuilder();
+
+        var worker = new WorkflowEngineWorker(
+            scopeFactory: null!,
+            lifetime: null!,
+            workSignal: new WorkflowWorkSignal(),
+            logger: NullLogger<WorkflowEngineWorker>.Instance,
+            settings: Options.Create(WorkerSettings));
+
+        return (worker, store, registry, builder, run, step);
+    }
+
+    /// <summary>Captures the retry-checkpoint fields of the context it was dispatched with.</summary>
+    private sealed class ContextCaptureAction : ActionType<object>
+    {
+        public JsonElement? SeenPriorOutputs { get; private set; }
+
+        public int SeenAttemptCount { get; private set; }
+
+        public override string Kind => "ContextCapture";
+
+        public override string DisplayName => this.Kind;
+
+        public override IReadOnlyList<ActionPortDescriptor> OutputPorts { get; } = new[]
+        {
+            new ActionPortDescriptor("success", "Success", ActionPortKind.Normal),
+            new ActionPortDescriptor("error", "Error", ActionPortKind.Error),
+        };
+
+        public override Task<ActionExecutionResult> ExecuteAsync(
+            ActionContext<object> context, CancellationToken cancellationToken)
+        {
+            this.SeenPriorOutputs = context.PriorAttemptOutputs;
+            this.SeenAttemptCount = context.AttemptCount;
+            return Task.FromResult(this.Port("success"));
+        }
     }
 
     // ----- ForEach helpers -----
