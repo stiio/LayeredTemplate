@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 
 namespace LayeredTemplate.Plugins.Workflow.Abstractions.Models;
@@ -32,6 +33,14 @@ public record WorkflowDefinition
     public string? DisplayName { get; init; }
 
     public required WorkflowGraph Graph { get; init; }
+
+    /// <summary>
+    /// Definition-level global variables (see <see cref="WorkflowGlobals"/>): a JSON object
+    /// exposed to expressions as <c>globals.&lt;key&gt;</c>. Frozen into the run's
+    /// static_context at start — the graph and its globals travel as one consistent pair, so
+    /// editing them never re-interprets in-flight runs. Null = none declared.
+    /// </summary>
+    public JsonElement? Globals { get; init; }
 
     /// <summary>Row creation instant (UTC), set by the store on insert. Default for in-memory records the store never produced.</summary>
     public DateTime CreatedAt { get; init; }

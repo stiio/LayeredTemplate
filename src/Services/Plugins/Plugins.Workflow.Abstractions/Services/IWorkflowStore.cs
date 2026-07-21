@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
@@ -32,6 +33,9 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
     /// Create or replace the definition matching the (tenant, owner, trigger) key.
     /// <paramref name="displayName"/> is optional and used for human-readable picker UIs;
     /// null leaves an existing display_name unchanged on upsert.
+    /// <paramref name="globals"/> must satisfy <see cref="WorkflowGlobals.EnsureValid"/> when
+    /// set. Same tri-state as displayName: null leaves existing globals unchanged (graph-only
+    /// saves can't wipe settings); an explicit empty object clears them.
     /// </summary>
     Task UpsertDefinitionAsync(
         Guid tenantId,
@@ -39,6 +43,7 @@ public interface IWorkflowStore : IWorkflowReadStore, IWorkflowRetentionStore
         Guid? ownerId,
         string triggerKind,
         WorkflowGraph graph,
+        JsonElement? globals,
         string? displayName,
         CancellationToken cancellationToken);
 

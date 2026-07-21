@@ -23,6 +23,7 @@ internal class WorkflowDefinitionConfiguration : IEntityTypeConfiguration<Entiti
         builder.Property(d => d.TriggerKind).HasColumnName("trigger_kind").HasMaxLength(64).IsRequired();
         builder.Property(d => d.DisplayName).HasColumnName("display_name").HasMaxLength(200);
         builder.Property(d => d.Graph).HasColumnName("graph").HasColumnType("jsonb").IsRequired();
+        builder.Property(d => d.Globals).HasColumnName("globals").HasColumnType("jsonb");
         builder.Property(d => d.CreatedAt).HasColumnName("created_at");
         builder.Property(d => d.UpdatedAt).HasColumnName("updated_at");
 

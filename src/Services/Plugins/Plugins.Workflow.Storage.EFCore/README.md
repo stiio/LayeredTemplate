@@ -34,7 +34,8 @@ in a sibling project and swap `AddEfCoreStorage(...)` for `AddXxxStorage(...)` i
 ```
 Entities/                          — EF entities the engine persists.
 ├── WorkflowDefinition.cs          — Stored graph + (TenantId, OwnerKind, OwnerId, TriggerKind)
-│                                    lookup key + optional DisplayName.
+│                                    lookup key + optional DisplayName + optional Globals
+│                                    (plaintext jsonb — not a secrets store).
 ├── WorkflowRun.cs                  — A single run: snapshot, static context (JSON-typed),
 │                                    accumulated step outputs (JSON-typed), status, trigger
 │                                    source, parent-run/step linkage.

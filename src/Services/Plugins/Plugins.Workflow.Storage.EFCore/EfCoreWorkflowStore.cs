@@ -55,8 +55,13 @@ internal class EfCoreWorkflowStore : IWorkflowStore
 
     public async Task UpsertDefinitionAsync(
         Guid tenantId, string ownerKind, Guid? ownerId, string triggerKind, WorkflowGraph graph,
-        string? displayName, CancellationToken cancellationToken)
+        JsonElement? globals, string? displayName, CancellationToken cancellationToken)
     {
+        if (globals is { } incomingGlobals)
+        {
+            WorkflowGlobals.EnsureValid(incomingGlobals);
+        }
+
         var graphJson = JsonSerializer.Serialize(graph, WorkflowJsonOptions.Default);
         var existing = await this.dbContext.WorkflowDefinitions
             .FirstOrDefaultAsync(
@@ -77,6 +82,7 @@ internal class EfCoreWorkflowStore : IWorkflowStore
                 TriggerKind = triggerKind,
                 DisplayName = displayName,
                 Graph = graphJson,
+                Globals = SerializeGlobals(globals),
                 CreatedAt = now,
                 UpdatedAt = now,
             });
@@ -90,9 +96,18 @@ internal class EfCoreWorkflowStore : IWorkflowStore
             {
                 existing.DisplayName = displayName;
             }
+            // Same tri-state for globals: null = leave as-is, explicit {} = clear (stored NULL).
+            if (globals is { } updatedGlobals)
+            {
+                existing.Globals = SerializeGlobals(updatedGlobals);
+            }
             existing.UpdatedAt = now;
         }
     }
+
+    /// <summary>Empty object normalizes to NULL so "no globals" has one canonical representation.</summary>
+    private static string? SerializeGlobals(JsonElement? globals) =>
+        globals is { } g && g.EnumerateObject().Any() ? g.GetRawText() : null;
 
     public async Task<WorkflowPagedResult<PluginWorkflowDefinition>> ListDefinitionsAsync(
         WorkflowDefinitionFilter filter, CancellationToken cancellationToken)
@@ -873,6 +888,9 @@ internal class EfCoreWorkflowStore : IWorkflowStore
             TriggerKind = entity.TriggerKind,
             DisplayName = entity.DisplayName,
             Graph = graph,
+            Globals = entity.Globals is { } globalsJson
+                ? JsonSerializer.Deserialize<JsonElement>(globalsJson)
+                : null,
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt,
         };

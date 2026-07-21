@@ -55,8 +55,8 @@ internal class WorkflowRestarter : IWorkflowRestarter
         }
 
         // Resolve the graph + a synthetic WorkflowDefinition wrapper. Runner only reads
-        // .Id and .Graph, so the other fields are populated for completeness but don't drive
-        // behaviour.
+        // .Id, .Graph and .Globals, so the other fields are populated for completeness but
+        // don't drive behaviour.
         PluginWorkflowDefinition? definition;
         if (command.Mode == WorkflowRestartMode.UseSnapshot)
         {
@@ -85,6 +85,9 @@ internal class WorkflowRestarter : IWorkflowRestarter
                 OwnerId = null,
                 TriggerKind = oldRun.TriggerKind,
                 Graph = snapshotGraph,
+                // Snapshot mode replays the pair the old run actually ran with — globals come
+                // from its frozen static_context, not the (possibly edited) live definition.
+                Globals = ExtractNamespace(oldRun.StaticContext, WorkflowGlobals.RootKey),
             };
         }
         else
@@ -97,7 +100,7 @@ internal class WorkflowRestarter : IWorkflowRestarter
             }
         }
 
-        var variables = ExtractVariables(oldRun.StaticContext);
+        var variables = ExtractNamespace(oldRun.StaticContext, "vars");
         var intent = new WorkflowStartIntent
         {
             TenantId = oldRun.TenantId,
@@ -137,29 +140,29 @@ internal class WorkflowRestarter : IWorkflowRestarter
     }
 
     /// <summary>
-    /// Pulls the original <c>vars</c> sub-object out of <c>StaticContext</c>. The Runner re-emits
-    /// <c>trigger</c> from the new intent, so we ignore that namespace entirely and only re-feed
-    /// consumer-supplied variables. Missing / wrong-shaped <c>vars</c> falls back to an empty
-    /// object — the restart still proceeds (workflow may behave differently with no vars, but at
-    /// least won't crash on parsing).
+    /// Pulls one namespace sub-object (<c>vars</c> / <c>globals</c>) out of the old run's
+    /// <c>StaticContext</c>. The Runner re-emits <c>trigger</c> from the new intent, so that
+    /// namespace is never re-fed. Missing / wrong-shaped values fall back to an empty object —
+    /// the restart still proceeds (workflow may behave differently with no vars, but at least
+    /// won't crash on parsing).
     /// </summary>
-    private static JsonElement ExtractVariables(JsonElement staticContext)
+    private static JsonElement ExtractNamespace(JsonElement staticContext, string key)
     {
         if (staticContext.ValueKind != JsonValueKind.Object)
         {
             return JsonSerializer.SerializeToElement(new { }, WorkflowJsonOptions.Default);
         }
 
-        if (!staticContext.TryGetProperty("vars", out var varsEl)
-            || varsEl.ValueKind != JsonValueKind.Object)
+        if (!staticContext.TryGetProperty(key, out var el)
+            || el.ValueKind != JsonValueKind.Object)
         {
             // Either pre-namespace static_context (no longer supported in dev) or someone
-            // wrote a non-object under vars. Fail soft to empty rather than throw.
+            // wrote a non-object under the key. Fail soft to empty rather than throw.
             return JsonSerializer.SerializeToElement(new { }, WorkflowJsonOptions.Default);
         }
 
         // Clone so the returned element doesn't share a buffer with the input — caller might be
         // looking at a record whose underlying JsonDocument has different lifetime expectations.
-        return varsEl.Clone();
+        return el.Clone();
     }
 }

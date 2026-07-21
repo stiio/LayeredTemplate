@@ -38,7 +38,7 @@ internal class WorkflowRunner : IWorkflowRunner
 
         if (!nodesById.TryGetValue(graph.StartNodeId, out var startNode)) return null;
 
-        var staticContext = BuildStaticContextFromIntent(intent);
+        var staticContext = BuildStaticContextFromIntent(intent, definition.Globals);
         var emptyStepsOutputs = EmptyObject;
         var model = ExpressionModelBuilder.Build(staticContext, emptyStepsOutputs);
 
@@ -92,25 +92,40 @@ internal class WorkflowRunner : IWorkflowRunner
     }
 
     /// <summary>
-    /// Static context shape: two top-level slots — <c>trigger</c> (engine-owned metadata) and
-    /// <c>vars</c> (the trigger source's payload). Splitting the namespace keeps consumer keys
-    /// from ever colliding with engine-added ones; templates address them as
-    /// <c>{{ vars.answers.email }}</c> and <c>{{ trigger.kind }}</c> respectively.
+    /// Static context shape: three top-level slots — <c>trigger</c> (engine-owned metadata),
+    /// <c>vars</c> (the trigger source's payload) and <c>globals</c> (definition-level constants,
+    /// see <see cref="WorkflowGlobals"/>). Splitting the namespace keeps consumer keys from ever
+    /// colliding with engine-added ones; templates address them as
+    /// <c>{{ vars.answers.email }}</c>, <c>{{ trigger.kind }}</c> and <c>{{ globals.apiUrl }}</c>.
     /// <para>
     /// <see cref="WorkflowStartIntent.Variables"/> is taken as-is — JSON in, JSON out — so the
     /// shape contract is what the consumer sent. Null collapses to an empty object. Anything
     /// other than a JSON object throws: the engine's expression model assumes <c>vars</c> is
     /// keyable, and silently substituting <c>{}</c> for a malformed value would hide bugs in
-    /// the trigger code.
+    /// the trigger code. Same rules for <paramref name="globals"/>.
+    /// </para>
+    /// <para>
+    /// Globals are frozen here with the same snapshot semantics as the graph: a graph and its
+    /// globals are authored as one consistent pair, so editing the definition mid-flight must
+    /// not re-interpret runs started under the old pair. Like <c>vars</c>, the slot is always a
+    /// real object (never absent) so strict-mode JS <c>globals.x</c> reads can't throw
+    /// <c>ReferenceError</c>.
     /// </para>
     /// </summary>
-    private static JsonElement BuildStaticContextFromIntent(WorkflowStartIntent intent)
+    private static JsonElement BuildStaticContextFromIntent(WorkflowStartIntent intent, JsonElement? globals)
     {
         if (intent.Variables is { } v && v.ValueKind != JsonValueKind.Object)
         {
             throw new ArgumentException(
                 $"WorkflowStartIntent.Variables must be a JSON object or null (got {v.ValueKind}).",
                 nameof(intent));
+        }
+
+        if (globals is { } g && g.ValueKind != JsonValueKind.Object)
+        {
+            throw new ArgumentException(
+                $"WorkflowDefinition.Globals must be a JSON object or null (got {g.ValueKind}).",
+                nameof(globals));
         }
 
         // SerializeToElement accepts null and emits the JSON `null` literal; we pre-substitute
@@ -126,6 +141,7 @@ internal class WorkflowRunner : IWorkflowRunner
                 sourceId = intent.TriggerSourceId?.ToString(),
             },
             ["vars"] = intent.Variables ?? EmptyObject,
+            [WorkflowGlobals.RootKey] = globals ?? EmptyObject,
         };
         return JsonSerializer.SerializeToElement(output, WorkflowJsonOptions.Default);
     }

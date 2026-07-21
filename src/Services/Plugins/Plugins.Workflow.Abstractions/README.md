@@ -134,8 +134,10 @@ var result = await dispatcher.DispatchAsync(new WorkflowDispatchRequest
 `Variables` is a `JsonElement?` (object); the engine stores it under `static_context.vars`.
 Templates address keys as `{{ vars.answers.email }}` / `vars.answers.email` (Liquid / JS).
 Engine-supplied metadata lives under a separate `trigger` namespace
-(`{{ trigger.kind }}`, `{{ trigger.isDryRun }}`, …) — the two namespaces never overlap, so no
-key in `Variables` can collide with engine-supplied data.
+(`{{ trigger.kind }}`, `{{ trigger.isDryRun }}`, …), and definition-level global variables
+under `globals` (`{{ globals.apiUrl }}`; see `WorkflowGlobals` — frozen at run start together
+with the graph snapshot, plaintext by design, not a secrets store). The namespaces never
+overlap, so no key in `Variables` can collide with engine-supplied data.
 
 ### Run / step state machines
 

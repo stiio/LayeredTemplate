@@ -26,6 +26,12 @@ public class WorkflowDefinition
     /// <summary>Serialized <c>WorkflowGraph</c> (jsonb).</summary>
     public string Graph { get; set; } = null!;
 
+    /// <summary>
+    /// Serialized globals JSON object (jsonb); null when the definition declares none (empty
+    /// objects are normalized to null on write). Shape guarded by <c>WorkflowGlobals.EnsureValid</c>.
+    /// </summary>
+    public string? Globals { get; set; }
+
     /// <summary>Set by the store on insert; not auto-managed by EF or any host interceptor.</summary>
     public DateTime CreatedAt { get; set; }
 

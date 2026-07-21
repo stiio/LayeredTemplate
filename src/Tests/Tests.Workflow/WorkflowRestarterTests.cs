@@ -76,6 +76,71 @@ public class WorkflowRestarterTests
     }
 
     [Fact]
+    public async Task Snapshot_restart_replays_the_old_runs_frozen_globals()
+    {
+        // Snapshot mode must replay the pair the old run actually ran with — globals come from
+        // its frozen static_context, not from the (possibly edited) live definition.
+        var run = MakeOldRun(
+            snapshot: GoodSnapshot(),
+            staticContext: """{ "vars": {}, "globals": { "apiUrl": "old" } }""");
+        var store = new FakeStore(run);
+        var runner = new FakeRunner(new WorkflowRunRecord { TenantId = run.TenantId });
+        var restarter = new WorkflowRestarter(store, runner, NullLogger<WorkflowRestarter>.Instance);
+
+        var result = await restarter.RestartAsync(
+            new WorkflowRestartCommand
+            {
+                RunId = run.Id,
+                TenantId = run.TenantId,
+                Mode = WorkflowRestartMode.UseSnapshot,
+            },
+            CancellationToken.None);
+
+        Assert.Equal(WorkflowRestartOutcome.Started, result.Outcome);
+        Assert.Equal("old", runner.LastDefinition!.Globals!.Value.GetProperty("apiUrl").GetString());
+    }
+
+    [Fact]
+    public async Task Current_definition_restart_takes_the_definitions_fresh_globals()
+    {
+        var run = MakeOldRun(
+            snapshot: GoodSnapshot(),
+            staticContext: """{ "vars": {}, "globals": { "apiUrl": "old" } }""");
+        var liveDef = new WorkflowDefinition
+        {
+            Id = run.DefinitionId,
+            TenantId = run.TenantId,
+            OwnerKind = "Form",
+            OwnerId = Guid.NewGuid(),
+            TriggerKind = run.TriggerKind,
+            Graph = new WorkflowGraph
+            {
+                StartNodeId = "live_start",
+                Nodes = new List<WorkflowNode>
+                {
+                    new() { Id = "live_start", Key = "s", Kind = "Transform" },
+                },
+            },
+            Globals = JsonSerializer.Deserialize<JsonElement>("""{ "apiUrl": "fresh" }"""),
+        };
+        var store = new FakeStore(run) { LiveDefinition = liveDef };
+        var runner = new FakeRunner(new WorkflowRunRecord { TenantId = run.TenantId });
+        var restarter = new WorkflowRestarter(store, runner, NullLogger<WorkflowRestarter>.Instance);
+
+        var result = await restarter.RestartAsync(
+            new WorkflowRestartCommand
+            {
+                RunId = run.Id,
+                TenantId = run.TenantId,
+                Mode = WorkflowRestartMode.UseCurrentDefinition,
+            },
+            CancellationToken.None);
+
+        Assert.Equal(WorkflowRestartOutcome.Started, result.Outcome);
+        Assert.Equal("fresh", runner.LastDefinition!.Globals!.Value.GetProperty("apiUrl").GetString());
+    }
+
+    [Fact]
     public async Task Snapshot_mode_returns_malformed_when_snapshot_isnt_json()
     {
         var run = MakeOldRun(snapshot: "this is not json {{{ <broken>");

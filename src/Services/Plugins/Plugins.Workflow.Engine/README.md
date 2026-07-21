@@ -250,10 +250,16 @@ All three see the same model:
 - `vars.<key>` — every key the trigger source put in `WorkflowStartIntent.Variables`.
 - `trigger.kind` / `trigger.isDryRun` / `trigger.sourceKind` / `trigger.sourceId` — engine
   metadata.
+- `globals.<key>` — definition-level global variables (environment URLs, toggles,
+  sub-workflow ids). Frozen into `static_context` at run start with the same snapshot
+  semantics as the graph: a graph and its globals are authored as one consistent pair, so
+  editing the definition never re-interprets in-flight runs (snapshot-mode restart replays
+  the old pair; current-definition restart takes the fresh one). Plaintext by design — NOT a
+  secrets store (see `WorkflowGlobals`).
 - `steps.<node-key>.<output>` — outputs from upstream completed steps.
 
-The two namespaces (`vars` / `trigger`) never overlap, so consumer keys can never collide
-with engine-supplied data.
+The namespaces (`vars` / `trigger` / `globals`) never overlap, so consumer keys can never
+collide with engine-supplied data.
 
 ## Default globals (camelCase)
 

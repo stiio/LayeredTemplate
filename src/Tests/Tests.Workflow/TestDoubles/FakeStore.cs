@@ -81,7 +81,10 @@ internal class FakeStore : IWorkflowStore
     {
     }
 
-    public void AddRun(WorkflowRunRecord r) => throw new NotSupportedException();
+    public void AddRun(WorkflowRunRecord r) => this.AddedRuns.Add(r);
+
+    /// <summary>Every run staged via <see cref="AddRun"/> (runner-path tests).</summary>
+    public List<WorkflowRunRecord> AddedRuns { get; } = new();
 
     // ===== Steps =====
 
@@ -194,7 +197,7 @@ internal class FakeStore : IWorkflowStore
         return Task.FromResult(this.LiveDefinition);
     }
 
-    public Task UpsertDefinitionAsync(Guid tenantId, string ownerKind, Guid? ownerId, string triggerKind, WorkflowGraph graph, string? displayName, CancellationToken cancellationToken)
+    public Task UpsertDefinitionAsync(Guid tenantId, string ownerKind, Guid? ownerId, string triggerKind, WorkflowGraph graph, JsonElement? globals, string? displayName, CancellationToken cancellationToken)
         => throw new NotSupportedException();
 
     public Task<WorkflowPagedResult<WorkflowDefinition>> ListDefinitionsAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken)
