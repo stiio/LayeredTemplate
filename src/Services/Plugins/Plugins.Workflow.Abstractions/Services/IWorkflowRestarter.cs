@@ -4,7 +4,7 @@ namespace LayeredTemplate.Plugins.Workflow.Abstractions.Services;
 /// Manual replay of a previously-executed workflow run. Creates a <i>new</i> run with the same
 /// static context (variables + trigger metadata) as the old one; the old run is not modified
 /// — the chain is implicit through the shared <c>TriggerSourceId</c> ordering in
-/// <see cref="IWorkflowStore.ListRunsByTriggerSourceAsync"/>.
+/// <see cref="IWorkflowStore.ListRunsAsync"/> (trigger-source filters).
 /// <para>
 /// Two modes — see <see cref="WorkflowRestartMode"/>: <c>UseSnapshot</c> replays the exact
 /// graph the old run was started against (frozen in <c>workflow_runs.workflow_snapshot</c>);

@@ -63,13 +63,19 @@ public interface IWorkflowRetentionStore
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Removes ALL runs (any status, any age) attached to <paramref name="definitionId"/> within
-    /// <paramref name="tenantId"/>. Step executions cascade. Returns the number of runs deleted.
-    /// Intended to be called <b>before</b> <c>IWorkflowStore.DeleteDefinitionAsync</c> when an
-    /// author removes a workflow from a form / disables it / deletes the owning resource — the
-    /// FK on <c>workflow_runs.definition_id</c> is <c>RESTRICT</c>, so the definition can't be
+    /// Removes ALL runs (any status, any age) attached to <paramref name="definitionId"/>.
+    /// Step executions cascade. Returns the number of runs deleted. Intended to be called
+    /// <b>before</b> <c>IWorkflowStore.DeleteDefinitionAsync</c> when an author removes a
+    /// workflow from a form / disables it / deletes the owning resource — the FK on
+    /// <c>workflow_runs.definition_id</c> is <c>RESTRICT</c>, so the definition can't be
     /// dropped while runs reference it. Calling this method is the explicit decision point for
     /// "the run history (and any PHI it carries) goes with the workflow definition."
+    /// <para>
+    /// <paramref name="tenantId"/>: null (default) purges across ALL tenants — required for
+    /// system definitions, whose runs execute under each operator's workspace tenant rather
+    /// than the definition's owning tenant. Non-null keeps defence-in-depth scoping for
+    /// owner-tenant definitions.
+    /// </para>
     /// </summary>
     /// <remarks>
     /// Not batched on <paramref name="limit"/> for backlog drain like the other purge methods —
@@ -79,8 +85,8 @@ public interface IWorkflowRetentionStore
     /// loop manually.
     /// </remarks>
     Task<int> PurgeRunsByDefinitionAsync(
-        Guid tenantId,
         Guid definitionId,
         int limit,
+        Guid? tenantId = null,
         CancellationToken cancellationToken = default);
 }

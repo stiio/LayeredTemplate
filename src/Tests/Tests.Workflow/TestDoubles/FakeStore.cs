@@ -206,12 +206,6 @@ internal class FakeStore : IWorkflowStore
     public Task DeleteDefinitionAsync(Guid tenantId, string ownerKind, Guid? ownerId, string triggerKind, CancellationToken cancellationToken)
         => throw new NotSupportedException();
 
-    public Task<WorkflowRunRecord?> FindRunByTriggerSourceAsync(Guid tenantId, string triggerSourceKind, Guid triggerSourceId, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
-
-    public Task<IReadOnlyList<WorkflowRunRecord>> ListRunsByTriggerSourceAsync(Guid tenantId, string triggerSourceKind, Guid triggerSourceId, CancellationToken cancellationToken)
-        => throw new NotSupportedException();
-
     public Task<WorkflowPagedResult<WorkflowRunRecord>> ListRunsAsync(WorkflowRunFilter filter, CancellationToken cancellationToken)
         => throw new NotSupportedException();
 
@@ -261,7 +255,7 @@ internal class FakeStore : IWorkflowStore
     public Task<int> FailStaleRunningRunsAsync(DateTime olderThan, int limit, Guid? tenantId = null, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
-    public Task<int> PurgeRunsByDefinitionAsync(Guid tenantId, Guid definitionId, int limit, CancellationToken cancellationToken = default)
+    public Task<int> PurgeRunsByDefinitionAsync(Guid definitionId, int limit, Guid? tenantId = null, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 }
 

@@ -197,45 +197,18 @@ internal class EfCoreWorkflowStore : IWorkflowStore
         return entity is null ? null : MapRunEntityToRecord(entity);
     }
 
-    public async Task<WorkflowRunRecord?> FindRunByTriggerSourceAsync(
-        Guid tenantId, string triggerSourceKind, Guid triggerSourceId, CancellationToken cancellationToken)
-    {
-        // Newest run wins when multiple share a trigger source — a submission can have one
-        // SubmissionCompleted + many SubmissionUpdated, and the legacy single-run lookup expects
-        // the most recent. Ordered by StartedAt because it's monotonic and indexed via PK
-        // (Guid v7 timestamp prefix); FinishedAt is null for in-flight runs.
-        var entity = await this.dbContext.WorkflowRuns
-            .AsNoTracking()
-            .Where(r => r.TenantId == tenantId
-                && r.TriggerSourceKind == triggerSourceKind
-                && r.TriggerSourceId == triggerSourceId)
-            .OrderByDescending(r => r.StartedAt)
-            .FirstOrDefaultAsync(cancellationToken);
-        return entity is null ? null : MapRunEntityToRecord(entity);
-    }
-
-    public async Task<IReadOnlyList<WorkflowRunRecord>> ListRunsByTriggerSourceAsync(
-        Guid tenantId, string triggerSourceKind, Guid triggerSourceId, CancellationToken cancellationToken)
-    {
-        var entities = await this.dbContext.WorkflowRuns
-            .AsNoTracking()
-            .Where(r => r.TenantId == tenantId
-                && r.TriggerSourceKind == triggerSourceKind
-                && r.TriggerSourceId == triggerSourceId)
-            .OrderByDescending(r => r.StartedAt)
-            .ToListAsync(cancellationToken);
-        return entities.Select(MapRunEntityToRecord).ToList();
-    }
-
     public async Task<WorkflowPagedResult<WorkflowRunRecord>> ListRunsAsync(
         WorkflowRunFilter filter, CancellationToken cancellationToken)
     {
         filter.Pagination.Validate();
 
-        IQueryable<Entities.WorkflowRun> query = this.dbContext.WorkflowRuns
-            .AsNoTracking()
-            .Where(r => r.TenantId == filter.TenantId);
+        IQueryable<Entities.WorkflowRun> query = this.dbContext.WorkflowRuns.AsNoTracking();
 
+        // Null tenant = explicit admin-wide listing (see WorkflowRunFilter.TenantId doc).
+        if (filter.TenantId is { } tenantId)
+        {
+            query = query.Where(r => r.TenantId == tenantId);
+        }
         if (filter.DefinitionId is { } definitionId)
         {
             query = query.Where(r => r.DefinitionId == definitionId);
@@ -789,16 +762,24 @@ internal class EfCoreWorkflowStore : IWorkflowStore
     }
 
     public Task<int> PurgeRunsByDefinitionAsync(
-        Guid tenantId,
         Guid definitionId,
         int limit,
+        Guid? tenantId = null,
         CancellationToken cancellationToken = default)
     {
-        // Tenant-scoped on purpose — defence in depth. Even though (tenantId, definitionId) is
-        // 1:1 with the definition row, a malformed call shouldn't be able to wipe runs from a
-        // different tenant just by guessing a definitionId.
-        return this.dbContext.WorkflowRuns
-            .Where(r => r.TenantId == tenantId && r.DefinitionId == definitionId)
+        // Null tenant = the system-definition case: the definition lives under the system
+        // tenant while its runs execute under each operator's workspace tenant (same reasoning
+        // as AnyRunsForDefinitionAsync), so only a cross-tenant sweep can clear them. A non-null
+        // tenant keeps the defence-in-depth scoping for owner-tenant definitions — a malformed
+        // call can't wipe another tenant's runs by guessing a definitionId.
+        var query = this.dbContext.WorkflowRuns
+            .Where(r => r.DefinitionId == definitionId);
+        if (tenantId is { } tid)
+        {
+            query = query.Where(r => r.TenantId == tid);
+        }
+
+        return query
             .OrderBy(r => r.CreatedAt)
             .Take(limit)
             .ExecuteDeleteAsync(cancellationToken);

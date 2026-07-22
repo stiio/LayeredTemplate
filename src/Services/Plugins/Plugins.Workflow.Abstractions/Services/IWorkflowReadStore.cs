@@ -49,33 +49,14 @@ public interface IWorkflowReadStore
     Task<WorkflowRunRecord?> GetRunAsync(Guid runId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Lookup by trigger source — used by traces (e.g. <c>GET submissions/{id}/workflow-run</c>).
-    /// <paramref name="tenantId"/> is required for defense-in-depth: even if the caller's
-    /// authorisation already scoped the source to the right workspace, the store enforces the
-    /// match so a stray cross-tenant <c>(triggerSourceKind, triggerSourceId)</c> collision
-    /// cannot leak.
-    /// </summary>
-    Task<WorkflowRunRecord?> FindRunByTriggerSourceAsync(
-        Guid tenantId,
-        string triggerSourceKind,
-        Guid triggerSourceId,
-        CancellationToken cancellationToken);
-
-    /// <summary>
-    /// All runs for a given trigger source, newest first. Used by the dashboard run-history view
-    /// where a single submission can have multiple runs (e.g. one <c>SubmissionCompleted</c> +
-    /// many <c>SubmissionUpdated</c> from dashboard edits). Tenant-scoped.
-    /// </summary>
-    Task<IReadOnlyList<WorkflowRunRecord>> ListRunsByTriggerSourceAsync(
-        Guid tenantId,
-        string triggerSourceKind,
-        Guid triggerSourceId,
-        CancellationToken cancellationToken);
-
-    /// <summary>
     /// Paged list of runs matching <paramref name="filter"/>. Ordered by <c>CreatedAt DESC</c>
-    /// (driven by the <c>(tenant_id, created_at DESC)</c> index). Result includes total count
-    /// across all pages for full paginator UI.
+    /// (driven by the <c>(tenant_id, created_at DESC)</c> index when tenant-scoped). Result
+    /// includes total count across all pages for full paginator UI.
+    /// <para>
+    /// This is the single run-listing surface: trigger-source lookups (submission traces,
+    /// run-history views) are just filter combinations — <c>TriggerSourceKind</c> +
+    /// <c>TriggerSourceId</c>, with <c>Limit=1</c> for a "latest run wins" lookup.
+    /// </para>
     /// </summary>
     Task<WorkflowPagedResult<WorkflowRunRecord>> ListRunsAsync(
         WorkflowRunFilter filter,
