@@ -7,7 +7,7 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities;
 /// Persistent workflow run row. <see cref="Definition"/> nav lets EF model the FK; engine code
 /// maps this to <c>Hipaa.Backend.Plugins.Workflow.Abstractions.WorkflowRunRecord</c>.
 /// </summary>
-public class WorkflowRun
+internal class WorkflowRun
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
 

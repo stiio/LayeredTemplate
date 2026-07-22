@@ -5,7 +5,7 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities;
 /// <c>Hipaa.Backend.Plugins.Workflow.Abstractions.WorkflowDefinition</c> (the engine-side
 /// record): this is the EF-mapped row, that is the runtime POCO. Store maps both directions.
 /// </summary>
-public class WorkflowDefinition
+internal class WorkflowDefinition
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
 

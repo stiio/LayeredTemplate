@@ -6,7 +6,7 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities;
 /// Persistent step-execution row. Mapped to/from
 /// <c>Hipaa.Backend.Plugins.Workflow.Abstractions.WorkflowStepRecord</c> by the store.
 /// </summary>
-public class WorkflowStepExecution
+internal class WorkflowStepExecution
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
 

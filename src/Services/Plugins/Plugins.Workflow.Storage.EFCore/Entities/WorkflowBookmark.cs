@@ -12,7 +12,7 @@ namespace LayeredTemplate.Plugins.Workflow.Storage.EFCore.Entities;
 /// reconciliation sweep (backstop); cascade-deleted when the owning run is purged.
 /// </para>
 /// </summary>
-public class WorkflowBookmark
+internal class WorkflowBookmark
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
 
