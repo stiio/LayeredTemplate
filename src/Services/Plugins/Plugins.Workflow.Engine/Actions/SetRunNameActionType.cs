@@ -55,8 +55,8 @@ public class SetRunNameActionType : ActionType<SetRunNameConfig>
     {
         var name = WorkflowRunner.NormalizeName(context.Config.Name?.Resolved);
 
-        // Scoped store is shared with the worker's batch — GetRunAsync hits Local first when
-        // the run was already loaded by ExecuteOneAsync, returning the tracked entity.
+        // Scoped store is shared with the step's scope — GetRunAsync hits Local first when
+        // the run was already loaded by the step executor, returning the tracked entity.
         var run = await this.store.GetRunAsync(context.RunId, cancellationToken);
         if (run is not null)
         {

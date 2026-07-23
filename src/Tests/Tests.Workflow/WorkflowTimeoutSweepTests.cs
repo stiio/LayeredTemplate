@@ -3,8 +3,11 @@ using LayeredTemplate.Plugins.Workflow.Abstractions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
+using LayeredTemplate.Plugins.Workflow.Abstractions.Expressions;
 using LayeredTemplate.Plugins.Workflow.Engine;
 using LayeredTemplate.Plugins.Workflow.Engine.Actions;
+using LayeredTemplate.Plugins.Workflow.Engine.Expressions;
+using LayeredTemplate.Plugins.Workflow.Engine.Expressions.Engines;
 using LayeredTemplate.Plugins.Workflow.Engine.Services;
 using LayeredTemplate.Tests.Workflow.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,10 +18,10 @@ using Xunit;
 namespace LayeredTemplate.Tests.Workflow;
 
 /// <summary>
-/// The engine timeout sweep (<c>WorkflowEngineWorker.SweepExpiredWaitingStepsOnceAsync</c>, the
-/// maintenance-loop pass) routes each expired Waiting step through its action's
+/// The engine timeout sweep (<see cref="WorkflowMaintenanceSweeper"/>, driven by the worker's
+/// maintenance loop) routes each expired Waiting step through its action's
 /// <c>OnStepTimedOutAsync</c> and applies the result. Proves the per-action timeout policy
-/// end-to-end through the worker (claim → OnStepTimedOut → ApplyResult):
+/// end-to-end through the sweeper (claim → OnStepTimedOut → ApplyResult):
 ///  - a graceful-port action (Delay) → step Completed on its <c>done</c> port (the timer IS the
 ///    happy path);
 ///  - a no-override action (base default) → step Dead, non-transient (no timeout → retry →
@@ -43,9 +46,9 @@ public sealed class WorkflowTimeoutSweepTests
     public async Task Sweep_fires_delay_done_port_on_timeout()
     {
         // Delay's timer IS the happy path — OnStepTimedOut returns "done", so the swept step Completes.
-        var (worker, store, registry, step) = BuildSweep(new DelayActionType());
+        var (sweeper, store, registry, step) = BuildSweep(new DelayActionType());
 
-        await worker.SweepExpiredWaitingStepsOnceAsync(store, registry, MakeFanOut(store, registry), CancellationToken.None);
+        await sweeper.SweepExpiredOnceAsync(CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Completed, step.Status);
         Assert.Equal("done", step.OutputPort);
@@ -57,9 +60,9 @@ public sealed class WorkflowTimeoutSweepTests
         // A suspending action that never overrides OnStepTimedOut → the base default raises a
         // non-transient OnError, landing the swept step Dead (no port). Non-transient is
         // load-bearing: a transient default would loop timeout → retry → re-suspend.
-        var (worker, store, registry, step) = BuildSweep(new NoTimeoutAction());
+        var (sweeper, store, registry, step) = BuildSweep(new NoTimeoutAction());
 
-        await worker.SweepExpiredWaitingStepsOnceAsync(store, registry, MakeFanOut(store, registry), CancellationToken.None);
+        await sweeper.SweepExpiredOnceAsync(CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Dead, step.Status);
         Assert.Null(step.OutputPort);
@@ -70,9 +73,9 @@ public sealed class WorkflowTimeoutSweepTests
     public async Task Sweep_with_nothing_expired_is_a_no_op()
     {
         // Empty queue → the sweep claims nothing and touches nothing.
-        var (worker, store, registry, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        var (sweeper, store, registry, step) = BuildSweep(new DelayActionType(), seedExpired: false);
 
-        await worker.SweepExpiredWaitingStepsOnceAsync(store, registry, MakeFanOut(store, registry), CancellationToken.None);
+        await sweeper.SweepExpiredOnceAsync(CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Waiting, step.Status);
         Assert.Empty(store.UpdatedSteps);
@@ -80,7 +83,7 @@ public sealed class WorkflowTimeoutSweepTests
 
     // ── harness ─────────────────────────────────────────────────────────────
 
-    private static (WorkflowEngineWorker Worker, FakeStore Store, FakeRegistry Registry, WorkflowStepRecord Step) BuildSweep(
+    private static (WorkflowMaintenanceSweeper Sweeper, FakeStore Store, FakeRegistry Registry, WorkflowStepRecord Step) BuildSweep(
         IActionType action,
         bool seedExpired = true)
     {
@@ -117,22 +120,22 @@ public sealed class WorkflowTimeoutSweepTests
             store.ExpiredWaitingSteps.Enqueue(step);
         }
 
-        var worker = new WorkflowEngineWorker(
-            scopeFactory: null!,
-            lifetime: null!,
-            workSignal: new WorkflowWorkSignal(),
-            logger: NullLogger<WorkflowEngineWorker>.Instance,
-            settings: Options.Create(Settings));
+        var fanOut = new WorkflowFanOut(
+            store,
+            new FakeBuilder(),
+            Options.Create(Settings),
+            new ServiceCollection().BuildServiceProvider(),
+            NullLogger<WorkflowFanOut>.Instance);
+        var resolver = new ExpressionResolver(new IExpressionEngine[] { new StaticExpressionEngine() });
+        var executor = new WorkflowStepExecutor(
+            store, registry, fanOut, resolver,
+            Options.Create(Settings), NullLogger<WorkflowStepExecutor>.Instance);
+        var sweeper = new WorkflowMaintenanceSweeper(
+            store, registry, fanOut, resolver, executor,
+            Options.Create(Settings), NullLogger<WorkflowMaintenanceSweeper>.Instance);
 
-        return (worker, store, registry, step);
+        return (sweeper, store, registry, step);
     }
-
-    private static WorkflowFanOut MakeFanOut(FakeStore store, FakeRegistry registry) => new(
-        store,
-        new FakeBuilder(),
-        Options.Create(Settings),
-        new ServiceCollection().BuildServiceProvider(),
-        NullLogger<WorkflowFanOut>.Instance);
 
     // -----------------------------------------------------------------------
     // Expired-step revert — compensating write when timeout handling fails
@@ -145,12 +148,12 @@ public sealed class WorkflowTimeoutSweepTests
         // revert the row would be stuck forever (run is Suspended → stale-fail skips it, no
         // claim path touches 'running'). The revert re-parks it Waiting with an attempt counted
         // so the next maintenance pass retries the timeout.
-        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        var (sweeper, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
         step.Status = StepExecutionStatus.Running; // as the claim left it
         step.AttemptCount = 0;
         store.Steps.Add(step);
 
-        await worker.RevertExpiredStepCoreAsync(step.Id, "db blip", store, MakeFanOut(store, new FakeRegistry()));
+        await sweeper.RevertExpiredStepAsync(step.Id, "db blip");
 
         Assert.Equal(StepExecutionStatus.Waiting, step.Status);
         Assert.Equal(1, step.AttemptCount);
@@ -161,12 +164,12 @@ public sealed class WorkflowTimeoutSweepTests
     [Fact]
     public async Task Failed_timeout_handling_dead_letters_at_max_attempts()
     {
-        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        var (sweeper, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
         step.Status = StepExecutionStatus.Running;
         step.AttemptCount = Settings.MaxAttempts - 1; // this failure is the last allowed
         store.Steps.Add(step);
 
-        await worker.RevertExpiredStepCoreAsync(step.Id, "still broken", store, MakeFanOut(store, new FakeRegistry()));
+        await sweeper.RevertExpiredStepAsync(step.Id, "still broken");
 
         Assert.Equal(StepExecutionStatus.Dead, step.Status);
         Assert.NotNull(step.CompletedAt);
@@ -176,12 +179,12 @@ public sealed class WorkflowTimeoutSweepTests
     [Fact]
     public async Task Shutdown_interruption_reparks_immediately_without_consuming_an_attempt()
     {
-        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        var (sweeper, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
         step.Status = StepExecutionStatus.Running;
         step.AttemptCount = 2;
         store.Steps.Add(step);
 
-        await worker.RevertExpiredStepCoreAsync(step.Id, failure: null, store, MakeFanOut(store, new FakeRegistry()));
+        await sweeper.RevertExpiredStepAsync(step.Id, failure: null);
 
         Assert.Equal(StepExecutionStatus.Waiting, step.Status);
         Assert.Equal(2, step.AttemptCount); // a deploy is not a handler failure
@@ -197,7 +200,7 @@ public sealed class WorkflowTimeoutSweepTests
         // must park it back to Waiting untouched, while the first keeps its real outcome.
         var cts = new CancellationTokenSource();
         var action = new CancelOnTimeoutAction(cts);
-        var (worker, store, registry, step1) = BuildSweep(action);
+        var (sweeper, store, registry, step1) = BuildSweep(action);
         var step2 = new WorkflowStepRecord
         {
             RunId = step1.RunId,
@@ -210,7 +213,7 @@ public sealed class WorkflowTimeoutSweepTests
         };
         store.ExpiredWaitingSteps.Enqueue(step2);
 
-        await worker.SweepExpiredWaitingStepsOnceAsync(store, registry, MakeFanOut(store, registry), cts.Token);
+        await sweeper.SweepExpiredOnceAsync(cts.Token);
 
         Assert.Equal(StepExecutionStatus.Completed, step1.Status); // finished before the signal
         Assert.Equal(StepExecutionStatus.Waiting, step2.Status);   // reverted, not wedged in Running
@@ -223,12 +226,12 @@ public sealed class WorkflowTimeoutSweepTests
     {
         // Another path (operator resume, concurrent finalize) moved the step on between the
         // failure and the revert — the guard must not clobber the newer state.
-        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        var (sweeper, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
         step.Status = StepExecutionStatus.Completed;
         step.AttemptCount = 1;
         store.Steps.Add(step);
 
-        await worker.RevertExpiredStepCoreAsync(step.Id, "late failure", store, MakeFanOut(store, new FakeRegistry()));
+        await sweeper.RevertExpiredStepAsync(step.Id, "late failure");
 
         Assert.Equal(StepExecutionStatus.Completed, step.Status);
         Assert.Equal(1, step.AttemptCount);
@@ -243,14 +246,14 @@ public sealed class WorkflowTimeoutSweepTests
     {
         // A worker died between "claim committed" and "outcome committed" — no catch block ever
         // ran. The recovery sweep is the only thing that can un-wedge the row.
-        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        var (sweeper, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
         step.Status = StepExecutionStatus.Running;
         step.AttemptCount = 1; // counted by the claim; the crash must NOT refund it
         step.StartedAt = DateTime.UtcNow.AddHours(-2);
         step.UpdatedAt = DateTime.UtcNow.AddHours(-2); // long past StuckStepRecoverySeconds
         store.Steps.Add(step);
 
-        await worker.RecoverStuckRunningStepsOnceAsync(store, CancellationToken.None);
+        await sweeper.RecoverStuckRunningStepsOnceAsync(CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Pending, step.Status);
         Assert.Equal(1, step.AttemptCount);
@@ -263,12 +266,12 @@ public sealed class WorkflowTimeoutSweepTests
     {
         // A live worker is still inside its lane budget — the threshold must never steal a step
         // from a healthy executor.
-        var (worker, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
+        var (sweeper, store, _, step) = BuildSweep(new DelayActionType(), seedExpired: false);
         step.Status = StepExecutionStatus.Running;
         step.UpdatedAt = DateTime.UtcNow.AddSeconds(-30);
         store.Steps.Add(step);
 
-        await worker.RecoverStuckRunningStepsOnceAsync(store, CancellationToken.None);
+        await sweeper.RecoverStuckRunningStepsOnceAsync(CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Running, step.Status);
     }

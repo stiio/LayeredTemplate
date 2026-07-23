@@ -43,7 +43,7 @@
 - Run: `running` → `suspended` (пока хоть один Waiting шаг) → `running` (после resume) → `completed` / `failed`.
 - Step: `pending` → `running` → `completed` / `failed` / `dead` / `waiting`.
 
-Двигает state — `WorkflowEngineWorker` (`ProcessBatchAsync`): claim batch с `FOR UPDATE SKIP LOCKED`, по каждому step вызывает `IActionType.ExecuteAsync`, применяет `ActionExecutionResult` через `ApplyResultAsync` (выставляет step.Status, fan-out next, run-completion check). Single-port engine означает что run.completion check — простой: «нет ни одного активного step → run terminal».
+Двигает state — `WorkflowEngineWorker` (claim batch с `FOR UPDATE SKIP LOCKED`, DI-scope на каждый step) + `WorkflowStepExecutor`: по каждому step вызывает `IActionType.ExecuteAsync`, применяет `ActionExecutionResult` через `ApplyResultAsync` (выставляет step.Status, fan-out next, run-completion check). Single-port engine означает что run.completion check — простой: «нет ни одного активного step → run terminal».
 
 **Suspend/Resume**: step.Status = `waiting`, `next_attempt_at` = deadline. `IWorkflowResumer.ResumeAsync(runId, stepId, port, payload, ct)` — атомарный `UPDATE WHERE status='waiting'` (защита от двойного resume), затем fan-out по выбранному порту.
 

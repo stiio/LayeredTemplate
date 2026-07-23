@@ -12,7 +12,7 @@ namespace LayeredTemplate.Plugins.Workflow.Engine.Services;
 /// <para>
 /// Cancel does NOT touch step rows. In-flight actions run to completion and write whatever
 /// they actually produced (the trace shows what really executed). The next step that would
-/// have started sees <c>run.Status == Failed</c> in <c>WorkflowEngineWorker.ExecuteOneAsync</c>
+/// have started sees <c>run.Status == Failed</c> in <see cref="WorkflowStepExecutor.ExecuteAsync"/>
 /// and short-circuits to <c>step.Status = Dead</c>. Net effect: cancel honors the operator's
 /// intent at the run level while preserving accurate step history.
 /// </para>

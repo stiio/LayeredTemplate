@@ -1,12 +1,6 @@
-using System.Diagnostics;
-using System.Text.Json;
-using LayeredTemplate.Plugins.Workflow.Abstractions;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Actions;
-using LayeredTemplate.Plugins.Workflow.Abstractions.Expressions;
-using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Services;
-using LayeredTemplate.Plugins.Workflow.Engine.Expressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -15,10 +9,12 @@ using Microsoft.Extensions.Options;
 namespace LayeredTemplate.Plugins.Workflow.Engine.Services;
 
 /// <summary>
-/// Picks up pending workflow step executions, dispatches them via the registered IActionType,
-/// merges outputs into the run context, and enqueues successor steps based on workflow edges.
-/// All persistence goes through <see cref="IWorkflowStore"/>; edge-walking goes through
-/// <see cref="IWorkflowFanOut"/> so the resume API can reuse the same logic.
+/// Hosted orchestrator of the engine's background work: spawns the worker loops that claim
+/// pending step executions and the single maintenance loop, and owns everything scoping- and
+/// lifetime-related — claims, DI scopes, cancellation budgets, flushes, release-on-failure.
+/// What happens to a step INSIDE a scope lives elsewhere: per-step dispatch in
+/// <see cref="WorkflowStepExecutor"/>, maintenance work items in
+/// <see cref="WorkflowMaintenanceSweeper"/>.
 /// <para>
 /// Two-pool routing: when <see cref="WorkflowEngineSettings.LongRunningWorkerCount"/> is &gt; 0
 /// the engine spawns a dedicated pool that only claims rows with <c>is_long_running = true</c>;
@@ -278,11 +274,11 @@ internal class WorkflowEngineWorker : BackgroundService
 
     /// <summary>
     /// Processes a single claimed step in its OWN DI scope: loads the step, runs it through
-    /// <see cref="ExecuteOneAsync(WorkflowStepRecord, IWorkflowStore, IActionTypeRegistry, IWorkflowFanOut, WorkflowStepLane, CancellationToken)"/>,
-    /// and flushes. A fresh scope per step gives per-request-style scoped-service lifetimes and
-    /// full failure isolation: on any error the scope is simply disposed unsaved, leaving the row
-    /// 'running' for the release path to revert. Returns true when the step's outcome was durably
-    /// persisted (or the row vanished and there is nothing to release).
+    /// <see cref="WorkflowStepExecutor.ExecuteAsync"/>, and flushes. A fresh scope per step gives
+    /// per-request-style scoped-service lifetimes and full failure isolation: on any error the
+    /// scope is simply disposed unsaved, leaving the row 'running' for the release path to
+    /// revert. Returns true when the step's outcome was durably persisted (or the row vanished
+    /// and there is nothing to release).
     /// </summary>
     private async Task<bool> ProcessClaimedStepAsync(
         Guid stepId,
@@ -294,9 +290,7 @@ internal class WorkflowEngineWorker : BackgroundService
         {
             await using var scope = this.scopeFactory.CreateAsyncScope();
             var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
-            var registry = scope.ServiceProvider.GetRequiredService<IActionTypeRegistry>();
-            var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
-            var resolver = scope.ServiceProvider.GetRequiredService<IExpressionResolver>();
+            var executor = scope.ServiceProvider.GetRequiredService<WorkflowStepExecutor>();
 
             var step = await store.GetStepAsync(stepId, ct);
             if (step is null)
@@ -306,7 +300,7 @@ internal class WorkflowEngineWorker : BackgroundService
                 return true;
             }
 
-            await this.ExecuteOneAsync(step, store, registry, fanOut, lane, ct, resolver);
+            await executor.ExecuteAsync(step, lane, ct);
             // CT.None on purpose: the action has already run (side effects possibly issued);
             // this flush persists its computed outcome. Cancelling here — lane deadline landing
             // between action completion and save, or shutdown drain — would discard the outcome
@@ -342,7 +336,7 @@ internal class WorkflowEngineWorker : BackgroundService
         catch (Exception ex)
         {
             // Any other unhandled error (DB connection blip, OOM, an exception that escaped
-            // ExecuteOneAsync's inner action try/catch, …). Scope disposed unsaved; the release
+            // the executor's inner action try/catch, …). Scope disposed unsaved; the release
             // path reverts the claim. Side effects already issued by the action are
             // at-least-once: the next claim retries them, matching the general engine contract.
             this.logger.LogError(ex,
@@ -368,7 +362,7 @@ internal class WorkflowEngineWorker : BackgroundService
         {
             await using var scope = this.scopeFactory.CreateAsyncScope();
             var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
-            var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
+            var executor = scope.ServiceProvider.GetRequiredService<WorkflowStepExecutor>();
 
             var step = await store.GetStepAsync(stepId, CancellationToken.None);
             if (step is null) return true;
@@ -380,11 +374,11 @@ internal class WorkflowEngineWorker : BackgroundService
                     : $"Step did not complete within the fast-lane action timeout ({timeoutSeconds}s). "
                         + "Actions that legitimately run this long should declare IsLongRunning = true.",
                 transient: true);
-            await this.ApplyResultAsync(step, timeoutResult, store, fanOut, CancellationToken.None);
+            await executor.ApplyResultAsync(step, timeoutResult, CancellationToken.None);
             await store.SaveChangesAsync(CancellationToken.None);
             this.logger.LogWarning(
                 "Step {StepId} hit the {Lane}-lane action timeout ({Timeout}s) on attempt {Attempt}/{Max}; timeout outcome applied.",
-                stepId, FormatLane(lane), timeoutSeconds, step.AttemptCount, this.settings.MaxAttempts);
+                stepId, WorkflowStepExecutor.FormatLane(lane), timeoutSeconds, step.AttemptCount, this.settings.MaxAttempts);
             return true;
         }
         catch (Exception ex)
@@ -431,22 +425,18 @@ internal class WorkflowEngineWorker : BackgroundService
 
                 if (this.settings.BookmarkSweepIntervalSeconds > 0 && DateTime.UtcNow >= nextBookmarkSweep)
                 {
-                    // Own lightweight scope — set-based DELETE, no action code involved. Deletes
-                    // bookmarks whose target step is no longer Waiting (resumed elsewhere,
-                    // timed-out, dead-lettered, cancelled). This is what makes bookmark cleanup
-                    // CORRECT regardless of path; the eager delete-on-resume in the signaler is
-                    // just an optimization. No-ops when nothing's stale.
+                    // Own lightweight scope — set-based DELETE, no action code involved.
                     await using var bookmarkScope = this.scopeFactory.CreateAsyncScope();
-                    var bookmarkStore = bookmarkScope.ServiceProvider.GetRequiredService<IWorkflowStore>();
-                    await this.SweepResolvedBookmarksAsync(bookmarkStore, stoppingToken);
+                    var sweeper = bookmarkScope.ServiceProvider.GetRequiredService<WorkflowMaintenanceSweeper>();
+                    await sweeper.SweepResolvedBookmarksAsync(stoppingToken);
                     nextBookmarkSweep = DateTime.UtcNow.AddSeconds(this.settings.BookmarkSweepIntervalSeconds);
                 }
 
                 if (this.settings.StuckStepRecoverySeconds > 0 && DateTime.UtcNow >= nextStuckRecovery)
                 {
                     await using var recoveryScope = this.scopeFactory.CreateAsyncScope();
-                    var recoveryStore = recoveryScope.ServiceProvider.GetRequiredService<IWorkflowStore>();
-                    await this.RecoverStuckRunningStepsOnceAsync(recoveryStore, stoppingToken);
+                    var sweeper = recoveryScope.ServiceProvider.GetRequiredService<WorkflowMaintenanceSweeper>();
+                    await sweeper.RecoverStuckRunningStepsOnceAsync(stoppingToken);
                     nextStuckRecovery = DateTime.UtcNow.AddSeconds(StuckRecoveryCheckIntervalSeconds);
                 }
             }
@@ -476,8 +466,8 @@ internal class WorkflowEngineWorker : BackgroundService
     /// interval). Ids are claimed in a short-lived scope (the claim SQL commits immediately);
     /// each timeout handler then runs in its OWN scope — <c>OnStepTimedOutAsync</c> is
     /// consumer-extensible code and gets the same scoped-service isolation as a regular action
-    /// dispatch. Bookmark reconciliation is NOT part of the pass — the loop runs it on its own
-    /// rarer cadence (<see cref="WorkflowEngineSettings.BookmarkSweepIntervalSeconds"/>).
+    /// dispatch. The same claim → handle → revert sequence exists single-scope on
+    /// <see cref="WorkflowMaintenanceSweeper.SweepExpiredOnceAsync"/> — keep the two in sync.
     /// </summary>
     private async Task RunMaintenancePassAsync(CancellationToken stoppingToken)
     {
@@ -529,11 +519,9 @@ internal class WorkflowEngineWorker : BackgroundService
         {
             await using var scope = this.scopeFactory.CreateAsyncScope();
             var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
-            var registry = scope.ServiceProvider.GetRequiredService<IActionTypeRegistry>();
-            var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
-            var resolver = scope.ServiceProvider.GetRequiredService<IExpressionResolver>();
+            var sweeper = scope.ServiceProvider.GetRequiredService<WorkflowMaintenanceSweeper>();
 
-            await this.HandleExpiredStepAsync(stepId, store, registry, fanOut, ct, resolver);
+            await sweeper.HandleExpiredStepAsync(stepId, ct);
             // Commit the timeout outcome as its own unit. (A parent auto-resume triggered inside
             // the handler has already committed via the resumer's own transaction.)
             await store.SaveChangesAsync(ct);
@@ -554,27 +542,17 @@ internal class WorkflowEngineWorker : BackgroundService
     }
 
     /// <summary>
-    /// Compensating write after timeout handling didn't complete. The sweep's claim flipped the
-    /// step Waiting → Running via committed raw SQL; without this revert the row would be stuck
-    /// in 'running' FOREVER — its run sits in Suspended (which the stale-running fail
-    /// deliberately skips) and no claim path ever touches non-pending rows. Best-effort in a
-    /// fresh scope; if the revert itself fails (DB fully down), the wedge is logged loud for an
-    /// operator.
+    /// Runs <see cref="WorkflowMaintenanceSweeper.RevertExpiredStepAsync"/> in a fresh scope
+    /// (the failed handler's scope died with its staged junk). Best-effort: if the revert itself
+    /// fails (DB fully down), the wedge is logged loud for an operator.
     /// </summary>
-    /// <param name="failure">
-    /// The handler failure message, or null for a shutdown interruption. A failure consumes an
-    /// attempt (so a deterministically-broken timeout hook dead-letters at MaxAttempts instead
-    /// of retrying forever) and re-parks with backoff; a shutdown re-parks immediately with no
-    /// attempt consumed.
-    /// </param>
     private async Task TryRevertExpiredStepAsync(Guid stepId, string? failure)
     {
         try
         {
             await using var scope = this.scopeFactory.CreateAsyncScope();
-            var store = scope.ServiceProvider.GetRequiredService<IWorkflowStore>();
-            var fanOut = scope.ServiceProvider.GetRequiredService<IWorkflowFanOut>();
-            await this.RevertExpiredStepCoreAsync(stepId, failure, store, fanOut);
+            var sweeper = scope.ServiceProvider.GetRequiredService<WorkflowMaintenanceSweeper>();
+            await sweeper.RevertExpiredStepAsync(stepId, failure);
         }
         catch (Exception revertEx)
         {
@@ -582,724 +560,5 @@ internal class WorkflowEngineWorker : BackgroundService
                 "Failed to park expired step {StepId} back to waiting — row stays 'running' until an operator intervenes (no automatic reaper covers a running step under a suspended run).",
                 stepId);
         }
-    }
-
-    /// <summary>
-    /// One stuck-running recovery pass — internal seam for the test harness. Returns steps
-    /// abandoned in 'running' by crashed workers (updated_at older than
-    /// <see cref="WorkflowEngineSettings.StuckStepRecoverySeconds"/>) to 'pending', draining in
-    /// BatchSize chunks until dry. The crashed attempt stays counted: the first SOFT failure
-    /// after recovery dead-letters via MaxAttempts. A pure hard-crash loop (the step kills the
-    /// process every time, so ApplyResult's cap check never runs) is rate-limited by the
-    /// threshold and ultimately terminated by Retention.EnableStaleFail at the run level.
-    /// </summary>
-    internal async Task RecoverStuckRunningStepsOnceAsync(IWorkflowStore store, CancellationToken ct)
-    {
-        var threshold = DateTime.UtcNow.AddSeconds(-this.settings.StuckStepRecoverySeconds);
-        while (!ct.IsCancellationRequested)
-        {
-            var recovered = await store.ReclaimStuckRunningStepIdsAsync(threshold, this.settings.BatchSize, ct);
-            if (recovered.Count == 0) break;
-
-            this.logger.LogWarning(
-                "Recovered {Count} step(s) stuck in 'running' for over {Threshold}s (worker crash suspected); returned to pending: {StepIds}",
-                recovered.Count, this.settings.StuckStepRecoverySeconds, recovered);
-
-            if (recovered.Count < this.settings.BatchSize) break;
-        }
-    }
-
-    /// <summary>Core of the expired-step revert — internal seam for the test harness.</summary>
-    internal async Task RevertExpiredStepCoreAsync(
-        Guid stepId, string? failure, IWorkflowStore store, IWorkflowFanOut fanOut)
-    {
-        var step = await store.GetStepAsync(stepId, CancellationToken.None);
-        if (step is null || step.Status != StepExecutionStatus.Running)
-        {
-            // Vanished, or some other path already progressed it — nothing to revert.
-            return;
-        }
-
-        if (failure is null)
-        {
-            // Shutdown flavour: immediate re-park, the next startup's sweep re-claims it.
-            step.Status = StepExecutionStatus.Waiting;
-            step.NextAttemptAt = DateTime.UtcNow;
-            store.UpdateStep(step);
-            await store.SaveChangesAsync(CancellationToken.None);
-            this.logger.LogInformation(
-                "Expired step {StepId} parked back to waiting after shutdown interrupted its timeout handling.",
-                stepId);
-            return;
-        }
-
-        step.AttemptCount += 1;
-        step.LastError = $"Timeout handling failed: {failure}";
-
-        if (step.AttemptCount >= this.settings.MaxAttempts)
-        {
-            step.Status = StepExecutionStatus.Dead;
-            step.CompletedAt = DateTime.UtcNow;
-            store.UpdateStep(step);
-            await fanOut.CheckRunCompletionAsync(step, CancellationToken.None);
-            await store.SaveChangesAsync(CancellationToken.None);
-            this.logger.LogError(
-                "Expired step {StepId} dead-lettered after {Attempts}/{Max} failed timeout-handling attempt(s): {Failure}",
-                stepId, step.AttemptCount, this.settings.MaxAttempts, failure);
-            return;
-        }
-
-        step.Status = StepExecutionStatus.Waiting;
-        step.NextAttemptAt = DateTime.UtcNow.Add(this.BackoffFor(step.AttemptCount));
-        store.UpdateStep(step);
-        await store.SaveChangesAsync(CancellationToken.None);
-        this.logger.LogWarning(
-            "Expired step {StepId} parked back to waiting (attempt {Attempt}/{Max}); timeout handling retries at {NextAttemptAt:o}.",
-            stepId, step.AttemptCount, this.settings.MaxAttempts, step.NextAttemptAt);
-    }
-
-    /// <summary>
-    /// Internal for the test harness — runs ONE timeout-sweep pass (claim expired waiting steps →
-    /// per-action <c>OnStepTimedOutAsync</c> → <see cref="ApplyResultAsync"/>) on the supplied
-    /// store without spinning up a scope factory + hosted service. Production callers go through
-    /// <see cref="RunMaintenancePassAsync"/>, which wraps each step in its own scope. Mirrors the
-    /// <see cref="ExecuteOneAsync"/> test seam.
-    /// </summary>
-    internal async Task SweepExpiredWaitingStepsOnceAsync(
-        IWorkflowStore store,
-        IActionTypeRegistry registry,
-        IWorkflowFanOut fanOut,
-        CancellationToken ct,
-        IExpressionResolver? resolver = null)
-    {
-        var expiredIds = await store.ClaimExpiredWaitingStepIdsAsync(this.settings.BatchSize, ct);
-        foreach (var stepId in expiredIds)
-        {
-            if (ct.IsCancellationRequested) break;
-            await this.HandleExpiredStepAsync(stepId, store, registry, fanOut, ct, resolver);
-        }
-
-        // Same shutdown remainder-revert as the production pass (see RunMaintenancePassAsync).
-        if (ct.IsCancellationRequested)
-        {
-            foreach (var stepId in expiredIds)
-            {
-                await this.RevertExpiredStepCoreAsync(stepId, failure: null, store, fanOut);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Core of one expired step's timeout handling — shared by the production per-scope path and
-    /// the test seam. Tracked-loads the claimed step and routes it through its action's timeout
-    /// policy; stages mutations on <paramref name="store"/> without flushing.
-    /// </summary>
-    private async Task HandleExpiredStepAsync(
-        Guid stepId,
-        IWorkflowStore store,
-        IActionTypeRegistry registry,
-        IWorkflowFanOut fanOut,
-        CancellationToken ct,
-        IExpressionResolver? resolver = null)
-    {
-        var step = await store.GetStepAsync(stepId, ct);
-        if (step is null) return;
-
-        // Per-action policy: every action's OnStepTimedOutAsync decides the outcome. Suspending
-        // actions override it to fire a graceful port (Delay → done, WaitSignal / RunWorkflow →
-        // timedOut); the base default raises a non-transient OnError, landing the step in Dead
-        // with a generic message.
-        var actionType = registry.TryGet(step.Kind);
-        if (actionType is null)
-        {
-            step.Status = StepExecutionStatus.Dead;
-            step.LastError = $"Step '{step.Kind}' timed out while waiting and the action kind is unknown.";
-            step.CompletedAt = DateTime.UtcNow;
-            store.UpdateStep(step);
-            await fanOut.CheckRunCompletionAsync(step, ct);
-            return;
-        }
-
-        await this.HandleTimeoutGracefullyAsync(step, store, fanOut, actionType, ct, resolver);
-    }
-
-    /// <summary>
-    /// Reconciliation pass for the generic signal-wait bookmarks. A bookmark is valid only while
-    /// its step is Waiting; the moment the step leaves Waiting by ANY path, the bookmark is stale.
-    /// One set-based DELETE bounded by <see cref="WorkflowEngineSettings.BatchSize"/>. Best-effort:
-    /// swallow + log on failure so a transient DB blip here never aborts the batch's real work.
-    /// </summary>
-    private async Task SweepResolvedBookmarksAsync(IWorkflowStore store, CancellationToken ct)
-    {
-        try
-        {
-            var deleted = await store.SweepResolvedBookmarksAsync(this.settings.BatchSize, ct);
-            if (deleted > 0)
-            {
-                this.logger.LogInformation("Reconciliation swept {Count} resolved bookmark(s).", deleted);
-            }
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            // Shutdown — fine, next startup re-sweeps.
-        }
-        catch (Exception ex)
-        {
-            this.logger.LogError(ex, "Bookmark reconciliation sweep failed; will retry next pass.");
-        }
-    }
-
-    private async Task HandleTimeoutGracefullyAsync(
-        WorkflowStepRecord step,
-        IWorkflowStore store,
-        IWorkflowFanOut fanOut,
-        IActionType actionType,
-        CancellationToken ct,
-        IExpressionResolver? resolver = null)
-    {
-        using var sweepScope = this.logger.BeginScope(new Dictionary<string, object?>
-        {
-            ["StepId"] = step.Id,
-            ["RunId"] = step.RunId,
-            ["TenantId"] = step.TenantId,
-            ["Kind"] = step.Kind,
-            ["Phase"] = "deadline_sweep",
-        });
-        using var activity = WorkflowActivitySource.Instance.StartActivity(
-            "workflow.step.timeout", ActivityKind.Internal);
-        activity?.SetTag(WorkflowTags.RunId, step.RunId);
-        activity?.SetTag(WorkflowTags.StepId, step.Id);
-        activity?.SetTag(WorkflowTags.TenantId, step.TenantId);
-        activity?.SetTag(WorkflowTags.StepKind, step.Kind);
-
-        var run = await store.GetRunAsync(step.RunId, ct);
-        if (run is null)
-        {
-            step.Status = StepExecutionStatus.Dead;
-            step.LastError = $"Run {step.RunId} not found while expiring waiting step.";
-            step.CompletedAt = DateTime.UtcNow;
-            store.UpdateStep(step);
-            return;
-        }
-
-        object configObj;
-        var configType = actionType.ConfigType;
-        try
-        {
-            configObj = step.ResolvedConfig.Deserialize(configType, WorkflowJsonOptions.Default)
-                ?? Activator.CreateInstance(configType)!;
-        }
-        catch (Exception ex)
-        {
-            step.Status = StepExecutionStatus.Dead;
-            step.LastError = $"Could not deserialize resolved config on timeout: {ex.Message}";
-            step.CompletedAt = DateTime.UtcNow;
-            store.UpdateStep(step);
-            await fanOut.CheckRunCompletionAsync(step, ct);
-            return;
-        }
-
-        // Mirror WorkflowResumer.BuildContextAsync so the timeout context matches the resume/execute
-        // shape — NodeKey + StepsOutputs populated (graph is cached on the scope's fan-out, so cheap).
-        // No slice-A timeout override reads these, but keeping the context uniform avoids a future
-        // footgun for a timeout handler that wants the node key or prior outputs.
-        var graph = await fanOut.GetGraphAsync(run, ct);
-        var node = graph?.Nodes.FirstOrDefault(n => n.Id == step.NodeId);
-        var nodeKey = string.IsNullOrWhiteSpace(node?.Key) ? step.NodeId : node.Key;
-
-        var context = new ActionContext
-        {
-            Config = configObj,
-            RunId = step.RunId,
-            StepExecutionId = step.Id,
-            TenantId = run.TenantId,
-            DefinitionId = run.DefinitionId,
-            ActorUserId = run.ActorUserId,
-            TriggerSourceKind = run.TriggerSourceKind,
-            TriggerSourceId = run.TriggerSourceId,
-            IsDryRun = run.IsDryRun,
-            NodeKey = nodeKey,
-            StepsOutputs = run.StepsOutputs,
-            // For a timeout hook these are the suspend-time initial outputs — same channel.
-            PriorAttemptOutputs = step.Outputs,
-            AttemptCount = step.AttemptCount,
-        };
-
-        ActionExecutionResult result;
-        try
-        {
-            if (resolver is not null)
-            {
-                // Same late transient resolution as the execute path — a timeout hook may read
-                // config. The timeout fire is one-shot (no retry bookkeeping), so a resolution
-                // failure lands in the catch below: Dead with the reason recorded.
-                await resolver.ResolveTransientAsync(
-                    configObj,
-                    () => ExpressionModelBuilder.Build(run.StaticContext, run.StepsOutputs),
-                    ExpressionModelBuilder.EvaluationContextForRun(run),
-                    ct);
-            }
-
-            result = await actionType.OnStepTimedOutAsync(context, ct);
-        }
-        catch (Exception ex)
-        {
-            step.Status = StepExecutionStatus.Dead;
-            step.LastError = $"OnStepTimedOutAsync threw: {ex.Message}";
-            step.CompletedAt = DateTime.UtcNow;
-            store.UpdateStep(step);
-            await fanOut.CheckRunCompletionAsync(step, ct);
-            return;
-        }
-
-        await this.ApplyResultAsync(step, result, store, fanOut, ct);
-    }
-
-    /// <summary>
-    /// Internal for the test harness — exposes the per-step dispatch logic without spinning up a
-    /// scope factory + hosted service. Production callers go through <see cref="ProcessBatchAsync"/>.
-    /// </summary>
-    internal async Task ExecuteOneAsync(
-        WorkflowStepRecord step,
-        IWorkflowStore store,
-        IActionTypeRegistry registry,
-        IWorkflowFanOut fanOut,
-        CancellationToken ct)
-    {
-        // Test-harness overload — reuses the lane-aware path with WorkflowStepLane.Any so tests
-        // that don't care about lane semantics get the original single-pool behaviour.
-        await this.ExecuteOneAsync(step, store, registry, fanOut, WorkflowStepLane.Any, ct);
-    }
-
-    /// <param name="resolver">
-    /// Execute-time half of the two-phase expression resolution — materialises transient config
-    /// fields just before the action runs. Optional (trailing) so test-harness callers that
-    /// exercise configs without transient fields don't have to wire an engine stack; the
-    /// production path always passes the scope's resolver.
-    /// </param>
-    internal async Task ExecuteOneAsync(
-        WorkflowStepRecord step,
-        IWorkflowStore store,
-        IActionTypeRegistry registry,
-        IWorkflowFanOut fanOut,
-        WorkflowStepLane lane,
-        CancellationToken ct,
-        IExpressionResolver? resolver = null)
-    {
-        // Outer scope covers everything we know up-front (step + tenant). Inner scope (after the
-        // run loads) adds run-level fields. Serilog enrichers / Seq pick these up automatically;
-        // every log line below carries the structured fields without per-call repetition.
-        using var stepScope = this.logger.BeginScope(new Dictionary<string, object?>
-        {
-            ["StepId"] = step.Id,
-            ["RunId"] = step.RunId,
-            ["TenantId"] = step.TenantId,
-            ["Kind"] = step.Kind,
-            ["AttemptCount"] = step.AttemptCount,
-            ["Lane"] = lane.ToString(),
-        });
-
-        using var stepActivity = WorkflowActivitySource.Instance.StartActivity(
-            "workflow.step.execute", ActivityKind.Internal);
-        stepActivity?.SetTag(WorkflowTags.RunId, step.RunId);
-        stepActivity?.SetTag(WorkflowTags.StepId, step.Id);
-        stepActivity?.SetTag(WorkflowTags.TenantId, step.TenantId);
-        stepActivity?.SetTag(WorkflowTags.StepKind, step.Kind);
-        stepActivity?.SetTag(WorkflowTags.StepAttempt, step.AttemptCount);
-        stepActivity?.SetTag(WorkflowTags.StepLane, FormatLane(lane));
-
-        var actionType = registry.TryGet(step.Kind);
-        if (actionType is null)
-        {
-            step.Status = StepExecutionStatus.Dead;
-            step.LastError = $"Unknown action kind '{step.Kind}'.";
-            step.CompletedAt = DateTime.UtcNow;
-            store.UpdateStep(step);
-            await fanOut.CheckRunCompletionAsync(step, ct);
-            return;
-        }
-
-        var run = await store.GetRunAsync(step.RunId, ct);
-        if (run is null)
-        {
-            // Defensive: dispatching with no run means we'd hand the action a zero TenantId,
-            // which custom actions could mistake for "no scoping". Refuse to run and dead-letter.
-            step.Status = StepExecutionStatus.Dead;
-            step.LastError = $"Run {step.RunId} not found — refusing to dispatch step.";
-            step.CompletedAt = DateTime.UtcNow;
-            store.UpdateStep(step);
-            return;
-        }
-
-        // Run already terminal — typically means an operator cancel or FailRun fired between
-        // the claim SQL and our load here. Don't invoke the action: it may have side effects
-        // (HTTP, email, DB write) that we shouldn't trigger on a closed run. Mark the step
-        // dead-by-association and bail.
-        if (run.Status is WorkflowRunStatus.Completed or WorkflowRunStatus.Failed)
-        {
-            step.Status = StepExecutionStatus.Dead;
-            step.LastError = $"Run already terminal ({run.Status}); step skipped.";
-            step.CompletedAt = DateTime.UtcNow;
-            store.UpdateStep(step);
-            return;
-        }
-
-        object configObj;
-        try
-        {
-            // step.ResolvedConfig is JsonElement on the record; .Deserialize is the typed
-            // overload, no string round-trip. Options must match StepExecutionBuilder's
-            // serialize path (camelCase + enum-as-string) for the round-trip to be symmetric.
-            configObj = step.ResolvedConfig.Deserialize(actionType.ConfigType, WorkflowJsonOptions.Default)
-                ?? Activator.CreateInstance(actionType.ConfigType)!;
-        }
-        catch (Exception ex)
-        {
-            step.Status = StepExecutionStatus.Dead;
-            step.LastError = $"Could not deserialize resolved config: {ex.Message}";
-            step.CompletedAt = DateTime.UtcNow;
-            store.UpdateStep(step);
-            await fanOut.CheckRunCompletionAsync(step, ct);
-            return;
-        }
-
-        // Resolve node-key + steps_outputs snapshot so state-aware actions (ForEach, …) can read
-        // their own previous outputs without a separate query. Graph is cached by FanOut for the
-        // scope's lifetime — repeated calls within a batch hit the cache instead of re-parsing
-        // the snapshot.
-        var graph = await fanOut.GetGraphAsync(run, ct);
-        var nodeKey = ResolveNodeKey(graph, step.NodeId);
-        // run.StepsOutputs is JsonElement on the record now — no per-step parse.
-        var stepsOutputsJson = run.StepsOutputs;
-
-        // Run-aware scope: layered on top of stepScope so action-side log calls carry both.
-        using var runScope = this.logger.BeginScope(new Dictionary<string, object?>
-        {
-            ["NodeKey"] = nodeKey,
-            ["DefinitionId"] = run.DefinitionId,
-            ["IsDryRun"] = run.IsDryRun,
-            ["NestingLevel"] = run.NestingLevel,
-        });
-        stepActivity?.SetTag(WorkflowTags.StepNodeKey, nodeKey);
-        stepActivity?.SetTag(WorkflowTags.DefinitionId, run.DefinitionId);
-        stepActivity?.SetTag(WorkflowTags.IsDryRun, run.IsDryRun);
-        stepActivity?.SetTag(WorkflowTags.NestingLevel, run.NestingLevel);
-
-        var context = new ActionContext
-        {
-            Config = configObj,
-            RunId = step.RunId,
-            StepExecutionId = step.Id,
-            TenantId = run.TenantId,
-            DefinitionId = run.DefinitionId,
-            ActorUserId = run.ActorUserId,
-            TriggerSourceKind = run.TriggerSourceKind,
-            TriggerSourceId = run.TriggerSourceId,
-            IsDryRun = run.IsDryRun,
-            NodeKey = nodeKey,
-            StepsOutputs = stepsOutputsJson,
-            // Retry-checkpoint channel: whatever a previous attempt persisted (via OnError with
-            // outputs) comes back to the action so it can skip already-completed side effects.
-            PriorAttemptOutputs = step.Outputs,
-            AttemptCount = step.AttemptCount,
-        };
-
-        ActionExecutionResult result;
-        // Child span wraps the action invocation specifically — I/O latency (HTTP / S3 / DB
-        // inside the action) is visible separately from the surrounding step plumbing.
-        using (var actionActivity = WorkflowActivitySource.Instance.StartActivity(
-            "workflow.action.execute", ActivityKind.Internal))
-        {
-            actionActivity?.SetTag(WorkflowTags.ActionKind, step.Kind);
-            actionActivity?.SetTag(WorkflowTags.StepLane, FormatLane(lane));
-            try
-            {
-                if (resolver is not null)
-                {
-                    // Late resolution of transient config fields (secrets / heavy payloads) —
-                    // deliberately left unresolved at enqueue and never persisted. Inside this
-                    // try on purpose: a resolution failure (secret-store blip, bad expression)
-                    // flows through the same catch as an action exception — transient error,
-                    // retry / dead-letter path. Model factory is only invoked when the config
-                    // actually has a transient leaf.
-                    await resolver.ResolveTransientAsync(
-                        configObj,
-                        () => ExpressionModelBuilder.Build(run.StaticContext, run.StepsOutputs),
-                        ExpressionModelBuilder.EvaluationContextForRun(run),
-                        ct);
-                }
-
-                result = await actionType.ExecuteAsync(context, ct);
-                actionActivity?.SetTag(WorkflowTags.ActionResultType, ClassifyResult(result));
-                if (result.OutputPort is not null)
-                {
-                    actionActivity?.SetTag(WorkflowTags.StepOutputPort, result.OutputPort);
-                }
-                if (result.Error is not null)
-                {
-                    actionActivity?.SetStatus(ActivityStatusCode.Error, result.Error);
-                }
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                // Lane timeout or shutdown drain — the outcome policy lives in ProcessBatchAsync,
-                // which can see stoppingToken and distinguish the two (timeout ⇒ count the
-                // attempt; shutdown ⇒ release the claim). Tag the span while the action activity
-                // is still in scope, then let the cancellation propagate.
-                actionActivity?.SetStatus(ActivityStatusCode.Error, "Cancelled (lane timeout or shutdown drain)");
-                actionActivity?.SetTag(WorkflowTags.ActionResultType, "Cancelled");
-                throw;
-            }
-            catch (Exception ex)
-            {
-                // Unhandled exception → record the message and let the retry / dead-letter path
-                // handle it. No port is fired (Dead steps don't enqueue successors any more).
-                this.logger.LogError(ex, "Action {Kind} threw an unhandled exception.", step.Kind);
-                actionActivity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                actionActivity?.SetTag(WorkflowTags.ActionResultType, "Exception");
-                result = ActionExecutionResult.OnError(ex.Message);
-            }
-        }
-
-        if (result.OutputPort is not null)
-        {
-            stepActivity?.SetTag(WorkflowTags.StepOutputPort, result.OutputPort);
-        }
-        if (result.Error is not null)
-        {
-            stepActivity?.SetStatus(ActivityStatusCode.Error, result.Error);
-        }
-
-        // CT.None: the action has run — its outcome (fired port, outputs, run mutations) must be
-        // applied and staged even if the lane deadline or shutdown drain fires right after the
-        // action body returns. Cancelling bookkeeping here would discard a computed result and
-        // re-run the action's side effects on the next claim.
-        await this.ApplyResultAsync(step, result, store, fanOut, CancellationToken.None);
-    }
-
-    /// <summary>
-    /// String form of the lane for trace tags. Stable values — dashboards / alerts can compare
-    /// directly without parsing the enum. Keep in sync with the enum.
-    /// </summary>
-    private static string FormatLane(WorkflowStepLane lane) => lane switch
-    {
-        WorkflowStepLane.Any => "any",
-        WorkflowStepLane.FastOnly => "fast",
-        WorkflowStepLane.LongOnly => "long",
-        _ => "unknown",
-    };
-
-    /// <summary>
-    /// Tag-friendly label for what flavour of <see cref="ActionExecutionResult"/> the action
-    /// returned. Lets dashboards split by suspended-vs-fired-vs-terminated without having to
-    /// pattern-match raw fields.
-    /// </summary>
-    private static string ClassifyResult(ActionExecutionResult result) =>
-        result.IsSuspended ? "Suspended"
-        : result.TerminatesRun ? "TerminatesRun"
-        : result.Error is not null ? "Error"
-        : result.OutputPort is not null ? "OnPort"
-        : "None";
-
-    /// <summary>
-    /// Extracts the node's user-facing key from the parsed graph. Falls back to the node id
-    /// when the graph is missing the entry (legacy runs from before keys were mandatory, or
-    /// snapshot parse failures the FanOut cache already logged).
-    /// </summary>
-    private static string ResolveNodeKey(WorkflowGraph? graph, string nodeId)
-    {
-        var node = graph?.Nodes.FirstOrDefault(n => n.Id == nodeId);
-        return string.IsNullOrWhiteSpace(node?.Key) ? nodeId : node.Key;
-    }
-
-    /// <summary>
-    /// Common landing for both <c>Execute</c> and <c>OnTimeout</c> results — branches on
-    /// Suspend / Terminate / Error / success and updates the step accordingly.
-    /// </summary>
-    private async Task ApplyResultAsync(
-        WorkflowStepRecord step,
-        ActionExecutionResult result,
-        IWorkflowStore store,
-        IWorkflowFanOut fanOut,
-        CancellationToken ct)
-    {
-        // Suspend: park the step in Waiting, optionally with a deadline. NextAttemptAt is the
-        // sweeper's hook; DateTime.MaxValue keeps the sweeper from ever picking it up.
-        if (result.IsSuspended)
-        {
-            step.Status = StepExecutionStatus.Waiting;
-            step.NextAttemptAt = result.SuspendTimeoutSeconds is { } t
-                ? DateTime.UtcNow.AddSeconds(t)
-                : DateTime.MaxValue;
-            step.OutputPort = null;
-            step.Outputs = ToJsonElement(result.Outputs);
-            step.LastError = null;
-            store.UpdateStep(step);
-            // Persist any bookmarks the action registered on the SAME pending batch as the step's
-            // Waiting transition — the choke point's single flush makes "step parked" and "bookmarks
-            // live" atomic. Empty / null = no signal-wait, regular suspend (Approve / Delay / …).
-            if (result.Bookmarks is { Count: > 0 } bookmarks)
-            {
-                store.AddBookmarks(step, bookmarks);
-                // Correlation-key PHI hardening: log HASHED keys, never raw. A generic WaitSignal key
-                // is author-controlled and could carry PHI; the stable hash lets ops match this
-                // suspend to the later SignalAsync (same key → same hash) without exposing the value.
-                this.logger.LogInformation(
-                    "Step {StepId} suspended with {Count} bookmark(s): {KeyHashes}",
-                    step.Id,
-                    bookmarks.Count,
-                    bookmarks.Select(b => CorrelationKeyLog.Hash(b.CorrelationKey)).ToArray());
-            }
-            // Drive run.Status → Suspended (single-port engine: this Waiting step is now the only
-            // active one). CheckRunCompletion is the single source of truth for run state.
-            await fanOut.CheckRunCompletionAsync(step, ct);
-            return;
-        }
-
-        // Successful early termination (FinishRun): step is Completed with the return payload
-        // stamped on its outputs (for trace), and the run flips to Completed with the same
-        // payload on run.ReturnValue (canonical slot the sub-workflow auto-resume reads).
-        // No successor edges fire — the action declares no output ports.
-        if (result.TerminatesRun)
-        {
-            var serializedReturn = ToJsonElement(result.ReturnValue);
-
-            step.Status = StepExecutionStatus.Completed;
-            step.OutputPort = null;
-            step.Outputs = serializedReturn;
-            step.CompletedAt = DateTime.UtcNow;
-            step.LastError = null;
-            store.UpdateStep(step);
-
-            var run = await store.GetRunAsync(step.RunId, ct);
-            if (run is not null)
-            {
-                // Flip to Completed unless run is already terminal (Completed/Failed) — Suspended
-                // is fine to override (the FinishRun terminator preempts whatever Waiting step was
-                // there). ALWAYS run the parent-resume path: TryResumeWaitingStepAsync atomically
-                // guards on Waiting status, so a duplicate resume is a safe no-op.
-                if (run.Status is not (WorkflowRunStatus.Completed or WorkflowRunStatus.Failed))
-                {
-                    run.Status = WorkflowRunStatus.Completed;
-                    run.FinishedAt = DateTime.UtcNow;
-                    run.ReturnValue = serializedReturn;
-                    store.UpdateRun(run);
-                }
-
-                await fanOut.OnRunFinalizedAsync(step.RunId, ct);
-            }
-            return;
-        }
-
-        if (!string.IsNullOrEmpty(result.Error))
-        {
-            step.LastError = result.Error;
-            // Non-transient errors (e.g. FailRun) skip retries — exhausted immediately.
-            var exhausted = !result.IsTransient || step.AttemptCount >= this.settings.MaxAttempts;
-
-            if (exhausted && !string.IsNullOrEmpty(result.RetryExhaustedPort))
-            {
-                // Author-declared fallback branch: attempts are spent (or the failure was
-                // deterministic), but the action told the engine where the run should go in
-                // that case — complete the step on the fallback port instead of dead-lettering
-                // the whole run. LastError stays on the row, so the trace shows the failed
-                // attempts AND the branch taken; Outputs carry the LAST attempt's error
-                // payload (or the surviving retry checkpoint when the last attempt returned
-                // none), merged into steps_outputs like any completion so the fallback branch
-                // can read them via steps.<key>.*.
-                step.Status = StepExecutionStatus.Completed;
-                step.OutputPort = result.RetryExhaustedPort;
-                if (result.Outputs is not null)
-                {
-                    step.Outputs = ToJsonElement(result.Outputs);
-                }
-                step.CompletedAt = DateTime.UtcNow;
-                store.UpdateStep(step);
-                this.logger.LogWarning(
-                    "Step failed {AttemptCount}/{MaxAttempts} attempt(s) (transient={Transient}); taking fallback port '{Port}': {Error}",
-                    step.AttemptCount,
-                    this.settings.MaxAttempts,
-                    result.IsTransient,
-                    result.RetryExhaustedPort,
-                    result.Error);
-                await fanOut.EnqueueNextStepAsync(step, result.RetryExhaustedPort, ct);
-                await fanOut.CheckRunCompletionAsync(step, ct);
-            }
-            else if (exhausted)
-            {
-                step.Status = StepExecutionStatus.Dead;
-                step.OutputPort = null;
-                // Preserve-if-null: a final attempt that returned no outputs must not wipe an
-                // earlier retry checkpoint — it's postmortem evidence of what DID happen.
-                if (result.Outputs is not null)
-                {
-                    step.Outputs = ToJsonElement(result.Outputs);
-                }
-                step.CompletedAt = DateTime.UtcNow;
-                store.UpdateStep(step);
-                this.logger.LogError(
-                    "Step dead-lettered after {AttemptCount}/{MaxAttempts} attempt(s) (transient={Transient}): {Error}",
-                    step.AttemptCount,
-                    this.settings.MaxAttempts,
-                    result.IsTransient,
-                    result.Error);
-                // Dead steps don't fire any successor edges — branches that should run on
-                // failure must wire to an Error-kind port the action returns explicitly (or
-                // use RetryExhaustedPort, which takes the branch above instead of Dead).
-                await fanOut.CheckRunCompletionAsync(step, ct);
-            }
-            else
-            {
-                // Retry. Outputs returned WITH the transient error are the retry checkpoint:
-                // persisted on the row and handed back to the next attempt via
-                // ActionContext.PriorAttemptOutputs, so a multi-side-effect action can skip
-                // work it already completed (row inserted, email still owed). Null outputs
-                // leave the previous checkpoint intact — an attempt that crashed before
-                // producing one must not erase earlier progress.
-                step.Status = StepExecutionStatus.Pending;
-                step.NextAttemptAt = DateTime.UtcNow.Add(this.BackoffFor(step.AttemptCount));
-                if (result.Outputs is not null)
-                {
-                    step.Outputs = ToJsonElement(result.Outputs);
-                }
-                store.UpdateStep(step);
-                this.logger.LogWarning(
-                    "Step transient error on attempt {AttemptCount}/{MaxAttempts}, retrying at {NextAttemptAt:o}: {Error}",
-                    step.AttemptCount,
-                    this.settings.MaxAttempts,
-                    step.NextAttemptAt,
-                    result.Error);
-            }
-            return;
-        }
-
-        step.Status = StepExecutionStatus.Completed;
-        step.OutputPort = result.OutputPort;
-        step.Outputs = ToJsonElement(result.Outputs);
-        step.CompletedAt = DateTime.UtcNow;
-        step.LastError = null;
-        store.UpdateStep(step);
-
-        await fanOut.EnqueueNextStepAsync(step, result.OutputPort, ct);
-        await fanOut.CheckRunCompletionAsync(step, ct);
-    }
-
-    /// <summary>
-    /// Converts an action's <see cref="ActionExecutionResult.Outputs"/> / <c>ReturnValue</c>
-    /// (loose <see cref="object"/> from the contract) into the JsonElement the record stores.
-    /// Null in → null out so the column stays unset for actions that didn't produce a payload.
-    /// Goes through <see cref="WorkflowJsonOptions.Default"/> so camelCase + enum-as-string is
-    /// applied consistently (action authors return anonymous types whose property names should
-    /// surface to consumers in camelCase).
-    /// </summary>
-    private static JsonElement? ToJsonElement(object? value) =>
-        value is null ? null : JsonSerializer.SerializeToElement(value, WorkflowJsonOptions.Default);
-
-    private TimeSpan BackoffFor(int attemptIndex)
-    {
-        var backoff = this.settings.BackoffSeconds;
-        if (backoff.Length == 0) return TimeSpan.FromSeconds(30);
-        var idx = Math.Min(attemptIndex - 1, backoff.Length - 1);
-        return TimeSpan.FromSeconds(backoff[Math.Max(0, idx)]);
     }
 }

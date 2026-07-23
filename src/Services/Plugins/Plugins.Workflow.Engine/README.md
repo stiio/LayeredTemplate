@@ -65,8 +65,12 @@ Services/                          — Engine pipeline pieces.
 │                                    auto-resume cascade. Shared between worker + resumer.
 ├── WorkflowValidator.cs           — Graph invariants (cycles, references, ports, single
 │                                    start node, edge-port consistency).
-├── WorkflowEngineWorker.cs        — BackgroundService loop: claim → dispatch → enqueue →
-│                                    expire stale waiting steps → save (per step).
+├── WorkflowEngineWorker.cs        — BackgroundService: worker + maintenance loops, claims,
+│                                    per-step DI scopes, cancellation budgets, flushes.
+├── WorkflowStepExecutor.cs        — Per-scope step dispatch: load run → config → action →
+│                                    apply result (retry / dead-letter / suspend / terminate).
+├── WorkflowMaintenanceSweeper.cs  — Maintenance work items: expired-waiting timeout sweep +
+│                                    revert, stuck-running recovery, bookmark reconciliation.
 ├── WorkflowRetentionWorker.cs     — BackgroundService that runs the IWorkflowRetentionStore
 │                                    purge methods on a configurable schedule.
 ├── WorkflowActivitySource.cs      — Internal ActivitySource wrapper + WorkflowTags constants
@@ -109,7 +113,7 @@ services.AddScoped<IActionType, HttpRequestActionType>();
   in both engines — same camelCase names in both).
 - `ActionTypeRegistry`, `WorkflowValidator`, `StepExecutionBuilder`.
 - `WorkflowDispatcher`, `WorkflowRunner`, `WorkflowResumer`, `WorkflowCanceller`,
-  `WorkflowRestarter`, `WorkflowFanOut`.
+  `WorkflowRestarter`, `WorkflowFanOut`, `WorkflowStepExecutor`, `WorkflowMaintenanceSweeper`.
 - `WorkflowEngineWorker` and `WorkflowRetentionWorker` as `HostedService`s.
 
 ## Settings (`WorkflowEngineSettings`)

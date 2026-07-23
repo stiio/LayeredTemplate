@@ -27,8 +27,8 @@ namespace LayeredTemplate.Tests.Workflow;
 ///     stay untouched; [TransientExpr] forces transiency over the whole property subtree
 ///   - StepExecutionBuilder persists the transient field as its raw expression (no `resolved`)
 ///     and rejects oversized resolved configs (MaxResolvedConfigChars guardrail)
-///   - worker: transient fields materialise just before the action runs; a resolution failure
-///     is a retryable step error, not an instant Dead.
+///   - step executor: transient fields materialise just before the action runs; a resolution
+///     failure is a retryable step error, not an instant Dead.
 /// </summary>
 public class TransientExprTests
 {
@@ -182,15 +182,14 @@ public class TransientExprTests
         Assert.DoesNotContain(huge, step.ResolvedConfig.GetRawText());
     }
 
-    // ----- worker: late materialisation + retry semantics -----
+    // ----- executor: late materialisation + retry semantics -----
 
     [Fact]
-    public async Task Worker_materialises_transient_fields_before_the_action_runs()
+    public async Task Executor_materialises_transient_fields_before_the_action_runs()
     {
-        var (worker, store, registry, fanOut, step, capture) = WorkerHarness(maxAttempts: 1);
+        var (executor, step, capture) = ExecutorHarness(maxAttempts: 1, NewResolver());
 
-        await worker.ExecuteOneAsync(
-            step, store, registry, fanOut, WorkflowStepLane.Any, CancellationToken.None, NewResolver());
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.NotNull(capture.Seen);
         Assert.Equal("persisted", capture.Seen!.Plain.Resolved);   // from resolved_config as-is
@@ -199,13 +198,13 @@ public class TransientExprTests
     }
 
     [Fact]
-    public async Task Worker_treats_transient_resolution_failure_as_retryable_error()
+    public async Task Executor_treats_transient_resolution_failure_as_retryable_error()
     {
-        var (worker, store, registry, fanOut, step, capture) = WorkerHarness(maxAttempts: 3);
-        var engineless = new ExpressionResolver(Enumerable.Empty<IExpressionEngine>());
+        // Engine-less resolver: the transient leaf's engine lookup fails deterministically.
+        var (executor, step, capture) = ExecutorHarness(
+            maxAttempts: 3, new ExpressionResolver(Enumerable.Empty<IExpressionEngine>()));
 
-        await worker.ExecuteOneAsync(
-            step, store, registry, fanOut, WorkflowStepLane.Any, CancellationToken.None, engineless);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Null(capture.Seen); // the action never ran — no side effects on a broken config
         Assert.Equal(StepExecutionStatus.Pending, step.Status); // retry scheduled, not Dead
@@ -300,8 +299,8 @@ public class TransientExprTests
         return (builder, NewRun(), node);
     }
 
-    private static (WorkflowEngineWorker Worker, FakeStore Store, FakeRegistry Registry,
-        WorkflowFanOut FanOut, WorkflowStepRecord Step, CaptureAction Capture) WorkerHarness(int maxAttempts)
+    private static (WorkflowStepExecutor Executor, WorkflowStepRecord Step, CaptureAction Capture) ExecutorHarness(
+        int maxAttempts, ExpressionResolver resolver)
     {
         var capture = new CaptureAction();
         var registry = new FakeRegistry(capture);
@@ -338,15 +337,11 @@ public class TransientExprTests
         var fanOut = new WorkflowFanOut(
             store, new FakeBuilder(), Options.Create(settings),
             new ServiceCollection().BuildServiceProvider(), NullLogger<WorkflowFanOut>.Instance);
+        var executor = new WorkflowStepExecutor(
+            store, registry, fanOut, resolver,
+            Options.Create(settings), NullLogger<WorkflowStepExecutor>.Instance);
 
-        var worker = new WorkflowEngineWorker(
-            scopeFactory: null!,
-            lifetime: null!,
-            workSignal: new WorkflowWorkSignal(),
-            logger: NullLogger<WorkflowEngineWorker>.Instance,
-            settings: Options.Create(settings));
-
-        return (worker, store, registry, fanOut, step, capture);
+        return (executor, step, capture);
     }
 
     private static (WorkflowResumer Resumer, WorkflowStepRecord Step, ResumeProbeAction Probe) ResumerHarness(

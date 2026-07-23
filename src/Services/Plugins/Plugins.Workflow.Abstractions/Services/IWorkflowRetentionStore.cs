@@ -39,7 +39,7 @@ public interface IWorkflowRetentionStore
     /// </summary>
     /// <remarks>
     /// In-flight runs may still have a step that gets claimed mid-purge by a concurrent worker;
-    /// the worker's <c>ExecuteOneAsync</c> handles a missing run by dead-lettering the step.
+    /// the engine's step executor handles a missing run by dead-lettering the step.
     /// </remarks>
     Task<int> PurgeAllForTenantAsync(
         Guid tenantId,

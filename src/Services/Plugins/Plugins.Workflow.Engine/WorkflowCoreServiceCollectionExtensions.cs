@@ -66,6 +66,13 @@ public static class WorkflowCoreServiceCollectionExtensions
         // Shared between worker (regular execution) and external resume callers (suspended-step
         // API). Encapsulates edge / Join / safety-cap rules.
         services.AddScoped<IWorkflowFanOut, WorkflowFanOut>();
+        // Engine-internal per-scope units the worker resolves from each step's own DI scope:
+        // step dispatch + result state machine, and the maintenance-loop work items (timeout
+        // sweep / revert, stuck-running recovery, bookmark reconciliation). Registered by
+        // concrete type — they're plumbing between the worker and scoped services, not a
+        // consumer-facing contract.
+        services.AddScoped<WorkflowStepExecutor>();
+        services.AddScoped<WorkflowMaintenanceSweeper>();
         services.AddScoped<IWorkflowResumer, WorkflowResumer>();
         // Generic signal-wait fan-out: resolves bookmarks for an opaque (tenant, key) pair and
         // resumes every waiting run via the resumer. App-side facade (mirrors IWorkflowDispatcher);

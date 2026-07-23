@@ -6,6 +6,8 @@ using LayeredTemplate.Plugins.Workflow.Abstractions.Graph;
 using LayeredTemplate.Plugins.Workflow.Abstractions.Models;
 using LayeredTemplate.Plugins.Workflow.Engine;
 using LayeredTemplate.Plugins.Workflow.Engine.Actions;
+using LayeredTemplate.Plugins.Workflow.Engine.Expressions;
+using LayeredTemplate.Plugins.Workflow.Engine.Expressions.Engines;
 using LayeredTemplate.Plugins.Workflow.Engine.Services;
 using LayeredTemplate.Tests.Workflow.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +18,7 @@ using Xunit;
 namespace LayeredTemplate.Tests.Workflow;
 
 /// <summary>
-/// Worker behaviour around the single-port-per-step contract:
+/// Step-dispatch behaviour around the single-port-per-step contract:
 ///  - successful step fires exactly the named edge (no auto-fire of any other declared port);
 ///  - Dead steps don't fan out;
 ///  - transient retries don't fan out either;
@@ -24,14 +26,14 @@ namespace LayeredTemplate.Tests.Workflow;
 ///  - suspends park the step Waiting and persist bookmarks on the same flow;
 ///  - <c>ForEach</c> iterates correctly across visits and surfaces non-array / cap-exceeded
 ///    inputs as non-transient OnError.
-/// Ported from the origin project's suite; drives the REAL worker/fan-out via the internal
-/// <c>ExecuteOneAsync</c> seam against in-memory fakes.
+/// Ported from the origin project's suite; drives the REAL <see cref="WorkflowStepExecutor"/> +
+/// fan-out against in-memory fakes (the worker adds only claiming / scoping / flushing on top).
 /// </summary>
-public class WorkflowEngineWorkerTests
+public class WorkflowStepExecutorTests
 {
     private const string TestKind = "TestAction";
 
-    /// <summary>Engine settings shared between worker and fan-out across all tests.</summary>
+    /// <summary>Engine settings shared between executor and fan-out across all tests.</summary>
     private static readonly WorkflowEngineSettings WorkerSettings = new()
     {
         MaxAttempts = 5,
@@ -48,7 +50,7 @@ public class WorkflowEngineWorkerTests
     {
         // Action returns "success" — the engine must walk only that edge, even if other edges
         // declared on the same node exist (e.g. the "extra" edge here).
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -57,8 +59,7 @@ public class WorkflowEngineWorkerTests
             },
             actionResult: ActionExecutionResult.OnPort("success"));
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Completed, step.Status);
         Assert.Equal("success", step.OutputPort);
@@ -70,7 +71,7 @@ public class WorkflowEngineWorkerTests
     public async Task Dead_step_does_not_fan_out_at_all()
     {
         // Non-transient error → Dead on first attempt. No successor steps must be created.
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -79,8 +80,7 @@ public class WorkflowEngineWorkerTests
             },
             actionResult: ActionExecutionResult.OnError("simulated failure", transient: false));
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Dead, step.Status);
         Assert.Null(step.OutputPort);
@@ -92,7 +92,7 @@ public class WorkflowEngineWorkerTests
     {
         // Transient error and we're still under MaxAttempts → step goes back to Pending. No
         // successor edges fire.
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -104,8 +104,7 @@ public class WorkflowEngineWorkerTests
         // AttemptCount=1 means this is the first attempt — settings.MaxAttempts is 5.
         step.AttemptCount = 1;
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Pending, step.Status);
         Assert.Null(step.OutputPort);
@@ -122,7 +121,7 @@ public class WorkflowEngineWorkerTests
     {
         // A multi-side-effect action failed partway and reported what it already did — the
         // checkpoint must land on the step row so the next attempt can read it.
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -134,8 +133,7 @@ public class WorkflowEngineWorkerTests
 
         step.AttemptCount = 1;
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Pending, step.Status);
         Assert.NotNull(step.Outputs);
@@ -147,7 +145,7 @@ public class WorkflowEngineWorkerTests
     {
         // Attempt 2 crashed before producing a checkpoint — erasing attempt 1's progress record
         // would make attempt 3 redo completed side effects.
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -159,8 +157,7 @@ public class WorkflowEngineWorkerTests
         step.AttemptCount = 2;
         step.Outputs = JsonSerializer.SerializeToElement(new { dbRowId = 42 }, WorkflowJsonOptions.Default);
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Pending, step.Status);
         Assert.Equal(42, step.Outputs!.Value.GetProperty("dbRowId").GetInt32());
@@ -172,13 +169,12 @@ public class WorkflowEngineWorkerTests
         // The replay half of the channel: whatever the row carries arrives in
         // ActionContext.PriorAttemptOutputs together with the attempt number.
         var capture = new ContextCaptureAction();
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdgesWithAction(capture);
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdgesWithAction(capture);
 
         step.AttemptCount = 2;
         step.Outputs = JsonSerializer.SerializeToElement(new { dbRowId = 42 }, WorkflowJsonOptions.Default);
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.NotNull(capture.SeenPriorOutputs);
         Assert.Equal(42, capture.SeenPriorOutputs!.Value.GetProperty("dbRowId").GetInt32());
@@ -189,12 +185,11 @@ public class WorkflowEngineWorkerTests
     public async Task First_attempt_sees_no_checkpoint()
     {
         var capture = new ContextCaptureAction();
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdgesWithAction(capture);
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdgesWithAction(capture);
 
         step.AttemptCount = 1;
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Null(capture.SeenPriorOutputs);
         Assert.Equal(1, capture.SeenAttemptCount);
@@ -209,7 +204,7 @@ public class WorkflowEngineWorkerTests
     {
         // The fallback port only matters at exhaustion — while attempts remain, the step
         // retries exactly like a plain transient error, no edges fire.
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -221,8 +216,7 @@ public class WorkflowEngineWorkerTests
 
         step.AttemptCount = 1; // first of MaxAttempts=5
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Pending, step.Status);
         Assert.Null(step.OutputPort);
@@ -235,7 +229,7 @@ public class WorkflowEngineWorkerTests
         // Attempts spent → instead of Dead, the step completes on the declared fallback port:
         // the run continues down that edge, the last attempt's outputs are stamped, and
         // LastError keeps the failure visible in the trace.
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -250,8 +244,7 @@ public class WorkflowEngineWorkerTests
 
         step.AttemptCount = 5; // == MaxAttempts → exhausted
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Completed, step.Status);
         Assert.Equal("error", step.OutputPort);
@@ -268,7 +261,7 @@ public class WorkflowEngineWorkerTests
     {
         // Deterministic failure = exhausted at once: no retries are burned, the fallback
         // branch fires on the first attempt.
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -280,8 +273,7 @@ public class WorkflowEngineWorkerTests
 
         step.AttemptCount = 1;
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Completed, step.Status);
         Assert.Equal("error", step.OutputPort);
@@ -455,11 +447,11 @@ public class WorkflowEngineWorkerTests
     }
 
     [Fact]
-    public async Task Worker_terminates_run_to_completed_and_stamps_return_value()
+    public async Task Executor_terminates_run_to_completed_and_stamps_return_value()
     {
         // TerminatesRun result → step Completed, run.Status=Completed, run.ReturnValue serialized,
         // no successor steps fired even if edges exist on the graph.
-        var (worker, store, registry, builder, run, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, run, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -468,8 +460,7 @@ public class WorkflowEngineWorkerTests
             },
             actionResult: ActionExecutionResult.OnFinish(new { result = "ok", count = 7 }));
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Completed, step.Status);
         Assert.Null(step.OutputPort);
@@ -485,11 +476,11 @@ public class WorkflowEngineWorkerTests
     }
 
     [Fact]
-    public async Task Worker_terminates_run_with_null_return_value_leaves_run_return_value_null()
+    public async Task Executor_terminates_run_with_null_return_value_leaves_run_return_value_null()
     {
         // FinishRun without a payload → run.ReturnValue stays null. Parent (if any) would later
         // see return_value: null in its resume payload.
-        var (worker, store, registry, builder, run, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, run, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -498,8 +489,7 @@ public class WorkflowEngineWorkerTests
             },
             actionResult: ActionExecutionResult.OnFinish(returnValue: null));
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(WorkflowRunStatus.Completed, run.Status);
         Assert.Null(run.ReturnValue);
@@ -513,10 +503,10 @@ public class WorkflowEngineWorkerTests
     [Fact]
     public async Task Suspend_with_bookmarks_parks_step_waiting_and_persists_bookmarks()
     {
-        // Action suspends AND registers a bookmark. The worker must park the step Waiting and hand
+        // Action suspends AND registers a bookmark. The executor must park the step Waiting and hand
         // the registrations to the store on the same flow as the step update.
         var registrations = new[] { new WorkflowBookmarkRegistration("submission:123", "signalled") };
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -525,8 +515,7 @@ public class WorkflowEngineWorkerTests
             },
             actionResult: ActionExecutionResult.OnSuspend(timeoutSeconds: 3600, bookmarks: registrations));
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Waiting, step.Status);
         Assert.Null(step.OutputPort);
@@ -542,7 +531,7 @@ public class WorkflowEngineWorkerTests
     {
         // A plain suspend (Approve / Delay) registers no bookmarks — the store's AddBookmarks must
         // not be invoked, so the bookmark table stays untouched.
-        var (worker, store, registry, builder, _, step) = SetupSingleSourceTwoEdges(
+        var (executor, store, registry, _, step) = SetupSingleSourceTwoEdges(
             sourceKind: TestKind,
             ports: new[]
             {
@@ -551,8 +540,7 @@ public class WorkflowEngineWorkerTests
             },
             actionResult: ActionExecutionResult.OnSuspend(timeoutSeconds: 60));
 
-        var fanOut = MakeFanOut(store, builder, registry);
-        await worker.ExecuteOneAsync(step, store, registry, fanOut, CancellationToken.None);
+        await executor.ExecuteAsync(step, WorkflowStepLane.Any, CancellationToken.None);
 
         Assert.Equal(StepExecutionStatus.Waiting, step.Status);
         Assert.Empty(store.AddedBookmarks);
@@ -673,16 +661,21 @@ public class WorkflowEngineWorkerTests
     // ParentStepId on any step), so the fan-out never resolves IWorkflowResumer from it.
     private static readonly IServiceProvider EmptyProvider = new ServiceCollection().BuildServiceProvider();
 
-    private static WorkflowFanOut MakeFanOut(
-        FakeStore store, FakeBuilder builder, FakeRegistry registry)
+    private static WorkflowStepExecutor MakeExecutor(FakeStore store, FakeRegistry registry)
         => new(
             store,
-            builder,
+            registry,
+            new WorkflowFanOut(
+                store,
+                new FakeBuilder(),
+                Options.Create(WorkerSettings),
+                EmptyProvider,
+                NullLogger<WorkflowFanOut>.Instance),
+            new ExpressionResolver(new IExpressionEngine[] { new StaticExpressionEngine() }),
             Options.Create(WorkerSettings),
-            EmptyProvider,
-            NullLogger<WorkflowFanOut>.Instance);
+            NullLogger<WorkflowStepExecutor>.Instance);
 
-    private static (WorkflowEngineWorker Worker, FakeStore Store, FakeRegistry Registry, FakeBuilder Builder,
+    private static (WorkflowStepExecutor Executor, FakeStore Store, FakeRegistry Registry,
         WorkflowRunRecord Run, WorkflowStepRecord Step) SetupSingleSourceTwoEdges(
         string sourceKind,
         IReadOnlyList<ActionPortDescriptor> ports,
@@ -708,7 +701,7 @@ public class WorkflowEngineWorkerTests
 
     private static readonly JsonElement EmptyJsonObject = JsonDocument.Parse("{}").RootElement;
 
-    private static (WorkflowEngineWorker Worker, FakeStore Store, FakeRegistry Registry, FakeBuilder Builder,
+    private static (WorkflowStepExecutor Executor, FakeStore Store, FakeRegistry Registry,
         WorkflowRunRecord Run, WorkflowStepRecord Step) BuildHarness(
         WorkflowGraph graph,
         WorkflowNode sourceNode,
@@ -751,20 +744,12 @@ public class WorkflowEngineWorkerTests
 
         var registry = new FakeRegistry(sourceKind, ports, actionResult);
         var store = new FakeStore(run);
-        var builder = new FakeBuilder();
 
-        var worker = new WorkflowEngineWorker(
-            scopeFactory: null!,   // ExecuteOneAsync doesn't use it.
-            lifetime: null!,       // ditto — only ExecuteAsync touches lifetime.
-            workSignal: new WorkflowWorkSignal(), // only the idle wait in WorkerLoopAsync uses it.
-            logger: NullLogger<WorkflowEngineWorker>.Instance,
-            settings: Options.Create(WorkerSettings));
-
-        return (worker, store, registry, builder, run, step);
+        return (MakeExecutor(store, registry), store, registry, run, step);
     }
 
     /// <summary>Same single-source harness, but the registry wraps a REAL action instance.</summary>
-    private static (WorkflowEngineWorker Worker, FakeStore Store, FakeRegistry Registry, FakeBuilder Builder,
+    private static (WorkflowStepExecutor Executor, FakeStore Store, FakeRegistry Registry,
         WorkflowRunRecord Run, WorkflowStepRecord Step) SetupSingleSourceTwoEdgesWithAction(IActionType action)
     {
         var sourceNode = new WorkflowNode { Id = "src", Kind = action.Kind, Key = "src", Config = EmptyJsonObject };
@@ -807,16 +792,8 @@ public class WorkflowEngineWorkerTests
 
         var registry = new FakeRegistry(action);
         var store = new FakeStore(run);
-        var builder = new FakeBuilder();
 
-        var worker = new WorkflowEngineWorker(
-            scopeFactory: null!,
-            lifetime: null!,
-            workSignal: new WorkflowWorkSignal(),
-            logger: NullLogger<WorkflowEngineWorker>.Instance,
-            settings: Options.Create(WorkerSettings));
-
-        return (worker, store, registry, builder, run, step);
+        return (MakeExecutor(store, registry), store, registry, run, step);
     }
 
     /// <summary>Captures the retry-checkpoint fields of the context it was dispatched with.</summary>
